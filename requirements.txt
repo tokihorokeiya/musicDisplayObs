@@ -1,0 +1,6 @@
+﻿customtkinter>=5.2.0
+tkinterdnd2>=0.4.2
+winsdk>=1.0.0b10
+Pillow>=10.0.0
+pystray>=0.19.5
+aiohttp>=3.9.0

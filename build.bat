@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 title Build Real-Time Music Display Executable
 echo ===================================================
 echo Building Real-Time Music Display Executable (.exe)
@@ -8,7 +8,11 @@ echo.
 pyinstaller --noconfirm --onedir --windowed ^
     --add-data "templates;templates" ^
     --add-data "static;static" ^
+    --add-data "songIcon.jpg;." ^
+    --add-data "config.json;." ^
+    --collect-all "customtkinter" ^
     --collect-all "tkinterdnd2" ^
+    --collect-all "winsdk" ^
     --name "OBSMusicDisplay" ^
     main.py
 
@@ -21,4 +25,3 @@ if %ERRORLEVEL% EQU 0 (
 ) else (
     echo Build failed with error code %ERRORLEVEL%.
 )
-pause

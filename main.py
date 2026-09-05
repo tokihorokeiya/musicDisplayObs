@@ -22,16 +22,16 @@ class AppCoordinator:
         self.media_engine = MediaEngine(on_update_callback=self._on_media_update)
         self.server = MediaServer(self.media_engine, port=self.config.get("port", 11150))
 
-        # Start async event loop in background thread
-        self.async_thread = threading.Thread(target=self._run_async_loop, daemon=True)
-        self.async_thread.start()
-
-        # Initialize GUI in main thread
+        # Initialize GUI in main thread first
         self.gui = AppGUI(
             config=self.config,
             on_port_change_callback=self._on_port_changed,
             on_theme_change_callback=self._on_theme_changed
         )
+
+        # Start async event loop in background thread once GUI is ready
+        self.async_thread = threading.Thread(target=self._run_async_loop, daemon=True)
+        self.async_thread.start()
 
         try:
             self.gui.mainloop()

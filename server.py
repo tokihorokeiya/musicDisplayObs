@@ -1,5 +1,6 @@
 import asyncio
 import os
+import sys
 import json
 from aiohttp import web
 
@@ -12,7 +13,12 @@ class MediaServer:
         self.site = None
         self.ws_clients = set()
         self.is_running = False
-        self.base_dir = os.path.dirname(os.path.abspath(__file__))
+
+        if getattr(sys, 'frozen', False):
+            bundle_dir = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
+            self.base_dir = bundle_dir if os.path.exists(os.path.join(bundle_dir, "templates")) else os.path.dirname(sys.executable)
+        else:
+            self.base_dir = os.path.dirname(os.path.abspath(__file__))
 
         self._setup_routes()
 

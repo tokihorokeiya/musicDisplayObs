@@ -3,7 +3,7 @@
     "language": "zh_TW",
     "resolution_mode": "1920x700",
     "selected_theme": "glassmorphism",
-    "autohide_on_pause": false,
+    "autohide_on_pause": true,
     "autohide_delay_seconds": 3,
     "marquee_speed": 40,
     "start_minimized": false

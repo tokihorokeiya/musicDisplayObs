@@ -1,6 +1,7 @@
 import io
 import base64
 import os
+import sys
 import subprocess
 import webbrowser
 import threading
@@ -30,11 +31,11 @@ THEME_IDS = [
 
 def get_ui_font_family(lang):
     if lang == "ja":
-        return "Yu Gothic"
+        return "Yu Gothic UI"
     elif lang == "ko":
         return "Malgun Gothic"
     elif lang == "zh_TW":
-        return "Microsoft JhengHei"
+        return "Microsoft JhengHei UI"
     elif lang == "th":
         return "Leelawadee UI"
     return "Segoe UI"
@@ -77,10 +78,13 @@ def generate_obs_shortcuts(port, base_dir, res_param):
     os.makedirs(shortcuts_dir, exist_ok=True)
     
     file_map = {}
+    html_map = {}
     for i, theme_id in enumerate(THEME_IDS, 1):
+        url = f"http://localhost:{port}/overlay?theme={theme_id}{res_param}"
+        
+        # .url shortcut file
         filename = f"{i:02d}_{theme_id}.url"
         filepath = os.path.join(shortcuts_dir, filename)
-        url = f"http://localhost:{port}/overlay?theme={theme_id}{res_param}"
         content = f"[InternetShortcut]\nURL={url}\n"
         try:
             with open(filepath, "w", encoding="utf-8") as f:
@@ -88,7 +92,29 @@ def generate_obs_shortcuts(port, base_dir, res_param):
         except Exception:
             pass
         file_map[theme_id] = filepath
-    return shortcuts_dir, file_map
+
+        # .html source file - OBS automatically creates a Browser Source when an HTML file is dropped!
+        html_filename = f"{i:02d}_{theme_id}.html"
+        html_filepath = os.path.join(shortcuts_dir, html_filename)
+        html_content = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta http-equiv="refresh" content="0; url={url}">
+<title>OBS Music Overlay - {theme_id}</title>
+<style>html, body {{ margin: 0; padding: 0; overflow: hidden; background: transparent; }}</style>
+<script>window.location.replace("{url}");</script>
+</head>
+<body style="background:transparent;overflow:hidden;"></body>
+</html>"""
+        try:
+            with open(html_filepath, "w", encoding="utf-8") as f:
+                f.write(html_content)
+        except Exception:
+            pass
+        html_map[theme_id] = html_filepath
+
+    return shortcuts_dir, file_map, html_map
 
 
 class DnDCustomTk(ctk.CTk, TkinterDnD.DnDWrapper):
@@ -117,8 +143,15 @@ class AppGUI(DnDCustomTk):
         ctk.set_appearance_mode("Dark")
         ctk.set_default_color_theme("blue")
 
-        self.base_dir = os.path.dirname(os.path.abspath(__file__))
-        self.shortcuts_dir, self.shortcut_file_map = generate_obs_shortcuts(
+        if getattr(sys, 'frozen', False):
+            self.base_dir = os.path.dirname(sys.executable)
+            bundle_dir = getattr(sys, '_MEIPASS', self.base_dir)
+            self.assets_dir = bundle_dir if os.path.exists(os.path.join(bundle_dir, "static")) else self.base_dir
+        else:
+            self.base_dir = os.path.dirname(os.path.abspath(__file__))
+            self.assets_dir = self.base_dir
+
+        self.shortcuts_dir, self.shortcut_file_map, self.shortcut_html_map = generate_obs_shortcuts(
             self.config.get("port", 11150), self.base_dir, self._get_res_query_param()
         )
 
@@ -126,13 +159,22 @@ class AppGUI(DnDCustomTk):
         self.tray_icon = None
         self.preview_tk_images = {}
         self.toast_timer = None
+        self.latest_media_data = None
         self.font_family = get_ui_font_family(self.current_lang)
 
-    def _font(self, size, weight="normal"):
-        return ctk.CTkFont(family=self.font_family, size=size, weight=weight)
+        # Dynamic widget placeholders
+        self.track_title_label = None
+        self.track_artist_label = None
+        self.time_label = None
+        self.progress_bar = None
+        self.status_badge = None
+        self.cover_label = None
 
         self._build_ui()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
+
+    def _font(self, size, weight="normal"):
+        return ctk.CTkFont(family=self.font_family, size=size, weight=weight)
 
     def _t(self, key, default=""):
         return get_text(self.current_lang, key, default)
@@ -176,6 +218,8 @@ class AppGUI(DnDCustomTk):
         lang_names = [opt[0] for opt in LANGUAGE_OPTIONS]
         current_lang_name = next((opt[0] for opt in LANGUAGE_OPTIONS if opt[1] == self.current_lang), lang_names[0])
 
+        # Standard multilingual font for clean rendering of Traditional Chinese and Japanese in dropdown
+        multilingual_font = ctk.CTkFont(family="Microsoft JhengHei UI", size=12)
         self.lang_menu = ctk.CTkOptionMenu(
             header_right,
             values=lang_names,
@@ -183,7 +227,8 @@ class AppGUI(DnDCustomTk):
             width=210,
             height=30,
             corner_radius=8,
-            font=self._font(12),
+            font=multilingual_font,
+            dropdown_font=multilingual_font,
             fg_color="#27273a",
             button_color="#373752"
         )
@@ -212,13 +257,14 @@ class AppGUI(DnDCustomTk):
         )
         self.toast_label.pack(pady=6)
 
-        # Tabview
+        # Tabview with standard UI font for tabs
         self.tabview = ctk.CTkTabview(
             self,
             corner_radius=14,
             fg_color="#131722",
             segmented_button_selected_color="#4f46e5",
-            segmented_button_unselected_color="#1e1e2d"
+            segmented_button_unselected_color="#1e1e2d",
+            segmented_button_font=self._font(13, "bold")
         )
         self.tabview.pack(fill="both", expand=True, padx=20, pady=(0, 16))
 
@@ -227,6 +273,9 @@ class AppGUI(DnDCustomTk):
 
         self._build_now_playing_tab()
         self._build_gallery_tab()
+
+        if self.latest_media_data:
+            self.update_media_display(self.latest_media_data)
 
     def _build_now_playing_tab(self):
         content = ctk.CTkFrame(self.tab_playing, fg_color="transparent")
@@ -314,6 +363,7 @@ class AppGUI(DnDCustomTk):
             height=34,
             corner_radius=8,
             font=self._font(12),
+            dropdown_font=self._font(12),
             fg_color="#27273a",
             button_color="#373752"
         )
@@ -338,6 +388,7 @@ class AppGUI(DnDCustomTk):
             height=36,
             corner_radius=10,
             font=self._font(13),
+            dropdown_font=self._font(13),
             fg_color="#312e81",
             button_color="#4338ca",
             button_hover_color="#4f46e5"
@@ -436,7 +487,7 @@ class AppGUI(DnDCustomTk):
         self.scrollable_gallery.pack(fill="both", expand=True, padx=5, pady=(0, 10))
 
         port = self.config.get("port", 11150)
-        previews_dir = os.path.join(self.base_dir, "static", "previews")
+        previews_dir = os.path.join(self.assets_dir, "static", "previews")
         res_param = self._get_res_query_param()
 
         for i, theme_id in enumerate(THEME_IDS, 1):
@@ -574,33 +625,34 @@ class AppGUI(DnDCustomTk):
             set_btn.pack(pady=3)
 
     def _setup_drag_on_widget(self, widget, url, theme_id):
-        """Sets up smooth drag-and-drop into OBS without blocking mouse clicks or opening modal dialogs"""
-        shortcut_file = self.shortcut_file_map.get(theme_id, "")
-        norm_shortcut = os.path.normpath(os.path.abspath(shortcut_file)) if shortcut_file else ""
+        """Sets up smooth OLE drag-and-drop into OBS Studio as a Browser Source."""
+        html_file = self.shortcut_html_map.get(theme_id, "")
+        norm_file = os.path.normpath(os.path.abspath(html_file)) if html_file else ""
 
         try:
             widget.drag_source_register(1, DND_FILES, DND_TEXT)
-            
-            def on_drag_init(event):
-                if norm_shortcut and os.path.exists(norm_shortcut):
-                    return (COPY, DND_FILES, norm_shortcut)
-                return (COPY, DND_TEXT, url)
-                
+
+            def on_drag_init(*args):
+                try:
+                    if norm_file and os.path.exists(norm_file):
+                        # Dropping an HTML file into OBS Studio automatically creates an OBS Browser Source!
+                        return (COPY, DND_FILES, norm_file)
+                    return (COPY, DND_TEXT, url)
+                except Exception as ex:
+                    print("DnD init note:", ex)
+                    return (COPY, DND_TEXT, url)
+
             widget.dnd_bind('<<DragInitCmd>>', on_drag_init)
 
-            def on_drag_end(event):
-                self.show_inapp_toast(self._t("drag_done_toast", "✔ Dragged into OBS!"))
+            def on_drag_end(*args):
+                try:
+                    self.show_inapp_toast(self._t("drag_done_toast", "✔ Dragged into OBS!"))
+                except Exception:
+                    pass
 
             widget.dnd_bind('<<DragEndCmd>>', on_drag_end)
         except Exception as e:
             print("DnD register note:", e)
-
-        def on_click(event):
-            self.clipboard_clear()
-            self.clipboard_append(url)
-            self.show_inapp_toast(self._t("copied_toast"))
-
-        widget.bind("<ButtonRelease-1>", on_click, add="+")
 
     def _on_language_changed(self, chosen_label):
         lang_code = next((opt[1] for opt in LANGUAGE_OPTIONS if opt[0] == chosen_label), "zh_TW")
@@ -616,7 +668,7 @@ class AppGUI(DnDCustomTk):
         self.config["resolution_mode"] = mode_id
         save_config(self.config)
         
-        self.shortcuts_dir, self.shortcut_file_map = generate_obs_shortcuts(
+        self.shortcuts_dir, self.shortcut_file_map, self.shortcut_html_map = generate_obs_shortcuts(
             self.config.get("port", 11150), self.base_dir, self._get_res_query_param()
         )
         self._build_ui()
@@ -628,24 +680,12 @@ class AppGUI(DnDCustomTk):
             subprocess.Popen(["explorer", self.shortcuts_dir])
 
     def _set_default_thumbnail(self):
-        # Uses songIcon.jpg directly!
-        icon_path = os.path.join(self.base_dir, "songIcon.jpg")
-        if not os.path.exists(icon_path):
-            icon_path = os.path.join(self.base_dir, "static", "sample_cover.png")
-
-        if os.path.exists(icon_path):
-            try:
-                pil_img = Image.open(icon_path).convert("RGBA")
-                pil_img = pil_img.resize((170, 170), Image.Resampling.LANCZOS)
-                ctk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(170, 170))
-                self.cover_label.configure(image=ctk_img)
-                return
-            except Exception:
-                pass
-
-        img = Image.new("RGBA", (170, 170), (30, 27, 75, 255))
-        ctk_img = ctk.CTkImage(light_image=img, dark_image=img, size=(170, 170))
-        self.cover_label.configure(image=ctk_img)
+        # songIcon.jpg is only used in template gallery, NOT on the main page.
+        # Main page has NO placeholder/temp image - kept clean and empty as requested.
+        if hasattr(self, "cover_label") and self.cover_label and self.cover_label.winfo_exists():
+            empty_img = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
+            ctk_empty = ctk.CTkImage(light_image=empty_img, dark_image=empty_img, size=(1, 1))
+            self.cover_label.configure(image=ctk_empty, text="")
 
     def _get_current_obs_url(self):
         port = self.config.get("port", 11150)
@@ -697,7 +737,7 @@ class AppGUI(DnDCustomTk):
                 return
             self.config["port"] = new_port
             save_config(self.config)
-            self.shortcuts_dir, self.shortcut_file_map = generate_obs_shortcuts(
+            self.shortcuts_dir, self.shortcut_file_map, self.shortcut_html_map = generate_obs_shortcuts(
                 new_port, self.base_dir, self._get_res_query_param()
             )
             if self.on_port_change_callback:
@@ -711,49 +751,66 @@ class AppGUI(DnDCustomTk):
         save_config(self.config)
 
     def update_media_display(self, data):
+        self.latest_media_data = data
         def _update():
             if not data:
                 return
+            if getattr(self, "track_title_label", None) is None:
+                return
+            try:
+                if not self.track_title_label.winfo_exists():
+                    return
+            except Exception:
+                return
+
             has_media = data.get("has_media", False)
             title = data.get("title", "") or (self._t("waiting_media") if not has_media else "Untitled Track")
             artist = data.get("artist", "") or (self._t("play_instruction") if not has_media else "Unknown Artist")
             status = data.get("status", "Stopped")
 
-            self.track_title_label.configure(text=title)
-            self.track_artist_label.configure(text=artist)
+            try:
+                self.track_title_label.configure(text=title)
+                if hasattr(self, "track_artist_label") and self.track_artist_label and self.track_artist_label.winfo_exists():
+                    self.track_artist_label.configure(text=artist)
 
-            pos = data.get("position", 0)
-            dur = data.get("duration", 0)
-            cur_str = format_time_str(pos)
-            dur_str = format_time_str(dur) if dur > 0 else "--:--"
-            self.time_label.configure(text=f"{cur_str} / {dur_str}")
-            
-            if dur > 0:
-                self.progress_bar.set(min(1.0, max(0.0, pos / dur)))
-            else:
-                self.progress_bar.set(0)
+                pos = data.get("position", 0)
+                dur = data.get("duration", 0)
+                cur_str = format_time_str(pos)
+                dur_str = format_time_str(dur) if dur > 0 else "--:--"
+                if hasattr(self, "time_label") and self.time_label and self.time_label.winfo_exists():
+                    self.time_label.configure(text=f"{cur_str} / {dur_str}")
+                
+                if hasattr(self, "progress_bar") and self.progress_bar and self.progress_bar.winfo_exists():
+                    if dur > 0:
+                        self.progress_bar.set(min(1.0, max(0.0, pos / dur)))
+                    else:
+                        self.progress_bar.set(0)
 
-            if status == "Playing":
-                self.status_badge.configure(text=self._t("status_playing"), text_color="#4ade80", fg_color="#143422")
-            elif status == "Paused":
-                self.status_badge.configure(text=self._t("status_paused"), text_color="#facc15", fg_color="#362d08")
-            else:
-                self.status_badge.configure(text=self._t("status_idle"), text_color="#94a3b8", fg_color="#1e293b")
+                if hasattr(self, "status_badge") and self.status_badge and self.status_badge.winfo_exists():
+                    if status == "Playing":
+                        self.status_badge.configure(text=self._t("status_playing"), text_color="#4ade80", fg_color="#143422")
+                    elif status == "Paused":
+                        self.status_badge.configure(text=self._t("status_paused"), text_color="#facc15", fg_color="#362d08")
+                    else:
+                        self.status_badge.configure(text=self._t("status_idle"), text_color="#94a3b8", fg_color="#1e293b")
 
-            thumb_b64 = data.get("thumbnail", "")
-            if thumb_b64 and thumb_b64 != self.current_thumbnail_data:
-                self.current_thumbnail_data = thumb_b64
-                try:
-                    raw_b64 = thumb_b64.split(",", 1)[1] if "," in thumb_b64 else thumb_b64
-                    img_bytes = base64.b64decode(raw_b64)
-                    pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
-                    pil_img = pil_img.resize((170, 170), Image.Resampling.LANCZOS)
-                    ctk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(170, 170))
-                    self.cover_label.configure(image=ctk_img)
-                except Exception:
-                    self._set_default_thumbnail()
-            elif not thumb_b64 and not self.current_thumbnail_data:
-                self._set_default_thumbnail()
+                thumb_b64 = data.get("thumbnail", "")
+                if hasattr(self, "cover_label") and self.cover_label and self.cover_label.winfo_exists():
+                    if thumb_b64 and thumb_b64 != self.current_thumbnail_data:
+                        self.current_thumbnail_data = thumb_b64
+                        try:
+                            raw_b64 = thumb_b64.split(",", 1)[1] if "," in thumb_b64 else thumb_b64
+                            img_bytes = base64.b64decode(raw_b64)
+                            pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
+                            pil_img = pil_img.resize((170, 170), Image.Resampling.LANCZOS)
+                            ctk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(170, 170))
+                            self.cover_label.configure(image=ctk_img)
+                        except Exception:
+                            self._set_default_thumbnail()
+                    elif not thumb_b64 and not self.current_thumbnail_data:
+                        self._set_default_thumbnail()
+            except Exception:
+                pass
 
         self.after(0, _update)
 
