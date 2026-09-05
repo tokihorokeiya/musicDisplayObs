@@ -27,6 +27,7 @@ A modern, standalone desktop tool for Windows that captures currently playing mu
 * **10 High-Quality Built-in Themes** — From Glassmorphism and Cyberpunk to Retro Cassette, Vinyl, and Kawaii.
 * **Auto-Marquee Text** — Long song titles and artist names smoothly scroll with seamless looping.
 * **Jitter-Free Progress & Timestamps** — Real-time position tracking and synchronized progress bars.
+* **1-Click Direct Updates from GitHub** — Check and auto-update to the latest release right from the app without losing your settings.
 * **System Tray & Clean Exit** — Minimize to system tray or exit completely on demand.
 
 ---

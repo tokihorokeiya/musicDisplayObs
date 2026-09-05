@@ -15,6 +15,15 @@ from pystray import MenuItem as item
 from ole_drag import setup_native_drag_and_drop
 from i18n import get_text, get_theme_info, TRANSLATIONS
 from config import save_config
+from updater import (
+    APP_VERSION,
+    check_github_update,
+    download_file_with_progress,
+    apply_frozen_update,
+    apply_git_update,
+    is_frozen,
+    is_git_repo
+)
 
 THEME_IDS = [
     "glassmorphism",
@@ -120,6 +129,7 @@ class AppGUI(ctk.CTk):
 
         self._build_ui()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
+        self.after(3000, self._check_update_background_quiet)
 
     def _font(self, size, weight="normal"):
         return ctk.CTkFont(family=self.font_family, size=size, weight=weight)
@@ -433,6 +443,43 @@ class AppGUI(ctk.CTk):
             command=self._apply_port
         )
         self.port_save_btn.pack(side="right")
+
+        # Update / Version Row in Server Settings
+        update_row = ctk.CTkFrame(server_box, fg_color="transparent")
+        update_row.pack(fill="x", padx=14, pady=(0, 10))
+
+        version_container = ctk.CTkFrame(update_row, fg_color="transparent")
+        version_container.pack(side="left")
+
+        ctk.CTkLabel(
+            version_container,
+            text=self._t("version_label", "軟體版本："),
+            font=self._font(12, "bold")
+        ).pack(side="left")
+
+        self.version_badge = ctk.CTkLabel(
+            version_container,
+            text=APP_VERSION,
+            font=self._font(11, "bold"),
+            text_color="#a5b4fc",
+            fg_color="#1e1e2f",
+            corner_radius=6,
+            padx=8,
+            pady=2
+        )
+        self.version_badge.pack(side="left", padx=6)
+
+        self.btn_check_update = ctk.CTkButton(
+            update_row,
+            text=self._t("btn_check_update", "🚀 檢查與直接更新"),
+            height=30,
+            corner_radius=8,
+            font=self._font(12, "bold"),
+            fg_color="#312e81",
+            hover_color="#4338ca",
+            command=self._on_check_update_click
+        )
+        self.btn_check_update.pack(side="right")
 
         # Quick navigation button to Gallery
         self.go_gallery_btn = ctk.CTkButton(
@@ -949,3 +996,235 @@ class AppGUI(ctk.CTk):
             except Exception:
                 pass
         self.after(0, self.destroy)
+
+    def _check_update_background_quiet(self):
+        """Silently checks for updates in background without toasts unless update found."""
+        def _bg():
+            try:
+                info = check_github_update()
+                self.after(0, lambda: self._handle_update_result(info, manual=False))
+            except Exception:
+                pass
+        threading.Thread(target=_bg, daemon=True).start()
+
+    def _on_check_update_click(self):
+        """User manually clicked the update button."""
+        if getattr(self, "_is_checking_update", False):
+            return
+        self._is_checking_update = True
+        if hasattr(self, "btn_check_update") and self.btn_check_update.winfo_exists():
+            self.btn_check_update.configure(state="disabled", text=self._t("checking_update", "⏳ 正在檢查更新..."))
+        self.show_inapp_toast(self._t("checking_update", "⏳ 正在檢查 GitHub 最新版本..."))
+
+        def _bg_check():
+            try:
+                info = check_github_update()
+                self.after(0, lambda: self._handle_update_result(info, manual=True))
+            except Exception as e:
+                err_msg = str(e)
+                self.after(0, lambda: self._handle_update_error(err_msg))
+
+        threading.Thread(target=_bg_check, daemon=True).start()
+
+    def _handle_update_error(self, err_msg):
+        self._is_checking_update = False
+        if hasattr(self, "btn_check_update") and self.btn_check_update.winfo_exists():
+            self.btn_check_update.configure(state="normal", text=self._t("btn_check_update", "🚀 檢查與直接更新"))
+        self.show_inapp_toast(self._t("update_error", f"更新失敗：{err_msg}").format(error=err_msg))
+
+    def _handle_update_result(self, info, manual=False):
+        self._is_checking_update = False
+        if hasattr(self, "btn_check_update") and self.btn_check_update.winfo_exists():
+            self.btn_check_update.configure(state="normal", text=self._t("btn_check_update", "🚀 檢查與直接更新"))
+
+        if not info.get("has_update"):
+            if manual:
+                self.show_inapp_toast(self._t("already_latest", f"✔ 目前已是最新版本 ({APP_VERSION})！").format(version=APP_VERSION))
+            return
+
+        # An update is available!
+        latest_tag = info.get("latest_version", "")
+        if hasattr(self, "btn_check_update") and self.btn_check_update.winfo_exists():
+            self.btn_check_update.configure(
+                text=f"✨ 更新至 {latest_tag} ➔",
+                fg_color="#059669",
+                hover_color="#10b981"
+            )
+        if hasattr(self, "version_badge") and self.version_badge.winfo_exists():
+            self.version_badge.configure(
+                text=f"{APP_VERSION} (可更新: {latest_tag})",
+                fg_color="#064e3b",
+                text_color="#6ee7b7"
+            )
+
+        if manual:
+            self._show_update_modal(info)
+
+    def _show_update_modal(self, info):
+        """Displays a modal dialog for applying the update directly."""
+        latest_tag = info.get("latest_version", "")
+        dialog = ctk.CTkToplevel(self)
+        dialog.title(self._t("update_available_title", f"發現新版本 {latest_tag}！").format(version=latest_tag))
+        dialog.geometry("520x430")
+        dialog.resizable(False, False)
+        dialog.configure(fg_color="#131722")
+        dialog.transient(self)
+
+        self.update_idletasks()
+        rx = self.winfo_x() + (self.winfo_width() - 520) // 2
+        ry = self.winfo_y() + (self.winfo_height() - 430) // 2
+        dialog.geometry(f"+{max(10, rx)}+{max(10, ry)}")
+
+        content_box = ctk.CTkFrame(dialog, corner_radius=12, fg_color="#181824")
+        content_box.pack(fill="both", expand=True, padx=16, pady=16)
+
+        title_lbl = ctk.CTkLabel(
+            content_box,
+            text=self._t("update_available_title", f"🎉 發現新版本 {latest_tag}！").format(version=latest_tag),
+            font=self._font(16, "bold"),
+            text_color="#4ade80"
+        )
+        title_lbl.pack(anchor="w", padx=16, pady=(16, 4))
+
+        sub_lbl = ctk.CTkLabel(
+            content_box,
+            text=f"{self._t('version_label', '軟體版本：')} {info.get('current_version')}   ➔   {latest_tag}",
+            font=self._font(12),
+            text_color="#94a3b8"
+        )
+        sub_lbl.pack(anchor="w", padx=16, pady=(0, 10))
+
+        desc_frame = ctk.CTkScrollableFrame(content_box, corner_radius=8, fg_color="#0f111a", height=140)
+        desc_frame.pack(fill="both", expand=True, padx=16, pady=(0, 10))
+
+        rel_name = info.get("release_name", "")
+        if rel_name:
+            ctk.CTkLabel(desc_frame, text=rel_name, font=self._font(13, "bold"), text_color="#ffffff").pack(anchor="w", pady=(2, 4))
+
+        raw_notes = info.get("release_notes", "") or "點選下方按鈕直接更新或前往 GitHub 查看完整說明。"
+        clean_notes = raw_notes.replace("\r\n", "\n")
+        ctk.CTkLabel(desc_frame, text=clean_notes, font=self._font(11), text_color="#cbd5e1", justify="left", wraplength=440).pack(anchor="w")
+
+        progress_bar = ctk.CTkProgressBar(content_box, height=12, progress_color="#10b981")
+        progress_bar.set(0)
+
+        status_lbl = ctk.CTkLabel(content_box, text="", font=self._font(11, "bold"), text_color="#a5b4fc")
+        status_lbl.pack(anchor="w", padx=16, pady=(0, 6))
+
+        btn_row = ctk.CTkFrame(content_box, fg_color="transparent")
+        btn_row.pack(fill="x", padx=16, pady=(0, 14))
+
+        cancel_event = threading.Event()
+
+        def on_close():
+            cancel_event.set()
+            dialog.destroy()
+
+        dialog.protocol("WM_DELETE_WINDOW", on_close)
+
+        def do_update():
+            btn_start.configure(state="disabled")
+            btn_github.configure(state="disabled")
+            progress_bar.pack(fill="x", padx=16, pady=(0, 8), before=status_lbl)
+            progress_bar.set(0)
+
+            def _bg_worker():
+                if is_frozen():
+                    download_url = info.get("download_url")
+                    if not download_url:
+                        self.after(0, lambda: (
+                            status_lbl.configure(text="未找到 Windows 更新檔案，正在為您開啟 GitHub 發行頁面..."),
+                            webbrowser.open(info.get("html_url", ""))
+                        ))
+                        return
+
+                    temp_zip = os.path.join(tempfile.gettempdir(), f"OBSMusicDisplay_update_{latest_tag}.zip")
+
+                    def _on_prog(pct, cur, total):
+                        self.after(0, lambda p=pct: (
+                            progress_bar.set(p / 100.0),
+                            status_lbl.configure(text=self._t("downloading_update", f"正在下載更新檔... {p:.0f}%").format(progress=p))
+                        ))
+
+                    try:
+                        download_file_with_progress(download_url, temp_zip, progress_callback=_on_prog, cancel_event=cancel_event)
+                        self.after(0, lambda: status_lbl.configure(text=self._t("restarting_app", "下載完成！正在重啟並套用更新...")))
+                        time.sleep(1.0)
+                        apply_frozen_update(temp_zip, self.base_dir, self._quit_app)
+                    except Exception as e:
+                        if not cancel_event.is_set():
+                            err_str = str(e)
+                            self.after(0, lambda: (
+                                status_lbl.configure(text=self._t("update_error", f"更新失敗：{err_str}").format(error=err_str)),
+                                btn_start.configure(state="normal"),
+                                btn_github.configure(state="normal")
+                            ))
+                elif is_git_repo(self.base_dir):
+                    self.after(0, lambda: status_lbl.configure(text="正在透過 Git 拉取最新程式碼..."))
+                    ok, msg = apply_git_update(self.base_dir)
+                    if ok:
+                        self.after(0, lambda: status_lbl.configure(text="✔ 原始碼更新成功！正在重新啟動..."))
+                        time.sleep(1.5)
+                        self.after(0, self._restart_python_app)
+                    else:
+                        self.after(0, lambda: (
+                            status_lbl.configure(text=f"Git 更新失敗: {msg}"),
+                            btn_start.configure(state="normal"),
+                            btn_github.configure(state="normal")
+                        ))
+                else:
+                    self.after(0, lambda: (
+                        status_lbl.configure(text="正在開啟 GitHub 下載最新版本..."),
+                        webbrowser.open(info.get("html_url", ""))
+                    ))
+
+            threading.Thread(target=_bg_worker, daemon=True).start()
+
+        btn_start = ctk.CTkButton(
+            btn_row,
+            text=self._t("btn_start_update", "🚀 立即直接更新"),
+            font=self._font(12, "bold"),
+            fg_color="#10b981",
+            hover_color="#059669",
+            height=34,
+            corner_radius=8,
+            command=do_update
+        )
+        btn_start.pack(side="left", padx=(0, 6), fill="x", expand=True)
+
+        btn_github = ctk.CTkButton(
+            btn_row,
+            text=self._t("btn_view_release", "🌐 查看 GitHub"),
+            font=self._font(12),
+            fg_color="#27273a",
+            hover_color="#373752",
+            height=34,
+            width=110,
+            corner_radius=8,
+            command=lambda: webbrowser.open(info.get("html_url", ""))
+        )
+        btn_github.pack(side="left", padx=(0, 6))
+
+        btn_cancel = ctk.CTkButton(
+            btn_row,
+            text=self._t("btn_cancel", "取消"),
+            font=self._font(12),
+            fg_color="#374151",
+            hover_color="#4b5563",
+            height=34,
+            width=70,
+            corner_radius=8,
+            command=on_close
+        )
+        btn_cancel.pack(side="right")
+
+        dialog.grab_set()
+
+    def _restart_python_app(self):
+        if hasattr(self, "on_exit_callback") and self.on_exit_callback:
+            try:
+                self.on_exit_callback()
+            except Exception:
+                pass
+        python = sys.executable
+        os.execl(python, python, *sys.argv)
