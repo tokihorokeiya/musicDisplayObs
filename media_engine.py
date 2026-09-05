@@ -1,6 +1,7 @@
 import asyncio
 import base64
 import time
+import datetime
 import re
 import traceback
 from winsdk.windows.media.control import (
@@ -101,6 +102,8 @@ class MediaEngine:
         }
         self.is_running = False
         self._last_broadcast_time = 0
+        self._last_smooth_pos = 0.0
+        self._last_smooth_song = ""
 
     async def _extract_thumbnail(self, thumbnail_stream_ref):
         if not thumbnail_stream_ref:
@@ -182,16 +185,40 @@ class MediaEngine:
             clean_title, clean_artist = parse_song_and_artist(raw_title, raw_artist)
 
             # Timeline info (current position & duration)
-            pos = 0
-            dur = 0
+            pos = 0.0
+            dur = 0.0
             if timeline:
                 try:
-                    if timeline.position:
-                        pos = max(0.0, float(timeline.position.total_seconds()))
                     if timeline.end_time:
                         dur = max(0.0, float(timeline.end_time.total_seconds()))
+                    if timeline.position:
+                        raw_pos = max(0.0, float(timeline.position.total_seconds()))
+                        if is_playing and timeline.last_updated_time:
+                            lut = timeline.last_updated_time
+                            if lut.tzinfo is None:
+                                lut = lut.replace(tzinfo=datetime.timezone.utc)
+                            now_utc = datetime.datetime.now(datetime.timezone.utc)
+                            delta = (now_utc - lut).total_seconds()
+                            if 0.0 <= delta < 3600.0:
+                                raw_pos += delta
+                        if dur > 0:
+                            pos = min(dur, raw_pos)
+                        else:
+                            pos = raw_pos
                 except Exception:
                     pass
+
+            # Anti-jitter: prevent micro-backwards timestamp jumping during normal playback
+            song_key = f"{clean_title}::{clean_artist}"
+            if song_key == self._last_smooth_song and is_playing:
+                # If time jittered backwards by less than 2.0 seconds, keep previous progress
+                if 0.0 < (self._last_smooth_pos - pos) < 2.0:
+                    pos = self._last_smooth_pos
+                else:
+                    self._last_smooth_pos = pos
+            else:
+                self._last_smooth_song = song_key
+                self._last_smooth_pos = pos
 
             # Thumbnail
             thumbnail_b64 = ""
@@ -232,9 +259,9 @@ class MediaEngine:
                         abs(info["duration"] - self.current_data.get("duration", 0)) > 2
                     )
 
-                    # Also broadcast periodic time synchronization (every 2 seconds or on seek)
-                    time_jump = abs(info["position"] - self.current_data.get("position", 0)) > 3
-                    periodic_sync = (now - self._last_broadcast_time >= 2.0)
+                    # Periodic time synchronization (every 1 second or immediately on seek)
+                    time_jump = abs(info["position"] - self.current_data.get("position", 0)) > 2.0
+                    periodic_sync = (now - self._last_broadcast_time >= 1.0)
 
                     if meta_changed or time_jump or periodic_sync:
                         self.current_data = info

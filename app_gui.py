@@ -125,11 +125,13 @@ class DnDCustomTk(ctk.CTk, TkinterDnD.DnDWrapper):
 
 
 class AppGUI(DnDCustomTk):
-    def __init__(self, config, on_port_change_callback, on_theme_change_callback):
+    def __init__(self, config, on_port_change_callback, on_theme_change_callback, on_exit_callback=None):
         super().__init__()
         self.config = config
         self.on_port_change_callback = on_port_change_callback
         self.on_theme_change_callback = on_theme_change_callback
+        self.on_exit_callback = on_exit_callback
+        self._exit_dialog = None
         self.current_lang = self.config.get("language", "zh_TW")
         if self.current_lang not in TRANSLATIONS:
             self.current_lang = "zh_TW"
@@ -470,18 +472,6 @@ class AppGUI(DnDCustomTk):
             text_color="#a5b4fc"
         ).pack(side="left", padx=16, pady=12)
 
-        open_folder_btn = ctk.CTkButton(
-            top_bar,
-            text=self._t("open_folder_btn"),
-            font=self._font(12, "bold"),
-            height=34,
-            corner_radius=8,
-            fg_color="#059669",
-            hover_color="#047857",
-            command=self._open_shortcuts_folder
-        )
-        open_folder_btn.pack(side="right", padx=16, pady=10)
-
         # Scrollable gallery
         self.scrollable_gallery = ctk.CTkScrollableFrame(self.tab_gallery, fg_color="transparent")
         self.scrollable_gallery.pack(fill="both", expand=True, padx=5, pady=(0, 10))
@@ -518,22 +508,20 @@ class AppGUI(DnDCustomTk):
                 img_label = tk.Label(
                     preview_container,
                     image=photo_img,
-                    bg="#0f111a",
-                    cursor="fleur"
+                    bg="#0f111a"
                 )
                 img_label.pack(fill="both", expand=True)
             else:
                 img_label = tk.Label(
                     preview_container,
-                    text=f"Drag to OBS\n({name})",
+                    text=f"({name})",
                     fg="#6366f1",
                     bg="#0f111a",
-                    font=("Segoe UI", 12, "bold"),
-                    cursor="fleur"
+                    font=("Segoe UI", 12, "bold")
                 )
                 img_label.pack(fill="both", expand=True)
 
-            # Bind native drag on the preview image (NO alert popups on click!)
+            # Bind native drag on the preview image (retaining DnD function under the hood)
             self._setup_drag_on_widget(img_label, url, theme_id)
 
             # Center: Information & Direct URL field
@@ -555,20 +543,6 @@ class AppGUI(DnDCustomTk):
                 wraplength=270,
                 justify="left"
             ).pack(anchor="w", pady=(2, 4))
-
-            # Dedicated Draggable Handle Badge
-            drag_handle_box = tk.Label(
-                center_box,
-                text=f"⠿ {self._t('drag_hint')}",
-                bg="#1e293b",
-                fg="#4ade80",
-                font=(self.font_family, 10, "bold"),
-                padx=8,
-                pady=2,
-                cursor="fleur"
-            )
-            drag_handle_box.pack(anchor="w", pady=(0, 4))
-            self._setup_drag_on_widget(drag_handle_box, url, theme_id)
 
             drag_entry = ctk.CTkEntry(
                 center_box,
@@ -815,8 +789,109 @@ class AppGUI(DnDCustomTk):
         self.after(0, _update)
 
     def _on_close(self):
-        self.withdraw()
-        self._setup_tray()
+        self._show_exit_dialog()
+
+    def _show_exit_dialog(self):
+        if hasattr(self, "_exit_dialog") and self._exit_dialog and self._exit_dialog.winfo_exists():
+            self._exit_dialog.lift()
+            self._exit_dialog.focus_force()
+            return
+
+        dialog = ctk.CTkToplevel(self)
+        self._exit_dialog = dialog
+        dialog.title(self._t("close_dialog_title", "Close Application"))
+        dialog.geometry("490x230")
+        dialog.resizable(False, False)
+        dialog.attributes("-topmost", True)
+        dialog.transient(self)
+
+        # Center over main window
+        try:
+            x = self.winfo_x() + (self.winfo_width() // 2) - 245
+            y = self.winfo_y() + (self.winfo_height() // 2) - 115
+            dialog.geometry(f"+{max(0, x)}+{max(0, y)}")
+        except Exception:
+            pass
+
+        content = ctk.CTkFrame(dialog, fg_color="#181824", corner_radius=14)
+        content.pack(fill="both", expand=True, padx=12, pady=12)
+
+        header_frame = ctk.CTkFrame(content, fg_color="transparent")
+        header_frame.pack(fill="x", padx=16, pady=(14, 8))
+
+        ctk.CTkLabel(
+            header_frame,
+            text=f"❓ {self._t('close_dialog_title', 'Close Application')}",
+            font=self._font(15, "bold"),
+            text_color="#ffffff"
+        ).pack(anchor="w")
+
+        ctk.CTkLabel(
+            content,
+            text=self._t("close_dialog_msg", "Do you want to minimize to the system tray to keep music displaying in OBS, or exit the application completely?"),
+            font=self._font(12),
+            text_color="#cbd5e1",
+            wraplength=430,
+            justify="left"
+        ).pack(anchor="w", padx=16, pady=(0, 16))
+
+        btn_row = ctk.CTkFrame(content, fg_color="transparent")
+        btn_row.pack(fill="x", padx=16, pady=(6, 12))
+
+        def on_minimize():
+            dialog.destroy()
+            self.withdraw()
+            self._setup_tray()
+            self.show_inapp_toast(self._t("minimized_toast", "Minimized to system tray"))
+
+        def on_exit():
+            dialog.destroy()
+            self._quit_app()
+
+        def on_cancel():
+            dialog.destroy()
+
+        exit_btn = ctk.CTkButton(
+            btn_row,
+            text=self._t("btn_exit_app", "Exit Completely"),
+            font=self._font(12, "bold"),
+            fg_color="#dc2626",
+            hover_color="#b91c1c",
+            width=130,
+            height=34,
+            corner_radius=8,
+            command=on_exit
+        )
+        exit_btn.pack(side="right", padx=(6, 0))
+
+        min_btn = ctk.CTkButton(
+            btn_row,
+            text=self._t("btn_minimize_tray", "Minimize to Tray"),
+            font=self._font(12, "bold"),
+            fg_color="#4f46e5",
+            hover_color="#4338ca",
+            width=135,
+            height=34,
+            corner_radius=8,
+            command=on_minimize
+        )
+        min_btn.pack(side="right", padx=(6, 0))
+
+        cancel_btn = ctk.CTkButton(
+            btn_row,
+            text=self._t("btn_cancel", "Cancel"),
+            font=self._font(12),
+            fg_color="#374151",
+            hover_color="#4b5563",
+            width=80,
+            height=34,
+            corner_radius=8,
+            command=on_cancel
+        )
+        cancel_btn.pack(side="right")
+
+        dialog.protocol("WM_DELETE_WINDOW", on_cancel)
+        dialog.grab_set()
 
     def _setup_tray(self):
         if self.tray_icon:
@@ -825,7 +900,7 @@ class AppGUI(DnDCustomTk):
         menu = (
             item("Open Controller", self._restore_from_tray),
             item("Copy Active OBS URL", self._copy_obs_url),
-            item("Open Drag & Drop Folder", lambda icon, item: self._open_shortcuts_folder()),
+            item("Open Shortcuts Folder", lambda icon, item: self._open_shortcuts_folder()),
             item("Exit", self._quit_app)
         )
         self.tray_icon = pystray.Icon("OBSMusicDisplay", img, "OBS Music Display", menu)
@@ -839,5 +914,14 @@ class AppGUI(DnDCustomTk):
 
     def _quit_app(self, icon=None, item=None):
         if self.tray_icon:
-            self.tray_icon.stop()
+            try:
+                self.tray_icon.stop()
+            except Exception:
+                pass
+            self.tray_icon = None
+        if hasattr(self, "on_exit_callback") and self.on_exit_callback:
+            try:
+                self.on_exit_callback()
+            except Exception:
+                pass
         self.after(0, self.destroy)

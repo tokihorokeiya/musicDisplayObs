@@ -216,12 +216,43 @@ function renderThemeHTML(theme) {
     }
 }
 
+function getEstimatedPosition() {
+    const duration = currentMedia.duration || 0;
+    let pos = localPosition;
+    if (currentMedia.is_playing) {
+        const elapsed = (Date.now() - lastSyncTimestamp) / 1000;
+        pos = localPosition + elapsed;
+    }
+    if (duration > 0 && pos > duration) {
+        pos = duration;
+    }
+    return Math.max(0, pos);
+}
+
 function updateUI(data) {
     if (!data) return;
-    currentMedia = data;
 
-    localPosition = data.position || 0;
-    lastSyncTimestamp = Date.now();
+    const serverPos = (typeof data.position === 'number' && !isNaN(data.position)) ? Math.max(0, data.position) : 0;
+    const songChanged = (data.title !== currentMedia.title || data.artist !== currentMedia.artist);
+    const playStateChanged = (data.is_playing !== currentMedia.is_playing);
+
+    if (!songChanged && !playStateChanged && currentMedia.is_playing && data.is_playing) {
+        const currentLocal = getEstimatedPosition();
+        const diff = Math.abs(serverPos - currentLocal);
+        // Only jump if it's a real seek (> 2.0s), otherwise never bounce backwards
+        if (diff > 2.0) {
+            localPosition = serverPos;
+            lastSyncTimestamp = Date.now();
+        } else if (serverPos > localPosition) {
+            localPosition = serverPos;
+            lastSyncTimestamp = Date.now();
+        }
+    } else {
+        localPosition = serverPos;
+        lastSyncTimestamp = Date.now();
+    }
+
+    currentMedia = data;
 
     const container = document.getElementById('overlay-container');
     const widgetCard = document.getElementById('widget-card');
@@ -294,15 +325,7 @@ function renderTimelineTick() {
     const timeDurationEl = document.getElementById('time-duration');
 
     const duration = currentMedia.duration || 0;
-    let pos = localPosition;
-
-    if (currentMedia.is_playing) {
-        const elapsedSinceSync = (Date.now() - lastSyncTimestamp) / 1000;
-        pos = Math.max(0, localPosition + elapsedSinceSync);
-        if (duration > 0 && pos > duration) {
-            pos = duration;
-        }
-    }
+    const pos = getEstimatedPosition();
 
     const percent = duration > 0 ? Math.min(100, Math.max(0, (pos / duration) * 100)) : 0;
 

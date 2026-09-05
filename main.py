@@ -26,7 +26,8 @@ class AppCoordinator:
         self.gui = AppGUI(
             config=self.config,
             on_port_change_callback=self._on_port_changed,
-            on_theme_change_callback=self._on_theme_changed
+            on_theme_change_callback=self._on_theme_changed,
+            on_exit_callback=self._shutdown
         )
 
         # Start async event loop in background thread once GUI is ready
@@ -37,6 +38,7 @@ class AppCoordinator:
             self.gui.mainloop()
         finally:
             self._shutdown()
+            os._exit(0)
 
     def _run_async_loop(self):
         self.loop = asyncio.new_event_loop()
@@ -75,7 +77,16 @@ class AppCoordinator:
         if self.media_engine:
             self.media_engine.stop_monitoring()
         if self.loop and self.server:
-            asyncio.run_coroutine_threadsafe(self.server.stop(), self.loop)
+            try:
+                future = asyncio.run_coroutine_threadsafe(self.server.stop(), self.loop)
+                future.result(timeout=1.0)
+            except Exception:
+                pass
+        if self.loop and self.loop.is_running():
+            try:
+                self.loop.call_soon_threadsafe(self.loop.stop)
+            except Exception:
+                pass
 
 
 def main():
