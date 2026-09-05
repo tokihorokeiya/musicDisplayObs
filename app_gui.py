@@ -11,8 +11,8 @@ from PIL import Image, ImageTk
 import pystray
 from pystray import MenuItem as item
 
-# Import TkinterDnD for native Windows OLE drag-and-drop into OBS
-from tkinterdnd2 import TkinterDnD, DND_FILES, DND_TEXT, COPY
+# Native Windows OLE drag-and-drop into OBS Studio (UniformResourceLocator / URL)
+from ole_drag import setup_native_drag_and_drop
 from i18n import get_text, get_theme_info, TRANSLATIONS
 from config import save_config
 
@@ -73,58 +73,7 @@ def format_time_str(seconds):
     s = int(seconds) % 60
     return f"{m:02d}:{s:02d}"
 
-def generate_obs_shortcuts(port, base_dir, res_param):
-    shortcuts_dir = os.path.join(base_dir, "obs_shortcuts")
-    os.makedirs(shortcuts_dir, exist_ok=True)
-    
-    file_map = {}
-    html_map = {}
-    for i, theme_id in enumerate(THEME_IDS, 1):
-        url = f"http://localhost:{port}/overlay?theme={theme_id}{res_param}"
-        
-        # .url shortcut file
-        filename = f"{i:02d}_{theme_id}.url"
-        filepath = os.path.join(shortcuts_dir, filename)
-        content = f"[InternetShortcut]\nURL={url}\n"
-        try:
-            with open(filepath, "w", encoding="utf-8") as f:
-                f.write(content)
-        except Exception:
-            pass
-        file_map[theme_id] = filepath
-
-        # .html source file - OBS automatically creates a Browser Source when an HTML file is dropped!
-        html_filename = f"{i:02d}_{theme_id}.html"
-        html_filepath = os.path.join(shortcuts_dir, html_filename)
-        html_content = f"""<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<meta http-equiv="refresh" content="0; url={url}">
-<title>OBS Music Overlay - {theme_id}</title>
-<style>html, body {{ margin: 0; padding: 0; overflow: hidden; background: transparent; }}</style>
-<script>window.location.replace("{url}");</script>
-</head>
-<body style="background:transparent;overflow:hidden;"></body>
-</html>"""
-        try:
-            with open(html_filepath, "w", encoding="utf-8") as f:
-                f.write(html_content)
-        except Exception:
-            pass
-        html_map[theme_id] = html_filepath
-
-    return shortcuts_dir, file_map, html_map
-
-
-class DnDCustomTk(ctk.CTk, TkinterDnD.DnDWrapper):
-    """CustomTkinter root window integrated with TkinterDnD OLE drag-and-drop"""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.TkdndVersion = TkinterDnD._require(self)
-
-
-class AppGUI(DnDCustomTk):
+class AppGUI(ctk.CTk):
     def __init__(self, config, on_port_change_callback, on_theme_change_callback, on_exit_callback=None):
         super().__init__()
         self.config = config
@@ -153,11 +102,8 @@ class AppGUI(DnDCustomTk):
             self.base_dir = os.path.dirname(os.path.abspath(__file__))
             self.assets_dir = self.base_dir
 
-        self.shortcuts_dir, self.shortcut_file_map, self.shortcut_html_map = generate_obs_shortcuts(
-            self.config.get("port", 11150), self.base_dir, self._get_res_query_param()
-        )
-
         self.current_thumbnail_data = None
+        self._cached_cover_img = None
         self.tray_icon = None
         self.preview_tk_images = {}
         self.toast_timer = None
@@ -182,10 +128,7 @@ class AppGUI(DnDCustomTk):
         return get_text(self.current_lang, key, default)
 
     def _get_res_query_param(self):
-        for label, mode_id, param in RESOLUTION_MODES:
-            if mode_id == self.current_res_mode:
-                return param
-        return "&w=1920&h=700&mode=1920x700"
+        return ""
 
     def show_inapp_toast(self, message):
         """Displays a clean in-app toast notification bar (NO modal alert popup!)"""
@@ -198,6 +141,7 @@ class AppGUI(DnDCustomTk):
             self.toast_timer = self.after(3000, lambda: self.toast_frame.pack_forget())
 
     def _build_ui(self):
+        self.current_thumbnail_data = None
         for child in self.winfo_children():
             child.destroy()
 
@@ -337,111 +281,151 @@ class AppGUI(DnDCustomTk):
         )
         self.time_label.pack()
 
-        # Right Column: Controls & OBS Integration
-        self.controls_card = ctk.CTkFrame(content, corner_radius=16, fg_color="#181824")
+        # Right Column: Global Active Overlay & Server Settings
+        self.controls_card = ctk.CTkFrame(content, corner_radius=16, fg_color="#181824", width=390)
         self.controls_card.pack(side="right", fill="both", expand=True, padx=(10, 0))
 
+        # --- Section 1: Global Active Overlay (OBS Auto-Sync) ---
         ctk.CTkLabel(
             self.controls_card,
-            text=self._t("obs_section_header"),
-            font=self._font(11, "bold"),
+            text=self._t("global_theme_header", "🌐 全域使用中模板 (OBS 自動同步)"),
+            font=self._font(13, "bold"),
             text_color="#6366f1"
-        ).pack(anchor="w", padx=20, pady=(16, 10))
+        ).pack(anchor="w", padx=20, pady=(16, 6))
 
-        # Resolution Mode Selector
-        ctk.CTkLabel(
-            self.controls_card,
-            text=self._t("canvas_size_label"),
-            font=self._font(13, "bold")
-        ).pack(anchor="w", padx=20, pady=(0, 4))
-
-        res_labels = [r[0] for r in RESOLUTION_MODES]
-        current_res_label = next((r[0] for r in RESOLUTION_MODES if r[1] == self.current_res_mode), res_labels[0])
-
-        self.res_menu = ctk.CTkOptionMenu(
-            self.controls_card,
-            values=res_labels,
-            command=self._on_res_mode_changed,
-            height=34,
-            corner_radius=8,
-            font=self._font(12),
-            dropdown_font=self._font(12),
-            fg_color="#27273a",
-            button_color="#373752"
-        )
-        self.res_menu.set(current_res_label)
-        self.res_menu.pack(fill="x", padx=20, pady=(0, 12))
-
-        # Active Theme Dropdown
-        ctk.CTkLabel(
-            self.controls_card,
-            text=self._t("active_theme"),
-            font=self._font(13, "bold")
-        ).pack(anchor="w", padx=20, pady=(0, 4))
-        
-        theme_display_names = [get_theme_info(self.current_lang, tid)[0] for tid in THEME_IDS]
-        active_theme_id = self.config.get("selected_theme", "glassmorphism")
-        active_display_name = get_theme_info(self.current_lang, active_theme_id)[0]
-
-        self.theme_dropdown = ctk.CTkOptionMenu(
-            self.controls_card,
-            values=theme_display_names,
-            command=self._on_theme_dropdown_selected,
-            height=36,
-            corner_radius=10,
-            font=self._font(13),
-            dropdown_font=self._font(13),
-            fg_color="#312e81",
-            button_color="#4338ca",
-            button_hover_color="#4f46e5"
-        )
-        self.theme_dropdown.set(active_display_name)
-        self.theme_dropdown.pack(fill="x", padx=20, pady=(0, 14))
-
-        # Quick Copy OBS Button
-        self.copy_btn = ctk.CTkButton(
-            self.controls_card,
-            text=self._t("copy_obs_url"),
-            font=self._font(14, "bold"),
-            height=44,
-            corner_radius=10,
-            fg_color="#4f46e5",
-            hover_color="#4338ca",
-            command=self._copy_obs_url
-        )
-        self.copy_btn.pack(fill="x", padx=20, pady=(0, 6))
+        global_box = ctk.CTkFrame(self.controls_card, corner_radius=12, fg_color="#12121c")
+        global_box.pack(fill="x", padx=20, pady=(0, 14))
 
         ctk.CTkLabel(
-            self.controls_card,
-            text=self._t("obs_tip"),
+            global_box,
+            text=self._t("global_theme_desc"),
             font=self._font(11),
             text_color="#94a3b8",
-            wraplength=380,
+            wraplength=350,
             justify="left"
-        ).pack(anchor="w", padx=20, pady=(0, 16))
+        ).pack(anchor="w", padx=14, pady=(12, 8))
 
-        # Server Settings Frame
+        # Active Theme Dropdown Row
+        theme_row = ctk.CTkFrame(global_box, fg_color="transparent")
+        theme_row.pack(fill="x", padx=14, pady=(0, 8))
+
+        ctk.CTkLabel(
+            theme_row,
+            text=self._t("active_theme_label", "目前全域模板："),
+            font=self._font(12, "bold")
+        ).pack(side="left")
+
+        current_theme_id = self.config.get("selected_theme", "glassmorphism")
+        current_theme_name, _ = get_theme_info(self.current_lang, current_theme_id)
+        theme_display_names = [get_theme_info(self.current_lang, tid)[0] for tid in THEME_IDS]
+
+        theme_dropdown_font = self._font(12)
+        self.global_theme_dropdown = ctk.CTkOptionMenu(
+            theme_row,
+            values=theme_display_names,
+            width=220,
+            height=30,
+            corner_radius=8,
+            font=theme_dropdown_font,
+            dropdown_font=theme_dropdown_font,
+            fg_color="#312e81",
+            button_color="#4338ca",
+            button_hover_color="#4f46e5",
+            command=self._on_global_theme_selected
+        )
+        try:
+            self.global_theme_dropdown._dropdown_menu.configure(font=theme_dropdown_font)
+        except Exception:
+            pass
+        self.global_theme_dropdown.set(current_theme_name)
+        self.global_theme_dropdown.pack(side="right")
+
+        # Global URL Entry
+        global_url = self._get_global_overlay_url()
+        self.global_url_entry = ctk.CTkEntry(
+            global_box,
+            height=28,
+            font=ctk.CTkFont(size=11),
+            text_color="#a5b4fc",
+            fg_color="#0a0a10"
+        )
+        self.global_url_entry.insert(0, global_url)
+        self.global_url_entry.configure(state="readonly")
+        self.global_url_entry.pack(fill="x", padx=14, pady=(0, 6))
+        self._setup_drag_on_widget(self.global_url_entry, self._get_global_overlay_url)
+
+        # Global Drag Hint Badge
+        drag_global_badge = tk.Label(
+            global_box,
+            text=f"⠿ {self._t('drag_hint')}",
+            bg="#1e293b",
+            fg="#4ade80",
+            font=(self.font_family, 10, "bold"),
+            padx=8,
+            pady=2,
+            cursor="hand2"
+        )
+        drag_global_badge.pack(anchor="w", padx=14, pady=(0, 8))
+        self._setup_drag_on_widget(drag_global_badge, self._get_global_overlay_url)
+
+        # Global Action Buttons
+        global_btn_row = ctk.CTkFrame(global_box, fg_color="transparent")
+        global_btn_row.pack(fill="x", padx=14, pady=(0, 12))
+
+        self.btn_copy_global = ctk.CTkButton(
+            global_btn_row,
+            text=self._t("btn_copy_global_url", "📋 複製全域網址"),
+            height=32,
+            corner_radius=8,
+            font=self._font(12, "bold"),
+            fg_color="#4f46e5",
+            hover_color="#4338ca",
+            command=self._copy_global_url
+        )
+        self.btn_copy_global.pack(side="left", fill="x", expand=True, padx=(0, 4))
+
+        self.btn_preview_global = ctk.CTkButton(
+            global_btn_row,
+            text=self._t("btn_preview_global", "👁️ 預覽"),
+            width=70,
+            height=32,
+            corner_radius=8,
+            font=self._font(12),
+            fg_color="#27273a",
+            hover_color="#373752",
+            command=lambda: webbrowser.open(self._get_global_overlay_url())
+        )
+        self.btn_preview_global.pack(side="right", padx=(4, 0))
+
+        # --- Section 2: Server Settings ---
+        ctk.CTkLabel(
+            self.controls_card,
+            text=self._t("server_settings_header", "⚙️ 系統與伺服器設定"),
+            font=self._font(13, "bold"),
+            text_color="#6366f1"
+        ).pack(anchor="w", padx=20, pady=(4, 6))
+
         server_box = ctk.CTkFrame(self.controls_card, corner_radius=12, fg_color="#12121c")
-        server_box.pack(fill="x", padx=20, pady=(0, 16))
+        server_box.pack(fill="x", padx=20, pady=(0, 12))
 
         port_row = ctk.CTkFrame(server_box, fg_color="transparent")
-        port_row.pack(fill="x", padx=14, pady=12)
+        port_row.pack(fill="x", padx=14, pady=10)
 
         ctk.CTkLabel(
             port_row,
             text=self._t("server_port"),
-            font=self._font(13, "bold")
+            font=self._font(12, "bold")
         ).pack(side="left")
 
-        self.port_entry = ctk.CTkEntry(port_row, width=80, height=32, corner_radius=8)
+        self.port_entry = ctk.CTkEntry(port_row, width=80, height=30, corner_radius=8)
         self.port_entry.insert(0, str(self.config.get("port", 11150)))
         self.port_entry.pack(side="left", padx=10)
 
         self.port_save_btn = ctk.CTkButton(
             port_row,
             text=self._t("apply_port"),
-            width=90,
-            height=32,
+            width=80,
+            height=30,
             corner_radius=8,
             font=self._font(12),
             fg_color="#374151",
@@ -450,16 +434,20 @@ class AppGUI(DnDCustomTk):
         )
         self.port_save_btn.pack(side="right")
 
-        # Auto-Hide Toggle
-        self.autohide_switch = ctk.CTkSwitch(
+        # Quick navigation button to Gallery
+        self.go_gallery_btn = ctk.CTkButton(
             self.controls_card,
-            text=self._t("autohide_switch"),
-            font=self._font(12),
-            command=self._on_autohide_toggle
+            text=self._t("btn_go_gallery", "🎨 前往「模板庫」探索各樣式 ➔"),
+            height=36,
+            corner_radius=8,
+            font=self._font(12, "bold"),
+            fg_color="#1e1e2f",
+            hover_color="#2d2d44",
+            border_width=1,
+            border_color="#4338ca",
+            command=lambda: self.tabview.set(self._t("tab_gallery"))
         )
-        if self.config.get("autohide_on_pause", False):
-            self.autohide_switch.select()
-        self.autohide_switch.pack(anchor="w", padx=20, pady=(0, 16))
+        self.go_gallery_btn.pack(fill="x", padx=20, pady=(0, 16))
 
     def _build_gallery_tab(self):
         top_bar = ctk.CTkFrame(self.tab_gallery, corner_radius=12, fg_color="#181824")
@@ -472,17 +460,28 @@ class AppGUI(DnDCustomTk):
             text_color="#a5b4fc"
         ).pack(side="left", padx=16, pady=12)
 
+        # Auto-Hide Toggle moved to template gallery top bar!
+        self.autohide_switch = ctk.CTkSwitch(
+            top_bar,
+            text=self._t("autohide_switch"),
+            font=self._font(12, "bold"),
+            progress_color="#4f46e5",
+            command=self._on_autohide_toggle
+        )
+        if self.config.get("autohide_on_pause", False):
+            self.autohide_switch.select()
+        self.autohide_switch.pack(side="right", padx=16, pady=10)
+
         # Scrollable gallery
         self.scrollable_gallery = ctk.CTkScrollableFrame(self.tab_gallery, fg_color="transparent")
         self.scrollable_gallery.pack(fill="both", expand=True, padx=5, pady=(0, 10))
 
-        port = self.config.get("port", 11150)
         previews_dir = os.path.join(self.assets_dir, "static", "previews")
-        res_param = self._get_res_query_param()
+        self.gallery_url_entries = {}
 
         for i, theme_id in enumerate(THEME_IDS, 1):
             name, desc = get_theme_info(self.current_lang, theme_id)
-            url = f"http://localhost:{port}/overlay?theme={theme_id}{res_param}"
+            url = self._get_theme_url(theme_id)
 
             card = ctk.CTkFrame(self.scrollable_gallery, corner_radius=14, fg_color="#181824")
             card.pack(fill="x", pady=8, padx=6)
@@ -508,7 +507,8 @@ class AppGUI(DnDCustomTk):
                 img_label = tk.Label(
                     preview_container,
                     image=photo_img,
-                    bg="#0f111a"
+                    bg="#0f111a",
+                    cursor="hand2"
                 )
                 img_label.pack(fill="both", expand=True)
             else:
@@ -517,12 +517,14 @@ class AppGUI(DnDCustomTk):
                     text=f"({name})",
                     fg="#6366f1",
                     bg="#0f111a",
-                    font=("Segoe UI", 12, "bold")
+                    font=("Segoe UI", 12, "bold"),
+                    cursor="hand2"
                 )
                 img_label.pack(fill="both", expand=True)
 
-            # Bind native drag on the preview image (retaining DnD function under the hood)
-            self._setup_drag_on_widget(img_label, url, theme_id)
+            # Bind native drag on the preview image, container, and entry (click=copy, drag=add to OBS)
+            self._setup_drag_on_widget(img_label, lambda t=theme_id: self._get_theme_url(t))
+            self._setup_drag_on_widget(preview_container, lambda t=theme_id: self._get_theme_url(t))
 
             # Center: Information & Direct URL field
             center_box = ctk.CTkFrame(card, fg_color="transparent")
@@ -544,6 +546,20 @@ class AppGUI(DnDCustomTk):
                 justify="left"
             ).pack(anchor="w", pady=(2, 4))
 
+            # Dedicated Drag Handle Badge
+            drag_handle_box = tk.Label(
+                center_box,
+                text=f"⠿ {self._t('drag_hint')}",
+                bg="#1e293b",
+                fg="#4ade80",
+                font=(self.font_family, 10, "bold"),
+                padx=8,
+                pady=2,
+                cursor="hand2"
+            )
+            drag_handle_box.pack(anchor="w", pady=(0, 4))
+            self._setup_drag_on_widget(drag_handle_box, lambda t=theme_id: self._get_theme_url(t))
+
             drag_entry = ctk.CTkEntry(
                 center_box,
                 height=26,
@@ -554,6 +570,8 @@ class AppGUI(DnDCustomTk):
             drag_entry.insert(0, url)
             drag_entry.configure(state="readonly")
             drag_entry.pack(fill="x", pady=(2, 0))
+            self._setup_drag_on_widget(drag_entry, lambda t=theme_id: self._get_theme_url(t))
+            self.gallery_url_entries[theme_id] = drag_entry
 
             # Right: Action Buttons
             btn_box = ctk.CTkFrame(card, fg_color="transparent")
@@ -568,7 +586,7 @@ class AppGUI(DnDCustomTk):
                 font=self._font(12),
                 fg_color="#4f46e5",
                 hover_color="#4338ca",
-                command=lambda t=theme_id, u=url: self._copy_specific_theme(t, u)
+                command=lambda t=theme_id: self._copy_specific_theme(t)
             )
             copy_btn.pack(pady=3)
 
@@ -581,7 +599,7 @@ class AppGUI(DnDCustomTk):
                 font=self._font(12),
                 fg_color="#27273a",
                 hover_color="#373752",
-                command=lambda u=url: webbrowser.open(u)
+                command=lambda t=theme_id: webbrowser.open(self._get_theme_url(t))
             )
             preview_btn.pack(pady=3)
 
@@ -598,35 +616,21 @@ class AppGUI(DnDCustomTk):
             )
             set_btn.pack(pady=3)
 
-    def _setup_drag_on_widget(self, widget, url, theme_id):
-        """Sets up smooth OLE drag-and-drop into OBS Studio as a Browser Source."""
-        html_file = self.shortcut_html_map.get(theme_id, "")
-        norm_file = os.path.normpath(os.path.abspath(html_file)) if html_file else ""
+    def _setup_drag_on_widget(self, widget, get_url_func):
+        """Sets up native Windows OLE drag-and-drop into OBS Studio as a Browser Source with direct HTTP URL."""
+        setup_native_drag_and_drop(
+            widget=widget,
+            get_url_func=get_url_func,
+            on_drag_success_callback=lambda: self.show_inapp_toast(self._t("drag_done_toast", "✔ 已拖曳至 OBS！")),
+            on_click_callback=self._copy_url_to_clipboard
+        )
 
-        try:
-            widget.drag_source_register(1, DND_FILES, DND_TEXT)
-
-            def on_drag_init(*args):
-                try:
-                    if norm_file and os.path.exists(norm_file):
-                        # Dropping an HTML file into OBS Studio automatically creates an OBS Browser Source!
-                        return (COPY, DND_FILES, norm_file)
-                    return (COPY, DND_TEXT, url)
-                except Exception as ex:
-                    print("DnD init note:", ex)
-                    return (COPY, DND_TEXT, url)
-
-            widget.dnd_bind('<<DragInitCmd>>', on_drag_init)
-
-            def on_drag_end(*args):
-                try:
-                    self.show_inapp_toast(self._t("drag_done_toast", "✔ Dragged into OBS!"))
-                except Exception:
-                    pass
-
-            widget.dnd_bind('<<DragEndCmd>>', on_drag_end)
-        except Exception as e:
-            print("DnD register note:", e)
+    def _copy_url_to_clipboard(self, url):
+        if not url:
+            return
+        self.clipboard_clear()
+        self.clipboard_append(url)
+        self.show_inapp_toast(self._t("copied_toast"))
 
     def _on_language_changed(self, chosen_label):
         lang_code = next((opt[1] for opt in LANGUAGE_OPTIONS if opt[0] == chosen_label), "zh_TW")
@@ -636,49 +640,63 @@ class AppGUI(DnDCustomTk):
         save_config(self.config)
         self._build_ui()
 
-    def _on_res_mode_changed(self, chosen_label):
-        mode_id = next((r[1] for r in RESOLUTION_MODES if r[0] == chosen_label), "1920x700")
-        self.current_res_mode = mode_id
-        self.config["resolution_mode"] = mode_id
-        save_config(self.config)
-        
-        self.shortcuts_dir, self.shortcut_file_map, self.shortcut_html_map = generate_obs_shortcuts(
-            self.config.get("port", 11150), self.base_dir, self._get_res_query_param()
-        )
-        self._build_ui()
+    def _get_global_overlay_url(self):
+        port = self.config.get("port", 11150)
+        autohide = 1 if self.config.get("autohide_on_pause", False) else 0
+        return f"http://localhost:{port}/overlay?autohide={autohide}"
 
-    def _open_shortcuts_folder(self):
-        try:
-            os.startfile(self.shortcuts_dir)
-        except Exception:
-            subprocess.Popen(["explorer", self.shortcuts_dir])
+    def _get_theme_url(self, theme_id):
+        port = self.config.get("port", 11150)
+        autohide = 1 if self.config.get("autohide_on_pause", False) else 0
+        return f"http://localhost:{port}/overlay?theme={theme_id}&autohide={autohide}"
+
+    def _update_all_url_fields(self):
+        """Refreshes all displayed URL entry fields when port or autohide changes."""
+        if hasattr(self, "global_url_entry") and self.global_url_entry and self.global_url_entry.winfo_exists():
+            g_url = self._get_global_overlay_url()
+            self.global_url_entry.configure(state="normal")
+            self.global_url_entry.delete(0, "end")
+            self.global_url_entry.insert(0, g_url)
+            self.global_url_entry.configure(state="readonly")
+
+        for tid, entry in getattr(self, "gallery_url_entries", {}).items():
+            if entry and entry.winfo_exists():
+                new_url = self._get_theme_url(tid)
+                entry.configure(state="normal")
+                entry.delete(0, "end")
+                entry.insert(0, new_url)
+                entry.configure(state="readonly")
 
     def _set_default_thumbnail(self):
         # songIcon.jpg is only used in template gallery, NOT on the main page.
         # Main page has NO placeholder/temp image - kept clean and empty as requested.
         if hasattr(self, "cover_label") and self.cover_label and self.cover_label.winfo_exists():
-            empty_img = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
-            ctk_empty = ctk.CTkImage(light_image=empty_img, dark_image=empty_img, size=(1, 1))
-            self.cover_label.configure(image=ctk_empty, text="")
+            if hasattr(self, "_cached_cover_img") and self._cached_cover_img:
+                self.cover_label.configure(image=self._cached_cover_img, text="")
+            else:
+                empty_img = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
+                ctk_empty = ctk.CTkImage(light_image=empty_img, dark_image=empty_img, size=(1, 1))
+                self.cover_label.configure(image=ctk_empty, text="")
 
     def _get_current_obs_url(self):
-        port = self.config.get("port", 11150)
-        theme = self.config.get("selected_theme", "glassmorphism")
-        autohide = 1 if self.config.get("autohide_on_pause", False) else 0
-        res_param = self._get_res_query_param()
-        return f"http://localhost:{port}/overlay?theme={theme}&autohide={autohide}{res_param}"
+        return self._get_global_overlay_url()
 
     def _copy_obs_url(self):
-        url = self._get_current_obs_url()
+        self._copy_global_url()
+
+    def _copy_global_url(self):
+        url = self._get_global_overlay_url()
         self.clipboard_clear()
         self.clipboard_append(url)
         self.show_inapp_toast(self._t("copied_toast"))
-        self.copy_btn.configure(text=f"✔ {self._t('copied_title')}", fg_color="#10b981")
-        self.after(2000, lambda: self.copy_btn.configure(text=self._t("copy_obs_url"), fg_color="#4f46e5"))
+        if hasattr(self, "btn_copy_global") and self.btn_copy_global and self.btn_copy_global.winfo_exists():
+            self.btn_copy_global.configure(text=f"✔ {self._t('copied_title')}", fg_color="#10b981")
+            self.after(2000, lambda: self.btn_copy_global.configure(text=self._t("btn_copy_global_url"), fg_color="#4f46e5"))
 
-    def _copy_specific_theme(self, theme_id, url):
+    def _copy_specific_theme(self, theme_id, url=None):
+        target_url = self._get_theme_url(theme_id)
         self.clipboard_clear()
-        self.clipboard_append(url)
+        self.clipboard_append(target_url)
         # Non-blocking in-app notification! NO modal alert popup window!
         self.show_inapp_toast(self._t("copied_toast"))
 
@@ -686,13 +704,13 @@ class AppGUI(DnDCustomTk):
         self.config["selected_theme"] = theme_id
         save_config(self.config)
         name, _ = get_theme_info(self.current_lang, theme_id)
-        if hasattr(self, "theme_dropdown"):
-            self.theme_dropdown.set(name)
+        if hasattr(self, "global_theme_dropdown") and self.global_theme_dropdown and self.global_theme_dropdown.winfo_exists():
+            self.global_theme_dropdown.set(name)
         if self.on_theme_change_callback:
             self.on_theme_change_callback(theme_id)
-        self.show_inapp_toast(self._t("theme_set_toast").format(name=name))
+        self.show_inapp_toast(self._t("set_active_toast", f"⭐ 已將「{name}」設為全域使用中模板！").format(name=name))
 
-    def _on_theme_dropdown_selected(self, chosen_display_name):
+    def _on_global_theme_selected(self, chosen_display_name):
         for tid in THEME_IDS:
             name, _ = get_theme_info(self.current_lang, tid)
             if name == chosen_display_name:
@@ -700,7 +718,7 @@ class AppGUI(DnDCustomTk):
                 save_config(self.config)
                 if self.on_theme_change_callback:
                     self.on_theme_change_callback(tid)
-                self.show_inapp_toast(self._t("theme_set_toast").format(name=name))
+                self.show_inapp_toast(self._t("set_active_toast", f"⭐ 已將「{name}」設為全域使用中模板！").format(name=name))
                 break
 
     def _apply_port(self):
@@ -711,9 +729,7 @@ class AppGUI(DnDCustomTk):
                 return
             self.config["port"] = new_port
             save_config(self.config)
-            self.shortcuts_dir, self.shortcut_file_map, self.shortcut_html_map = generate_obs_shortcuts(
-                new_port, self.base_dir, self._get_res_query_param()
-            )
+            self._update_all_url_fields()
             if self.on_port_change_callback:
                 self.on_port_change_callback(new_port)
             self.show_inapp_toast(self._t("port_updated_toast").format(port=new_port))
@@ -721,8 +737,10 @@ class AppGUI(DnDCustomTk):
             self.show_inapp_toast(str(e))
 
     def _on_autohide_toggle(self):
-        self.config["autohide_on_pause"] = bool(self.autohide_switch.get())
+        enabled = bool(self.autohide_switch.get())
+        self.config["autohide_on_pause"] = enabled
         save_config(self.config)
+        self._update_all_url_fields()
 
     def update_media_display(self, data):
         self.latest_media_data = data
@@ -770,18 +788,25 @@ class AppGUI(DnDCustomTk):
 
                 thumb_b64 = data.get("thumbnail", "")
                 if hasattr(self, "cover_label") and self.cover_label and self.cover_label.winfo_exists():
-                    if thumb_b64 and thumb_b64 != self.current_thumbnail_data:
-                        self.current_thumbnail_data = thumb_b64
-                        try:
-                            raw_b64 = thumb_b64.split(",", 1)[1] if "," in thumb_b64 else thumb_b64
-                            img_bytes = base64.b64decode(raw_b64)
-                            pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
-                            pil_img = pil_img.resize((170, 170), Image.Resampling.LANCZOS)
-                            ctk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(170, 170))
-                            self.cover_label.configure(image=ctk_img)
-                        except Exception:
-                            self._set_default_thumbnail()
-                    elif not thumb_b64 and not self.current_thumbnail_data:
+                    if thumb_b64:
+                        if thumb_b64 != self.current_thumbnail_data or not getattr(self, "_cached_cover_img", None):
+                            self.current_thumbnail_data = thumb_b64
+                            try:
+                                raw_b64 = thumb_b64.split(",", 1)[1] if "," in thumb_b64 else thumb_b64
+                                img_bytes = base64.b64decode(raw_b64)
+                                pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
+                                pil_img = pil_img.resize((170, 170), Image.Resampling.LANCZOS)
+                                ctk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(170, 170))
+                                self._cached_cover_img = ctk_img
+                                self.cover_label.configure(image=ctk_img, text="")
+                            except Exception:
+                                self._cached_cover_img = None
+                                self._set_default_thumbnail()
+                        elif hasattr(self, "_cached_cover_img") and self._cached_cover_img:
+                            self.cover_label.configure(image=self._cached_cover_img, text="")
+                    else:
+                        self._cached_cover_img = None
+                        self.current_thumbnail_data = None
                         self._set_default_thumbnail()
             except Exception:
                 pass
@@ -899,8 +924,7 @@ class AppGUI(DnDCustomTk):
         img = Image.new("RGB", (64, 64), color=(99, 102, 241))
         menu = (
             item("Open Controller", self._restore_from_tray),
-            item("Copy Active OBS URL", self._copy_obs_url),
-            item("Open Shortcuts Folder", lambda icon, item: self._open_shortcuts_folder()),
+            item("Copy Global OBS URL", self._copy_obs_url),
             item("Exit", self._quit_app)
         )
         self.tray_icon = pystray.Icon("OBSMusicDisplay", img, "OBS Music Display", menu)

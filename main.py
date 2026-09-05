@@ -20,6 +20,7 @@ class AppCoordinator:
     def start(self):
         # Initialize media engine
         self.media_engine = MediaEngine(on_update_callback=self._on_media_update)
+        self.media_engine.set_active_theme(self.config.get("selected_theme", "glassmorphism"))
         self.server = MediaServer(self.media_engine, port=self.config.get("port", 11150))
 
         # Initialize GUI in main thread first
@@ -61,6 +62,12 @@ class AppCoordinator:
     def _on_theme_changed(self, theme_id):
         self.config["selected_theme"] = theme_id
         save_config(self.config)
+        if self.media_engine:
+            self.media_engine.set_active_theme(theme_id)
+        if self.loop and self.server:
+            async def broadcast_theme():
+                await self.server.broadcast_media_update(self.media_engine.current_data)
+            asyncio.run_coroutine_threadsafe(broadcast_theme(), self.loop)
 
     def _on_port_changed(self, new_port):
         self.config["port"] = new_port

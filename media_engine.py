@@ -88,6 +88,7 @@ def parse_song_and_artist(raw_title, raw_artist):
 class MediaEngine:
     def __init__(self, on_update_callback=None):
         self.on_update_callback = on_update_callback
+        self.active_theme = "glassmorphism"
         self.current_data = {
             "title": "",
             "artist": "",
@@ -98,12 +99,18 @@ class MediaEngine:
             "position": 0,
             "duration": 0,
             "has_media": False,
-            "updated_at": 0
+            "updated_at": 0,
+            "active_theme": self.active_theme
         }
         self.is_running = False
         self._last_broadcast_time = 0
         self._last_smooth_pos = 0.0
         self._last_smooth_song = ""
+
+    def set_active_theme(self, theme_id):
+        """Updates active theme for dynamic overlay updates."""
+        self.active_theme = theme_id
+        self.current_data["active_theme"] = theme_id
 
     async def _extract_thumbnail(self, thumbnail_stream_ref):
         if not thumbnail_stream_ref:
@@ -264,6 +271,7 @@ class MediaEngine:
                     periodic_sync = (now - self._last_broadcast_time >= 1.0)
 
                     if meta_changed or time_jump or periodic_sync:
+                        info["active_theme"] = self.active_theme
                         self.current_data = info
                         self._last_broadcast_time = now
 

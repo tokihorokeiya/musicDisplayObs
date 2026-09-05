@@ -59,16 +59,27 @@ A modern, standalone desktop tool for Windows that captures currently playing mu
 
 ### 🎬 How to Add to OBS Studio
 
-1. Launch **OBS Music Display** and **OBS Studio**.
-2. In the app, switch to the **Template Gallery** tab.
-3. Choose your favorite theme and click the **"📋 Copy URL"** button.
-4. In OBS Studio:
-   - Under the **Sources** dock, click the **`+`** button.
-   - Select **Browser**.
-   - In the **URL** field, paste the copied link (`Ctrl + V`).
-   - Set **Width** to `1920` and **Height** to `700` (or `1000` × `400` if using compact mode).
+You can add the music overlay to OBS Studio using either of the two methods below:
+
+#### Method A: Direct Drag & Drop (Fastest & Easiest! 🚀)
+1. Open both **OBS Studio** and **OBS Music Display**.
+2. Simply click and drag any **template preview card**, **URL box**, or **`⠿ Drag into OBS` badge** directly onto the **OBS Studio preview canvas**.
+3. OBS Studio will automatically detect the web URL and pop up a confirmation prompt:
+   > *"You have dragged a URL into OBS. This will automatically add the link as a source. Continue?"*
+4. Click **Yes**. OBS creates the Browser Source automatically!
+5. Right-click the newly created source -> **Properties**, set **Width** to `1920` and **Height** to `700`, then click **OK**.
+
+#### Method B: Copy & Paste URL
+1. In OBS Music Display, click the **"📋 Copy Global URL"** button (on the main tab) or **"📋 Copy URL"** (in the Template Gallery).
+2. In OBS Studio:
+   - Under the **Sources** dock, click the **`+`** button and select **Browser**.
+   - Paste the link (`Ctrl + V`) into the **URL** field.
+   - Set **Width** to `1920` and **Height** to `700` (or `1000` × `400` for compact mode).
    - Click **OK**.
-5. Your live transparent music overlay is now active!
+
+> [!TIP]
+> **🌐 Global Active Template Auto-Sync:**
+> If you add the Global URL (`http://localhost:11150/overlay`), whenever you switch the active template in the app's main page, OBS Studio will automatically sync and update to that style in real-time without needing to re-copy and paste URLs!
 
 ---
 

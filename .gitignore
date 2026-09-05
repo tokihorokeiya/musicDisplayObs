@@ -1,4 +1,4 @@
-﻿__pycache__/
+__pycache__/
 *.py[cod]
 *.class
 *.spec
@@ -8,3 +8,4 @@ dist/
 .vscode/
 .idea/
 *.log
+obs_shortcuts/

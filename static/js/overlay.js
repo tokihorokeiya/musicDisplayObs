@@ -25,7 +25,11 @@ let lastSyncTimestamp = Date.now();
 
 // Parse Query Parameters
 const urlParams = new URLSearchParams(window.location.search);
-const requestedTheme = urlParams.get('theme') || 'glassmorphism';
+const requestedThemeParam = urlParams.get('theme');
+const isGlobalTheme = (!requestedThemeParam || requestedThemeParam === 'active' || requestedThemeParam === 'global');
+let currentTheme = (requestedThemeParam && requestedThemeParam !== 'active' && requestedThemeParam !== 'global') 
+    ? requestedThemeParam 
+    : 'glassmorphism';
 const autoHideEnabled = urlParams.get('autohide') === '1';
 const autoHideDelay = parseInt(urlParams.get('delay') || '4', 10) * 1000;
 const requestedMode = urlParams.get('mode') || (urlParams.get('w') === '1920' ? '1920x700' : 'auto');
@@ -33,7 +37,7 @@ const requestedPos = urlParams.get('pos') || 'center';
 const customScale = parseFloat(urlParams.get('scale') || '0');
 
 document.addEventListener('DOMContentLoaded', () => {
-    applyTheme(requestedTheme);
+    applyTheme(currentTheme);
     applyPositionAndMode();
     connectWebSocket();
     startPlaybackTicker();
@@ -253,6 +257,12 @@ function updateUI(data) {
     }
 
     currentMedia = data;
+
+    // If using the Global Active Overlay, dynamically switch theme if active_theme changed!
+    if (isGlobalTheme && data.active_theme && data.active_theme !== currentTheme) {
+        currentTheme = data.active_theme;
+        applyTheme(currentTheme);
+    }
 
     const container = document.getElementById('overlay-container');
     const widgetCard = document.getElementById('widget-card');
