@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OBS Music Overlay - Manager & Template Gallery</title>
+    <link rel="stylesheet" href="/static/css/themes.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #090b10;
+            --card-bg: #131722;
+            --border: rgba(255, 255, 255, 0.08);
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        body {
+            width: 100% !important;
+            height: auto !important;
+            min-height: 100vh;
+            background: var(--bg-dark) !important;
+            color: var(--text);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 38px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #a5b4fc 0%, #6366f1 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 16px;
+        }
+
+        /* Live Status Bar */
+        .status-panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 24px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+        }
+
+        .status-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .status-cover {
+            width: 68px;
+            height: 68px;
+            border-radius: 14px;
+            object-fit: cover;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .status-artist {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .pill-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #4ade80;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .pill-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4ade80;
+            box-shadow: 0 0 10px #4ade80;
+        }
+
+        /* Instructions Card */
+        .obs-instructions {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(236, 72, 153, 0.05) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            border-radius: 16px;
+            padding: 20px 24px;
+            margin-bottom: 40px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .obs-instructions strong {
+            color: #a5b4fc;
+        }
+
+        .obs-instructions ol {
+            margin: 10px 0 0 20px;
+            padding: 0;
+        }
+
+        /* Template Grid */
+        .template-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(540px, 1fr));
+            gap: 30px;
+            width: 100%;
+        }
+
+        .template-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .template-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+
+        .template-header {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .template-title {
+            font-size: 17px;
+            font-weight: 700;
+        }
+
+        .copy-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .copy-btn:hover {
+            background: var(--accent-hover);
+            transform: scale(1.02);
+        }
+
+        .copy-btn.copied {
+            background: #10b981;
+        }
+
+        .preview-viewport {
+            width: 100%;
+            height: 240px;
+            background: radial-gradient(#1e293b 1px, transparent 1px);
+            background-size: 16px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .preview-viewport iframe {
+            width: 1000px;
+            height: 400px;
+            border: none;
+            transform: scale(0.52);
+            transform-origin: center center;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Real-Time Music Display for OBS</h1>
+            <p class="subtitle">Captures YouTube, Spotify, Chrome & Edge audio in real-time with zero browser extensions.</p>
+        </header>
+
+        <!-- Live Status Panel -->
+        <div class="status-panel">
+            <div class="status-left">
+                <img id="dash-cover" class="status-cover" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' fill='%236366f1' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/></svg>" alt="Cover">
+                <div>
+                    <div class="status-title" id="dash-title">Waiting for Media...</div>
+                    <div class="status-artist" id="dash-artist">Play a song or video in your browser/player</div>
+                </div>
+            </div>
+            <div id="dash-badge" class="pill-badge">
+                <span class="pill-dot"></span>
+                <span id="dash-status-text">Ready</span>
+            </div>
+        </div>
+
+        <!-- OBS Setup Guide -->
+        <div class="obs-instructions">
+            <strong>How to add to OBS Studio in 3 seconds:</strong>
+            <ol>
+                <li>Click <strong>"Copy OBS URL"</strong> on any template below.</li>
+                <li>In OBS Studio, add a new <strong>Browser Source</strong> (+ icon in Sources).</li>
+                <li>Paste the URL and set <strong>Width: 1000</strong> and <strong>Height: 400</strong>. Check <em>"Shutdown source when not visible"</em> if desired!</li>
+            </ol>
+        </div>
+
+        <!-- 10 Built-In Templates -->
+        <div class="template-grid" id="template-container">
+            <!-- Dynamically populated -->
+        </div>
+    </div>
+
+    <script>
+        const THEMES = [
+            { id: 'glassmorphism', name: '1. Glassmorphism Glow' },
+            { id: 'cyberpunk', name: '2. Cyberpunk 2077 HUD' },
+            { id: 'vinyl', name: '3. Retro Vinyl Turntable' },
+            { id: 'minimal_pill', name: '4. Minimal Floating Pill' },
+            { id: 'cassette', name: '5. Retro Cassette Tape (Lo-Fi)' },
+            { id: 'broadcast', name: '6. Broadcast Lower-Third' },
+            { id: 'rgb_chroma', name: '7. RGB Gaming Chroma' },
+            { id: 'spotify', name: '8. Spotify Green Card' },
+            { id: 'cd_jewel', name: '9. 90s CD Jewel Case' },
+            { id: 'dynamic_island', name: '10. Dynamic Island Banner' }
+        ];
+
+        const grid = document.getElementById('template-container');
+        const host = window.location.host;
+
+        THEMES.forEach(t => {
+            const overlayUrl = `${window.location.protocol}//${host}/overlay?theme=${t.id}`;
+            const card = document.createElement('div');
+            card.className = 'template-card';
+            card.innerHTML = `
+                <div class="template-header">
+                    <div class="template-title">${t.name}</div>
+                    <button class="copy-btn" onclick="copyUrl('${overlayUrl}', this)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        Copy OBS URL
+                    </button>
+                </div>
+                <div class="preview-viewport">
+                    <iframe src="/overlay?theme=${t.id}"></iframe>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+
+        function copyUrl(url, btn) {
+            navigator.clipboard.writeText(url).then(() => {
+                const oldText = btn.innerHTML;
+                btn.classList.add('copied');
+                btn.innerHTML = '&#10003; Copied!';
+                setTimeout(() => {
+                    btn.classList.remove('copied');
+                    btn.innerHTML = oldText;
+                }, 2000);
+            });
+        }
+
+        // Live status websocket
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const socket = new WebSocket(`${wsProtocol}//${window.location.host}/ws`);
+
+        socket.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.has_media) {
+                    document.getElementById('dash-title').textContent = data.title || "Unknown Title";
+                    document.getElementById('dash-artist').textContent = data.artist || (data.app || "");
+                    document.getElementById('dash-status-text').textContent = data.status || "Playing";
+                    if (data.thumbnail) {
+                        document.getElementById('dash-cover').src = data.thumbnail;
+                    }
+                }
+            } catch(e) {}
+        };
+    </script>
+</body>
+</html>

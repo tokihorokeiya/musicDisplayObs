@@ -1,0 +1,376 @@
+/**
+ * Real-Time Music Display OBS Overlay Controller V4
+ * Multi-resolution (1920x700, 1000x400, 1920x1080 bottom), Auto-scaling,
+ * Zero-leak base64 SVG, White Title, Cute Kawaii & Lo-Fi Cozy themes.
+ */
+
+const DEFAULT_COVER = "/static/sample_cover.png";
+
+let currentMedia = {
+    title: "",
+    artist: "",
+    status: "Stopped",
+    is_playing: false,
+    thumbnail: "",
+    position: 0,
+    duration: 0,
+    has_media: false,
+    updated_at: Date.now() / 1000
+};
+
+let hideTimeout = null;
+let socket = null;
+let localPosition = 0;
+let lastSyncTimestamp = Date.now();
+
+// Parse Query Parameters
+const urlParams = new URLSearchParams(window.location.search);
+const requestedTheme = urlParams.get('theme') || 'glassmorphism';
+const autoHideEnabled = urlParams.get('autohide') === '1';
+const autoHideDelay = parseInt(urlParams.get('delay') || '4', 10) * 1000;
+const requestedMode = urlParams.get('mode') || (urlParams.get('w') === '1920' ? '1920x700' : 'auto');
+const requestedPos = urlParams.get('pos') || 'center';
+const customScale = parseFloat(urlParams.get('scale') || '0');
+
+document.addEventListener('DOMContentLoaded', () => {
+    applyTheme(requestedTheme);
+    applyPositionAndMode();
+    connectWebSocket();
+    startPlaybackTicker();
+    setupAutoScale();
+
+    if (urlParams.get('mock') === '1') {
+        updateUI({
+            title: "Sincerely",
+            artist: "Yuzuki Choco",
+            status: "Playing",
+            is_playing: true,
+            thumbnail: "/static/sample_cover.png",
+            position: 140.0,
+            duration: 278.0,
+            has_media: true,
+            updated_at: Date.now() / 1000
+        });
+    }
+});
+
+function applyPositionAndMode() {
+    if (requestedPos === 'bottom') {
+        document.body.classList.add('pos-bottom');
+    } else {
+        document.body.classList.add('pos-center');
+    }
+
+    if (requestedMode === '1920x700') {
+        document.body.classList.add('mode-1920x700');
+    }
+}
+
+function setupAutoScale() {
+    function autoScale() {
+        const windowW = window.innerWidth;
+        const windowH = window.innerHeight;
+        const container = document.getElementById('overlay-container');
+        if (!container) return;
+
+        if (customScale > 0) {
+            container.style.transform = `scale(${customScale})`;
+            return;
+        }
+
+        // If in 1920x700 or full screen window
+        if (windowW >= 1600 && windowH >= 650) {
+            // Scale up nicely for 1920p stream
+            const scale = Math.min(windowW / 1100, windowH / 460, 1.65);
+            container.style.transform = `scale(${scale})`;
+        } else if (windowW >= 1200) {
+            const scale = Math.min(windowW / 1050, windowH / 420, 1.35);
+            container.style.transform = `scale(${scale})`;
+        } else {
+            // Standard 1000x400 fit
+            const scale = Math.min(windowW / 1000, windowH / 400);
+            if (scale < 0.99 || scale > 1.01) {
+                container.style.transform = `scale(${scale})`;
+            } else {
+                container.style.transform = 'none';
+            }
+        }
+    }
+
+    window.addEventListener('resize', autoScale);
+    autoScale();
+}
+
+function applyTheme(themeName) {
+    const container = document.getElementById('overlay-container');
+    container.className = `theme-${themeName}`;
+    renderThemeHTML(themeName);
+}
+
+function formatTime(seconds) {
+    if (!seconds || isNaN(seconds) || seconds < 0) return "00:00";
+    const totalSec = Math.floor(seconds);
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    const mm = m < 10 ? `0${m}` : `${m}`;
+    const ss = s < 10 ? `0${s}` : `${s}`;
+    return `${mm}:${ss}`;
+}
+
+function renderThemeHTML(theme) {
+    const container = document.getElementById('overlay-container');
+    
+    if (theme === 'vinyl') {
+        container.innerHTML = `
+            <div class="widget-card" id="widget-card">
+                <div class="vinyl-wrapper">
+                    <img class="vinyl-sleeve cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
+                    <div class="vinyl-record">
+                        <div class="vinyl-center" id="vinyl-center-img"></div>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <div class="marquee-wrapper" id="title-wrapper">
+                        <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
+                    </div>
+                    <div class="artist-name" id="artist-name">No active playback</div>
+                    <div class="progress-section">
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="progress-fill"></div>
+                        </div>
+                        <div class="time-display" id="time-display">00:00 / 00:00</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (theme === 'cassette') {
+        container.innerHTML = `
+            <div class="widget-card" id="widget-card">
+                <div class="cassette-label">
+                    <div class="marquee-wrapper" id="title-wrapper">
+                        <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
+                    </div>
+                    <div class="spools-window">
+                        <div class="spool"></div>
+                        <div class="sound-bars">
+                            <span></span><span></span><span></span><span></span><span></span>
+                        </div>
+                        <div class="spool"></div>
+                    </div>
+                    <div class="cassette-bottom-row">
+                        <div class="artist-name" id="artist-name">No active playback</div>
+                        <div class="time-display" id="time-display">00:00 / 00:00</div>
+                    </div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (theme === 'spotify') {
+        container.innerHTML = `
+            <div class="widget-card" id="widget-card">
+                <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
+                <div class="info-box">
+                    <div class="marquee-wrapper" id="title-wrapper">
+                        <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
+                    </div>
+                    <div class="artist-name" id="artist-name">No active playback</div>
+                    <div class="progress-section spotify-progress-row">
+                        <span class="time-current" id="time-current">00:00</span>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="progress-fill"></div>
+                        </div>
+                        <span class="time-duration" id="time-duration">00:00</span>
+                    </div>
+                </div>
+                <div class="sound-bars">
+                    <span></span><span></span><span></span><span></span><span></span>
+                </div>
+            </div>
+        `;
+    } else {
+        // Universal Layout (glassmorphism, cyberpunk, minimal_pill, broadcast, cute_kawaii, lofi_cozy, dynamic_island)
+        container.innerHTML = `
+            <div class="widget-card" id="widget-card">
+                <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
+                <div class="info-box">
+                    <div class="top-row">
+                        <div class="marquee-wrapper" id="title-wrapper">
+                            <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
+                        </div>
+                        <div class="sound-bars">
+                            <span></span><span></span><span></span><span></span><span></span>
+                        </div>
+                    </div>
+                    <div class="artist-name" id="artist-name">No active playback</div>
+                    <div class="progress-section">
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="progress-fill"></div>
+                        </div>
+                        <div class="time-display" id="time-display">00:00 / 00:00</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+function updateUI(data) {
+    if (!data) return;
+    currentMedia = data;
+
+    localPosition = data.position || 0;
+    lastSyncTimestamp = Date.now();
+
+    const container = document.getElementById('overlay-container');
+    const widgetCard = document.getElementById('widget-card');
+    const titleEl = document.getElementById('track-title');
+    const titleWrapper = document.getElementById('title-wrapper');
+    const artistEl = document.getElementById('artist-name');
+    const coverEl = document.getElementById('cover-img');
+    const vinylCenter = document.getElementById('vinyl-center-img');
+
+    const hasMedia = data.has_media && (data.title || data.artist);
+    const isPlaying = data.is_playing;
+
+    // Handle auto-hide
+    if (autoHideEnabled) {
+        if (!hasMedia || !isPlaying) {
+            if (!hideTimeout) {
+                hideTimeout = setTimeout(() => {
+                    container.classList.add('hidden-overlay');
+                }, autoHideDelay);
+            }
+        } else {
+            if (hideTimeout) {
+                clearTimeout(hideTimeout);
+                hideTimeout = null;
+            }
+            container.classList.remove('hidden-overlay');
+        }
+    } else {
+        container.classList.remove('hidden-overlay');
+    }
+
+    // Playback state class
+    if (widgetCard) {
+        if (isPlaying) {
+            widgetCard.classList.add('playing');
+        } else {
+            widgetCard.classList.remove('playing');
+        }
+    }
+
+    // Cover
+    const coverSrc = data.thumbnail || DEFAULT_COVER;
+    if (coverEl && coverEl.src !== coverSrc) {
+        coverEl.src = coverSrc;
+    }
+    if (vinylCenter) {
+        vinylCenter.style.backgroundImage = `url("${coverSrc}")`;
+    }
+
+    // Title & Artist
+    const displayTitle = data.title || "Waiting for music...";
+    const displayArtist = data.artist || (hasMedia ? "Unknown Artist" : "No active playback");
+
+    if (titleEl && titleEl.textContent !== displayTitle) {
+        titleEl.textContent = displayTitle;
+        adjustMarquee(titleEl, titleWrapper);
+    }
+
+    if (artistEl && artistEl.textContent !== displayArtist) {
+        artistEl.textContent = displayArtist;
+    }
+
+    renderTimelineTick();
+}
+
+function renderTimelineTick() {
+    const fillEl = document.getElementById('progress-fill');
+    const timeDisplayEl = document.getElementById('time-display');
+    const timeCurrentEl = document.getElementById('time-current');
+    const timeDurationEl = document.getElementById('time-duration');
+
+    const duration = currentMedia.duration || 0;
+    let pos = localPosition;
+
+    if (currentMedia.is_playing) {
+        const elapsedSinceSync = (Date.now() - lastSyncTimestamp) / 1000;
+        pos = Math.max(0, localPosition + elapsedSinceSync);
+        if (duration > 0 && pos > duration) {
+            pos = duration;
+        }
+    }
+
+    const percent = duration > 0 ? Math.min(100, Math.max(0, (pos / duration) * 100)) : 0;
+
+    if (fillEl) {
+        fillEl.style.width = `${percent}%`;
+    }
+
+    const curFormatted = formatTime(pos);
+    const durFormatted = duration > 0 ? formatTime(duration) : "--:--";
+
+    if (timeDisplayEl) {
+        timeDisplayEl.textContent = `${curFormatted} / ${durFormatted}`;
+    }
+    if (timeCurrentEl) {
+        timeCurrentEl.textContent = curFormatted;
+    }
+    if (timeDurationEl) {
+        timeDurationEl.textContent = durFormatted;
+    }
+}
+
+function startPlaybackTicker() {
+    setInterval(() => {
+        if (currentMedia.has_media && currentMedia.is_playing) {
+            renderTimelineTick();
+        }
+    }, 500);
+}
+
+function adjustMarquee(textEl, wrapperEl) {
+    if (!textEl || !wrapperEl) return;
+    
+    textEl.classList.remove('marquee-scroll');
+    void textEl.offsetWidth;
+
+    const textWidth = textEl.scrollWidth;
+    const containerWidth = wrapperEl.clientWidth;
+
+    if (textWidth > containerWidth + 15) {
+        textEl.innerHTML = `${textEl.textContent}&nbsp;&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;&nbsp;${textEl.textContent}`;
+        textEl.classList.add('marquee-scroll');
+    }
+}
+
+function connectWebSocket() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${protocol}//${window.location.host}/ws`;
+
+    socket = new WebSocket(wsUrl);
+
+    socket.onopen = () => {
+        console.log('[OBS Overlay] WebSocket connected');
+    };
+
+    socket.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            updateUI(data);
+        } catch (e) {
+            console.error('[OBS Overlay] Parsing error:', e);
+        }
+    };
+
+    socket.onclose = () => {
+        setTimeout(connectWebSocket, 2000);
+    };
+
+    socket.onerror = () => {
+        socket.close();
+    };
+}
