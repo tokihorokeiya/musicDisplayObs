@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/対応OS-Windows%2010%20%7C%2011-0078D6?logo=windows&logoColor=white" alt="Platform">
   <img src="https://img.shields.io/badge/OBS%20Studio-v28%2B%20対応-black?logo=obsstudio&logoColor=white" alt="OBS Studio">
   <img src="https://img.shields.io/badge/ブラウザ拡張機能-完全不要-success" alt="拡張機能不要">
-  <img src="https://img.shields.io/badge/テーマ-19%20種類内蔵-8A2BE2" alt="19 Themes">
+  <img src="https://img.shields.io/badge/テーマ-23%20種類内蔵-8A2BE2" alt="23 Themes">
 </p>
 
 ---
@@ -24,7 +24,7 @@ Windows 環境向けに特化した、ブラウザ拡張機能不要のリアル
 
 * **ブラウザ拡張機能一切不要** — ブラウザで音楽を流すだけで自動認識！
 * **OBS 画面へ直接ドラッグ＆ドロップ** — プレビューカードをそのまま OBS キャンバスにドラッグするだけで即座に追加可能。
-* **19 種類の多彩なビジュアルスタイル** — グラスモフィズム、スイススタイル、レトロ 70 年代、8-Bit 像素、Bento グリッドなど豊富に内蔵。
+* **23 種類の多彩なビジュアルスタイル** — グラスモフィズム、スイススタイル、レトロ 70 年代、8-Bit 像素、Bento グリッド、サイバーナイト Keiya、英国パブ Belmore など豊富に内蔵。
 * **くっきり滑らかなベクターフォント描画** — 游ゴシック UI、メイリオ、微軟正黑體等の高品質フォントを採用し、ビットマップフォント化を防止。
 * **カクつきのないスムーズな進捗＆時間表示** — 経過時間を正確に計算し、巻き戻りや数値の揺れを防止。
 * **ワンクリックで GitHub から直接アップデート** — アプリ内から最新版を検知して自動熱更新。個人設定も安全に保持されます。

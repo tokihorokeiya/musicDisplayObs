@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6?logo=windows&logoColor=white" alt="Platform">
   <img src="https://img.shields.io/badge/OBS%20Studio-v28%2B%20Compatible-black?logo=obsstudio&logoColor=white" alt="OBS Studio">
   <img src="https://img.shields.io/badge/Browser%20Extension-Zero%20Required-success" alt="No Extensions">
-  <img src="https://img.shields.io/badge/Themes-19%20Built--in%20Styles-8A2BE2" alt="19 Themes">
+  <img src="https://img.shields.io/badge/Themes-23%20Built--in%20Styles-8A2BE2" alt="23 Themes">
 </p>
 
 ---
@@ -24,7 +24,7 @@ A modern, standalone desktop tool for Windows that captures currently playing mu
 
 * **Zero Browser Extensions** — Works automatically with any media playing in your browser or desktop apps.
 * **Direct Drag & Drop into OBS** — Simply drag any preview card or URL box directly into your OBS Studio canvas.
-* **19 High-Quality Built-in Themes** — From Glassmorphism, Cyberpunk, and Swiss Style to Retro 70s, 8-Bit Pixel, and Bento Grid.
+* **23 High-Quality Built-in Themes** — From Glassmorphism, Cyberpunk, and Swiss Style to Retro 70s, 8-Bit Pixel, Bento Grid, Cyber Knight Keiya, and British Pub Belmore.
 * **Normal Anti-Aliased CJK Fonts** — Smooth, high-definition ClearType vector fonts for Chinese, Japanese, and Korean characters everywhere.
 * **Auto-Marquee Text** — Long song titles and artist names smoothly scroll with seamless looping.
 * **Jitter-Free Progress & Timestamps** — Real-time position tracking and synchronized progress bars.

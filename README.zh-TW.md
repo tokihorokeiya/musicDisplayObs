@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/支援平台-Windows%2010%20%7C%2011-0078D6?logo=windows&logoColor=white" alt="Platform">
   <img src="https://img.shields.io/badge/OBS%20Studio-v28%2B%20相容-black?logo=obsstudio&logoColor=white" alt="OBS Studio">
   <img src="https://img.shields.io/badge/瀏覽器外掛-完全免安裝-success" alt="免外掛">
-  <img src="https://img.shields.io/badge/內建模板-19%20款精選風格-8A2BE2" alt="19 款模板">
+  <img src="https://img.shields.io/badge/內建模板-23%20款精選風格-8A2BE2" alt="23 款模板">
 </p>
 
 ---
@@ -24,7 +24,7 @@
 
 * **完全免裝任何瀏覽器外掛** — 只要瀏覽器正在播放音樂，軟體自動即時抓取！
 * **直接拖曳加入 OBS 畫布** — 預覽卡片或網址方塊可直接拖曳至 OBS 畫面，秒速新增瀏覽器來源。
-* **內建 19 款高品質風格模板** — 毛玻璃、賽博龐克、復古黑膠、瑞士網格、復古 70 年代、8-Bit 像素、Bento 模組等應有盡有。
+* **內建 23 款高品質風格模板** — 毛玻璃、賽博龐克、復古黑膠、瑞士網格、復古 70 年代、8-Bit 像素、Bento 模組、賽博騎士 Keiya、英倫酒吧 Belmore 等應有盡有。
 * **清晰向量抗鋸齒字體** — 微軟正黑體、Yu Gothic UI、Malgun Gothic 等平滑無襯線向量字體，全面杜絕中日韓文字出現 1-bit 點陣雜點。
 * **平滑無抖動進度條與時間顯示** — 精確計算真實播放時間，避免時間倒退或反覆跳動。
 * **一鍵直接從 GitHub 線上更新** — 軟體內建版本檢查與自動熱更新功能，升級時完整保留個人自訂設定。
