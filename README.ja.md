@@ -11,11 +11,11 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/tokihorokeiya/musicDisplayObs/releases"><img src="https://img.shields.io/github/v/release/tokihorokeiya/musicDisplayObs?color=blue&label=最新リリース" alt="Release"></a>
-  <img src="https://img.shields.io/badge/対応OS-Windows%2010%20%7C%2011-0078D6?logo=windows&logoColor=white" alt="Platform">
-  <img src="https://img.shields.io/badge/OBS%20Studio-v28%2B%20対応-black?logo=obsstudio&logoColor=white" alt="OBS Studio">
-  <img src="https://img.shields.io/badge/ブラウザ拡張機能-完全不要-success" alt="拡張機能不要">
-  <img src="https://img.shields.io/badge/テーマ-23%20種類内蔵-8A2BE2" alt="23 Themes">
+  <a href="https://github.com/tokihorokeiya/musicDisplayObs/releases"><img src="https://img.shields.io/github/v/release/tokihorokeiya/musicDisplayObs?color=blue&label=%E6%9C%80%E6%96%B0%E3%83%AA%E3%83%AA%E3%83%BC%E3%82%B9" alt="Release"></a>
+  <img src="https://img.shields.io/badge/%E2%8A%B2%E5%BF%9COS-Windows%2010%20%7C%2011-0078D6?logo=windows&logoColor=white" alt="Platform">
+  <img src="https://img.shields.io/badge/OBS%20Studio-v28%2B%20%E2%8A%B2%E5%BF%9C-black?logo=obsstudio&logoColor=white" alt="OBS Studio">
+  <img src="https://img.shields.io/badge/%E3%83%96%E3%83%A9%E3%82%A6%E3%82%B6%E6%8B%A1%E5%BC%B5%E6%A9%9F%E8%83%BD-%E5%AE%8C%E5%85%A8%E4%B8%8D%E8%A6%81-success" alt="拡張機能不要">
+  <img src="https://img.shields.io/badge/%E3%83%81%E3%83%BC%E3%83%9E-23%20%E7%A0%8D%E9%A1%9E%E5%86%85%E8%94%B5-8A2BE2" alt="23 Themes">
 </p>
 
 ---
