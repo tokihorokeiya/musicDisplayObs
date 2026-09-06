@@ -70,7 +70,16 @@ TRANSLATIONS = {   'zh_TW': {   'app_title': 'OBS 即時音樂動態顯示器',
                                'cute_kawaii': ('可愛日系粉彩 (Cute Kawaii)', '夢幻粉紫馬卡龍配色，圓潤氣泡卡片與愛心光澤，適合 VTuber 與動漫實況'),
                                'spotify': ('經典串流綠黑卡片', '經典串流播放器黑綠配色卡片，帶有即時進度條與跳動音頻條'),
                                'lofi_cozy': ('暖木咖啡 Lo-Fi 氛圍', '深胡桃木色與溫暖琥珀金色調，沉浸悠閒咖啡廳音樂氛圍'),
-                               'dynamic_island': ('動態島彈跳橫幅', '流體彈跳動效，大氣圓形封面與自動縮放彈跳膠囊')},
+                               'dynamic_island': ('動態島彈跳橫幅', '流體彈跳動效，大氣圓形封面與自動縮放彈跳膠囊'),
+                               'minimalism': ('極簡主義無瑕卡片', '北歐極簡現代主義，純粹留白、1px 細緻時間線條與優雅負空間'),
+                               'swiss': ('瑞士風格平面排版', '國際主義平面設計風格 (Swiss Style)，非對稱網格、經典紅黑高對比與無襯線字體'),
+                               'editorial': ('典雅時尚雜誌風格', '高端雜誌與文學出版美學 (Vogue/Kinfolk)，優雅襯線字體、燙金飾線與典雅邊框'),
+                               'hand_drawn': ('手繪塗鴉插畫風', '獨立手帳與塗鴉速寫風格，波浪不規則邊框、紙膠帶拼貼與手繪波浪進度條'),
+                               'retro': ('復古 70s 暖木黑膠音響', '70/80年代溫暖模擬 Hi-Fi 音響機，胡桃木框、復古調頻刻度與溫暖夕陽漸層線'),
+                               'pixel': ('經典 16-Bit 街機像素', '復古街機與 CRT 掃描線美學，階梯像素邊框、霓虹洋紅/青色電玩高分榜風格'),
+                               'flat': ('扁平化 2.0 幾何色塊', '純粹扁平化設計 (Flat Design 2.0)，零陰影、高對比飽和色塊與俐落膠囊標籤'),
+                               'eight_bit': ('復古 8-Bit 像素遊戲機', '經典紅白機/Game Boy 8位元點陣風，血量 HP 進度條、閃爍游標與晶片音頻跳動條'),
+                               'bento': ('便當盒模組化網格 (Bento)', '現代蘋果與 Linear 便當盒網格設計，圓角磨砂微光獨立隔間，兼具功能性與科技美感')},
                  'nav_dashboard': '即時控制台',
                  'nav_gallery': '風格模板庫',
                  'nav_settings': '系統設定',
@@ -201,7 +210,34 @@ TRANSLATIONS = {   'zh_TW': {   'app_title': 'OBS 即時音樂動態顯示器',
                                              'Warm dark walnut & golden amber aesthetic with cozy cafe coffee vibes'),
                             'dynamic_island': (   'Dynamic Island Banner',
                                                   'Fluid Apple-style dynamic island capsule with spring bounce '
-                                                  'animation')},
+                                                  'animation'),
+                            'minimalism': (   'Minimalism Style',
+                                              'Nordic Dieter Rams minimalism with pure negative space and hairline '
+                                              'progress'),
+                            'swiss': (   'Swiss Style (Helvetica Grid)',
+                                         'International Typographic Style with asymmetric bold grid, Swiss Red accents '
+                                         'and stark contrast'),
+                            'editorial': (   'Editorial Style (Magazine & Serif)',
+                                             'High-fashion editorial aesthetic with refined serifs, antique gold '
+                                             'borders and literary elegance'),
+                            'hand_drawn': (   'Hand-Drawn Sketchbook',
+                                              'Charming indie sketchbook and doodle aesthetic with wobbly borders and '
+                                              'washi tape'),
+                            'retro': (   'Retro 70s Hi-Fi Stereo',
+                                         '1970s warm analog stereo receiver with walnut trim, retro tuner dial and '
+                                         'sunset groove stripes'),
+                            'pixel': (   'Pixel Arcade CRT',
+                                         '16-bit arcade aesthetics with CRT scanlines, stepped pixel borders and '
+                                         'vibrant neon palette'),
+                            'flat': (   'Flat 2.0 Bold Blocks',
+                                        'Pure Flat Design 2.0 with zero shadows, high-contrast solid color blocking '
+                                        'and sharp pill tags'),
+                            'eight_bit': (   '8-Bit NES / Game Boy HUD',
+                                             'Authentic 8-bit retro console HUD with HP meter, pixel heart cursor and '
+                                             'chiptune spectrum'),
+                            'bento': (   'Bento Modular Grid',
+                                         'Modern Apple & Linear bento-box grid with frosted compartments for album '
+                                         'art, info and telemetry')},
               'nav_dashboard': 'Dashboard',
               'nav_gallery': 'Theme Gallery',
               'nav_settings': 'Settings',
@@ -317,7 +353,16 @@ TRANSLATIONS = {   'zh_TW': {   'app_title': 'OBS 即時音樂動態顯示器',
                             'cute_kawaii': ('キュート カワイイ パステル', 'パステルピンクとパープルの夢かわデザイン。VTuber・アニメ配信に最適！'),
                             'spotify': ('Spotify風 グリーンカード', 'おなじみのダーク＆グリーン配色、シークバーとイコライザー付き'),
                             'lofi_cozy': ('Lo-Fi ほっこりカフェ (琥珀)', 'ウォールナット木目と琥珀色の光が心地よい、リラックスできるカフェ風デザイン'),
-                            'dynamic_island': ('ダイナミックアイランド バナー', '弾むようなスプリングアニメーションと滑らかなカプセルデザイン')},
+                            'dynamic_island': ('ダイナミックアイランド バナー', '弾むようなスプリングアニメーションと滑らかなカプセルデザイン'),
+                            'minimalism': ('ミニマリズム・スタイル', '北欧ディーター・ラムズのミニマリズム、美しい余白と繊細な1pxプログレスバー'),
+                            'swiss': ('スイス・スタイル (ヘルベチカ・グリッド)', '国際タイポグラフィ様式、非対称グリッドとスイスレッドの力強いコントラスト'),
+                            'editorial': ('エディトリアル・スタイル (雑誌＆セリフ)', 'ハイファッション誌 (Vogue/Kinfolk) の美学、優雅なセリフ体と金箔風の装飾枠'),
+                            'hand_drawn': ('手描きスケッチブック風', '手帳・落書き風のイラストデザイン、温かみのあるマスキングテープと手描き風プログレスバー'),
+                            'retro': ('70年代レトロ Hi-Fi ステレオ', '70年代の温かみあるアナログ音響機器、ウォールナット木目とサンセットストライプ'),
+                            'pixel': ('16-Bit アーケード・ピクセル', 'レトロアーケードとCRT走査線美学、階段状ドット縁取りとネオンシアン・マゼンタ'),
+                            'flat': ('フラット 2.0 ボールドブロック', '影のないクリーンなフラットデザイン2.0、高コントラストなブロック配色とカプセルタグ'),
+                            'eight_bit': ('8-Bit ファミコン風 HUD', 'レトロな8ビットゲーム機風、HPバー風の進捗表示と点滅カーソル、チップチューン波形'),
+                            'bento': ('ベントー・モジュラーグリッド', 'AppleやLinearスタイルのBento Gridデザイン、擦りガラス調の独立コンパートメント')},
               'nav_dashboard': 'ダッシュボード',
               'nav_gallery': 'テーマギャラリー',
               'nav_settings': '設定',
@@ -417,7 +462,16 @@ TRANSLATIONS = {   'zh_TW': {   'app_title': 'OBS 即時音樂動態顯示器',
                             'cute_kawaii': ('귀여운 파스텔 카와이 (Cute Kawaii)', '달콤한 핑크 파스텔 감성, VTuber 및 애니메이션 스트리밍에 최적화'),
                             'spotify': ('스포티파이 그린 카드', '클래식 다크 스트리밍 뮤직 플레이어 카드 및 그린 프로그레스 바'),
                             'lofi_cozy': ('로파이 코지 카페 앰버', '깊은 호두나무 원목과 따뜻한 앰버 골드 감성의 편안한 카페 무드'),
-                            'dynamic_island': ('다이내믹 아일랜드 배너', '탄성 바운스 애니메이션이 적용된 유동적인 캡슐 배너')},
+                            'dynamic_island': ('다이내믹 아일랜드 배너', '탄성 바운스 애니메이션이 적용된 유동적인 캡슐 배너'),
+                            'minimalism': ('미니멀리즘 스타일', '북유럽 디터 람스 스타일 미니멀리즘, 깔끔한 여백과 1px 헤어라인 진행바'),
+                            'swiss': ('스위스 스타일 (헬베티카 그리드)', '국제 타이포그래피 스타일, 비대칭 그리드와 스위스 레드 포인트의 강렬한 대비'),
+                            'editorial': ('에디토리얼 매거진 스타일', '고급 패션 및 출판 미학 (Vogue/Kinfolk), 우아한 세리프 서체와 골드 테두리'),
+                            'hand_drawn': ('손그림 스케치북 스타일', '다이어리 낙서 감성 일러스트, 마스킹 테이프와 손그림 감성 진행바'),
+                            'retro': ('70년대 레트로 하이파이 오디오', '70년대 아날로그 하이파이 오디오 감성, 호두나무 우드 프레임과 레트로 튜너 다이얼'),
+                            'pixel': ('16비트 아케이드 픽셀 CRT', '레트로 오락실과 CRT 주사선 감성, 도트 픽셀 테두리와 네온 컬러 하이스코어 스타일'),
+                            'flat': ('플랫 2.0 볼드 블록', '그림자 없는 순수 플랫 디자인 2.0, 선명한 고대비 컬러 블록과 캡슐 태그'),
+                            'eight_bit': ('8비트 패미컴 / 게임보이 HUD', '추억의 8비트 레트로 콘솔 감성, HP 게이지 진행바와 깜빡이는 픽셀 커서'),
+                            'bento': ('벤토 모듈러 그리드', '애플과 Linear 스타일의 벤토 그리드 디자인, 반투명 글래스 독립 구역의 모던 테크 미학')},
               'nav_dashboard': '대시보드',
               'nav_gallery': '테마 갤러리',
               'nav_settings': '설정',
@@ -538,7 +592,34 @@ TRANSLATIONS = {   'zh_TW': {   'app_title': 'OBS 即時音樂動態顯示器',
                             'spotify': ('Tarjeta Verde Spotify', 'Tarjeta clásica de reproductor en verde y negro'),
                             'lofi_cozy': ('Café Acogedor Lo-Fi', 'Madera de nogal oscuro y ámbar dorado cálido'),
                             'dynamic_island': (   'Banner Dynamic Island',
-                                                  'Cápsula fluida estilo Apple con animación elástica')},
+                                                  'Cápsula fluida estilo Apple con animación elástica'),
+                            'minimalism': (   'Minimalism Style',
+                                              'Nordic Dieter Rams minimalism with pure negative space and hairline '
+                                              'progress'),
+                            'swiss': (   'Swiss Style (Helvetica Grid)',
+                                         'International Typographic Style with asymmetric bold grid, Swiss Red accents '
+                                         'and stark contrast'),
+                            'editorial': (   'Editorial Style (Magazine & Serif)',
+                                             'High-fashion editorial aesthetic with refined serifs, antique gold '
+                                             'borders and literary elegance'),
+                            'hand_drawn': (   'Hand-Drawn Sketchbook',
+                                              'Charming indie sketchbook and doodle aesthetic with wobbly borders and '
+                                              'washi tape'),
+                            'retro': (   'Retro 70s Hi-Fi Stereo',
+                                         '1970s warm analog stereo receiver with walnut trim, retro tuner dial and '
+                                         'sunset groove stripes'),
+                            'pixel': (   'Pixel Arcade CRT',
+                                         '16-bit arcade aesthetics with CRT scanlines, stepped pixel borders and '
+                                         'vibrant neon palette'),
+                            'flat': (   'Flat 2.0 Bold Blocks',
+                                        'Pure Flat Design 2.0 with zero shadows, high-contrast solid color blocking '
+                                        'and sharp pill tags'),
+                            'eight_bit': (   '8-Bit NES / Game Boy HUD',
+                                             'Authentic 8-bit retro console HUD with HP meter, pixel heart cursor and '
+                                             'chiptune spectrum'),
+                            'bento': (   'Bento Modular Grid',
+                                         'Modern Apple & Linear bento-box grid with frosted compartments for album '
+                                         'art, info and telemetry')},
               'nav_dashboard': 'Panel de control',
               'nav_gallery': 'Galería de temas',
               'nav_settings': 'Configuración',
@@ -665,7 +746,34 @@ TRANSLATIONS = {   'zh_TW': {   'app_title': 'OBS 即時音樂動態顯示器',
                                            'Carte classique noir et vert avec barre de progression'),
                             'lofi_cozy': ('Ambiance Café Lo-Fi', "Bois de noyer foncé et tons d'ambre chaleureux"),
                             'dynamic_island': (   'Bannière Dynamic Island',
-                                                  'Capsule dynamique fluide avec rebond élastique')},
+                                                  'Capsule dynamique fluide avec rebond élastique'),
+                            'minimalism': (   'Minimalism Style',
+                                              'Nordic Dieter Rams minimalism with pure negative space and hairline '
+                                              'progress'),
+                            'swiss': (   'Swiss Style (Helvetica Grid)',
+                                         'International Typographic Style with asymmetric bold grid, Swiss Red accents '
+                                         'and stark contrast'),
+                            'editorial': (   'Editorial Style (Magazine & Serif)',
+                                             'High-fashion editorial aesthetic with refined serifs, antique gold '
+                                             'borders and literary elegance'),
+                            'hand_drawn': (   'Hand-Drawn Sketchbook',
+                                              'Charming indie sketchbook and doodle aesthetic with wobbly borders and '
+                                              'washi tape'),
+                            'retro': (   'Retro 70s Hi-Fi Stereo',
+                                         '1970s warm analog stereo receiver with walnut trim, retro tuner dial and '
+                                         'sunset groove stripes'),
+                            'pixel': (   'Pixel Arcade CRT',
+                                         '16-bit arcade aesthetics with CRT scanlines, stepped pixel borders and '
+                                         'vibrant neon palette'),
+                            'flat': (   'Flat 2.0 Bold Blocks',
+                                        'Pure Flat Design 2.0 with zero shadows, high-contrast solid color blocking '
+                                        'and sharp pill tags'),
+                            'eight_bit': (   '8-Bit NES / Game Boy HUD',
+                                             'Authentic 8-bit retro console HUD with HP meter, pixel heart cursor and '
+                                             'chiptune spectrum'),
+                            'bento': (   'Bento Modular Grid',
+                                         'Modern Apple & Linear bento-box grid with frosted compartments for album '
+                                         'art, info and telemetry')},
               'nav_dashboard': 'Tableau de bord',
               'nav_gallery': 'Galerie de thèmes',
               'nav_settings': 'Paramètres',
@@ -788,7 +896,34 @@ TRANSLATIONS = {   'zh_TW': {   'app_title': 'OBS 即時音樂動態顯示器',
                             'cute_kawaii': ('Cute Kawaii Pastell', 'Süße Anime-Ästhetik mit rosa Neon-Glow für VTuber'),
                             'spotify': ('Spotify Green Card', 'Klassische dunkelgrüne Streaming-Player-Karte'),
                             'lofi_cozy': ('Lo-Fi Cozy Warmth', 'Dunkles Walnussholz und warme Bernsteintöne'),
-                            'dynamic_island': ('Dynamic Island Banner', 'Sanfte Kapsel mit Sprungfeder-Animation')},
+                            'dynamic_island': ('Dynamic Island Banner', 'Sanfte Kapsel mit Sprungfeder-Animation'),
+                            'minimalism': (   'Minimalism Style',
+                                              'Nordic Dieter Rams minimalism with pure negative space and hairline '
+                                              'progress'),
+                            'swiss': (   'Swiss Style (Helvetica Grid)',
+                                         'International Typographic Style with asymmetric bold grid, Swiss Red accents '
+                                         'and stark contrast'),
+                            'editorial': (   'Editorial Style (Magazine & Serif)',
+                                             'High-fashion editorial aesthetic with refined serifs, antique gold '
+                                             'borders and literary elegance'),
+                            'hand_drawn': (   'Hand-Drawn Sketchbook',
+                                              'Charming indie sketchbook and doodle aesthetic with wobbly borders and '
+                                              'washi tape'),
+                            'retro': (   'Retro 70s Hi-Fi Stereo',
+                                         '1970s warm analog stereo receiver with walnut trim, retro tuner dial and '
+                                         'sunset groove stripes'),
+                            'pixel': (   'Pixel Arcade CRT',
+                                         '16-bit arcade aesthetics with CRT scanlines, stepped pixel borders and '
+                                         'vibrant neon palette'),
+                            'flat': (   'Flat 2.0 Bold Blocks',
+                                        'Pure Flat Design 2.0 with zero shadows, high-contrast solid color blocking '
+                                        'and sharp pill tags'),
+                            'eight_bit': (   '8-Bit NES / Game Boy HUD',
+                                             'Authentic 8-bit retro console HUD with HP meter, pixel heart cursor and '
+                                             'chiptune spectrum'),
+                            'bento': (   'Bento Modular Grid',
+                                         'Modern Apple & Linear bento-box grid with frosted compartments for album '
+                                         'art, info and telemetry')},
               'nav_dashboard': 'Dashboard',
               'nav_gallery': 'Theme-Galerie',
               'nav_settings': 'Einstellungen',
@@ -909,7 +1044,34 @@ TRANSLATIONS = {   'zh_TW': {   'app_title': 'OBS 即時音樂動態顯示器',
                             'spotify': ('Cartão Verde Spotify', 'Cartão de player clássico verde e preto'),
                             'lofi_cozy': ('Conforto Lo-Fi Café', 'Madeira de nogueira escura e âmbar quente'),
                             'dynamic_island': (   'Banner Dynamic Island',
-                                                  'Cápsula fluida estilo Apple com animação elástica')},
+                                                  'Cápsula fluida estilo Apple com animação elástica'),
+                            'minimalism': (   'Minimalism Style',
+                                              'Nordic Dieter Rams minimalism with pure negative space and hairline '
+                                              'progress'),
+                            'swiss': (   'Swiss Style (Helvetica Grid)',
+                                         'International Typographic Style with asymmetric bold grid, Swiss Red accents '
+                                         'and stark contrast'),
+                            'editorial': (   'Editorial Style (Magazine & Serif)',
+                                             'High-fashion editorial aesthetic with refined serifs, antique gold '
+                                             'borders and literary elegance'),
+                            'hand_drawn': (   'Hand-Drawn Sketchbook',
+                                              'Charming indie sketchbook and doodle aesthetic with wobbly borders and '
+                                              'washi tape'),
+                            'retro': (   'Retro 70s Hi-Fi Stereo',
+                                         '1970s warm analog stereo receiver with walnut trim, retro tuner dial and '
+                                         'sunset groove stripes'),
+                            'pixel': (   'Pixel Arcade CRT',
+                                         '16-bit arcade aesthetics with CRT scanlines, stepped pixel borders and '
+                                         'vibrant neon palette'),
+                            'flat': (   'Flat 2.0 Bold Blocks',
+                                        'Pure Flat Design 2.0 with zero shadows, high-contrast solid color blocking '
+                                        'and sharp pill tags'),
+                            'eight_bit': (   '8-Bit NES / Game Boy HUD',
+                                             'Authentic 8-bit retro console HUD with HP meter, pixel heart cursor and '
+                                             'chiptune spectrum'),
+                            'bento': (   'Bento Modular Grid',
+                                         'Modern Apple & Linear bento-box grid with frosted compartments for album '
+                                         'art, info and telemetry')},
               'nav_dashboard': 'Painel',
               'nav_gallery': 'Galeria de temas',
               'nav_settings': 'Configurações',
@@ -1037,7 +1199,34 @@ TRANSLATIONS = {   'zh_TW': {   'app_title': 'OBS 即時音樂動態顯示器',
                             'lofi_cozy': (   'Caffè Accogliente Lo-Fi',
                                              "Noce scuro e sfumature d'ambra dorata per un'atmosfera rilassante"),
                             'dynamic_island': (   'Banner Dynamic Island',
-                                                  'Capsula dinamica in stile Apple con animazione elastica')},
+                                                  'Capsula dinamica in stile Apple con animazione elastica'),
+                            'minimalism': (   'Minimalism Style',
+                                              'Nordic Dieter Rams minimalism with pure negative space and hairline '
+                                              'progress'),
+                            'swiss': (   'Swiss Style (Helvetica Grid)',
+                                         'International Typographic Style with asymmetric bold grid, Swiss Red accents '
+                                         'and stark contrast'),
+                            'editorial': (   'Editorial Style (Magazine & Serif)',
+                                             'High-fashion editorial aesthetic with refined serifs, antique gold '
+                                             'borders and literary elegance'),
+                            'hand_drawn': (   'Hand-Drawn Sketchbook',
+                                              'Charming indie sketchbook and doodle aesthetic with wobbly borders and '
+                                              'washi tape'),
+                            'retro': (   'Retro 70s Hi-Fi Stereo',
+                                         '1970s warm analog stereo receiver with walnut trim, retro tuner dial and '
+                                         'sunset groove stripes'),
+                            'pixel': (   'Pixel Arcade CRT',
+                                         '16-bit arcade aesthetics with CRT scanlines, stepped pixel borders and '
+                                         'vibrant neon palette'),
+                            'flat': (   'Flat 2.0 Bold Blocks',
+                                        'Pure Flat Design 2.0 with zero shadows, high-contrast solid color blocking '
+                                        'and sharp pill tags'),
+                            'eight_bit': (   '8-Bit NES / Game Boy HUD',
+                                             'Authentic 8-bit retro console HUD with HP meter, pixel heart cursor and '
+                                             'chiptune spectrum'),
+                            'bento': (   'Bento Modular Grid',
+                                         'Modern Apple & Linear bento-box grid with frosted compartments for album '
+                                         'art, info and telemetry')},
               'nav_dashboard': 'Dashboard',
               'nav_gallery': 'Galleria temi',
               'nav_settings': 'Impostazioni',
@@ -1163,7 +1352,34 @@ TRANSLATIONS = {   'zh_TW': {   'app_title': 'OBS 即時音樂動態顯示器',
                                            'Классический темный плеер с зеленым индикатором трека'),
                             'lofi_cozy': ('Уютное Lo-Fi Кафе', 'Темный орех и теплый золотистый янтарь'),
                             'dynamic_island': (   'Баннер Dynamic Island',
-                                                  'Плавная капсула в стиле Apple с пружинной анимацией')},
+                                                  'Плавная капсула в стиле Apple с пружинной анимацией'),
+                            'minimalism': (   'Minimalism Style',
+                                              'Nordic Dieter Rams minimalism with pure negative space and hairline '
+                                              'progress'),
+                            'swiss': (   'Swiss Style (Helvetica Grid)',
+                                         'International Typographic Style with asymmetric bold grid, Swiss Red accents '
+                                         'and stark contrast'),
+                            'editorial': (   'Editorial Style (Magazine & Serif)',
+                                             'High-fashion editorial aesthetic with refined serifs, antique gold '
+                                             'borders and literary elegance'),
+                            'hand_drawn': (   'Hand-Drawn Sketchbook',
+                                              'Charming indie sketchbook and doodle aesthetic with wobbly borders and '
+                                              'washi tape'),
+                            'retro': (   'Retro 70s Hi-Fi Stereo',
+                                         '1970s warm analog stereo receiver with walnut trim, retro tuner dial and '
+                                         'sunset groove stripes'),
+                            'pixel': (   'Pixel Arcade CRT',
+                                         '16-bit arcade aesthetics with CRT scanlines, stepped pixel borders and '
+                                         'vibrant neon palette'),
+                            'flat': (   'Flat 2.0 Bold Blocks',
+                                        'Pure Flat Design 2.0 with zero shadows, high-contrast solid color blocking '
+                                        'and sharp pill tags'),
+                            'eight_bit': (   '8-Bit NES / Game Boy HUD',
+                                             'Authentic 8-bit retro console HUD with HP meter, pixel heart cursor and '
+                                             'chiptune spectrum'),
+                            'bento': (   'Bento Modular Grid',
+                                         'Modern Apple & Linear bento-box grid with frosted compartments for album '
+                                         'art, info and telemetry')},
               'nav_dashboard': 'Панель управления',
               'nav_gallery': 'Галерея тем',
               'nav_settings': 'Настройки',
@@ -1291,7 +1507,34 @@ TRANSLATIONS = {   'zh_TW': {   'app_title': 'OBS 即時音樂動態顯示器',
                             'lofi_cozy': (   'Nuansa Hangat Kafe Lo-Fi',
                                              'Kayu kenari gelap dan cahaya kuning hangat yang nyaman'),
                             'dynamic_island': (   'Banner Dynamic Island',
-                                                  'Kapsul dinamis mengambang dengan animasi membal')},
+                                                  'Kapsul dinamis mengambang dengan animasi membal'),
+                            'minimalism': (   'Minimalism Style',
+                                              'Nordic Dieter Rams minimalism with pure negative space and hairline '
+                                              'progress'),
+                            'swiss': (   'Swiss Style (Helvetica Grid)',
+                                         'International Typographic Style with asymmetric bold grid, Swiss Red accents '
+                                         'and stark contrast'),
+                            'editorial': (   'Editorial Style (Magazine & Serif)',
+                                             'High-fashion editorial aesthetic with refined serifs, antique gold '
+                                             'borders and literary elegance'),
+                            'hand_drawn': (   'Hand-Drawn Sketchbook',
+                                              'Charming indie sketchbook and doodle aesthetic with wobbly borders and '
+                                              'washi tape'),
+                            'retro': (   'Retro 70s Hi-Fi Stereo',
+                                         '1970s warm analog stereo receiver with walnut trim, retro tuner dial and '
+                                         'sunset groove stripes'),
+                            'pixel': (   'Pixel Arcade CRT',
+                                         '16-bit arcade aesthetics with CRT scanlines, stepped pixel borders and '
+                                         'vibrant neon palette'),
+                            'flat': (   'Flat 2.0 Bold Blocks',
+                                        'Pure Flat Design 2.0 with zero shadows, high-contrast solid color blocking '
+                                        'and sharp pill tags'),
+                            'eight_bit': (   '8-Bit NES / Game Boy HUD',
+                                             'Authentic 8-bit retro console HUD with HP meter, pixel heart cursor and '
+                                             'chiptune spectrum'),
+                            'bento': (   'Bento Modular Grid',
+                                         'Modern Apple & Linear bento-box grid with frosted compartments for album '
+                                         'art, info and telemetry')},
               'nav_dashboard': 'Dasbor',
               'nav_gallery': 'Galeri Tema',
               'nav_settings': 'Pengaturan',
@@ -1417,7 +1660,34 @@ TRANSLATIONS = {   'zh_TW': {   'app_title': 'OBS 即時音樂動態顯示器',
                             'spotify': ('Thẻ Xanh Đen Spotify', 'Giao diện phát nhạc phong cách Spotify kinh điển'),
                             'lofi_cozy': ('Quán Cà Phê Lo-Fi Ấm Áp', 'Gỗ óc chó trầm và sắc hổ phách vàng ấm cúng'),
                             'dynamic_island': (   'Dynamic Island Sinh Động',
-                                                  'Viên nang đảo động mượt mà với chuyển động lò xo')},
+                                                  'Viên nang đảo động mượt mà với chuyển động lò xo'),
+                            'minimalism': (   'Minimalism Style',
+                                              'Nordic Dieter Rams minimalism with pure negative space and hairline '
+                                              'progress'),
+                            'swiss': (   'Swiss Style (Helvetica Grid)',
+                                         'International Typographic Style with asymmetric bold grid, Swiss Red accents '
+                                         'and stark contrast'),
+                            'editorial': (   'Editorial Style (Magazine & Serif)',
+                                             'High-fashion editorial aesthetic with refined serifs, antique gold '
+                                             'borders and literary elegance'),
+                            'hand_drawn': (   'Hand-Drawn Sketchbook',
+                                              'Charming indie sketchbook and doodle aesthetic with wobbly borders and '
+                                              'washi tape'),
+                            'retro': (   'Retro 70s Hi-Fi Stereo',
+                                         '1970s warm analog stereo receiver with walnut trim, retro tuner dial and '
+                                         'sunset groove stripes'),
+                            'pixel': (   'Pixel Arcade CRT',
+                                         '16-bit arcade aesthetics with CRT scanlines, stepped pixel borders and '
+                                         'vibrant neon palette'),
+                            'flat': (   'Flat 2.0 Bold Blocks',
+                                        'Pure Flat Design 2.0 with zero shadows, high-contrast solid color blocking '
+                                        'and sharp pill tags'),
+                            'eight_bit': (   '8-Bit NES / Game Boy HUD',
+                                             'Authentic 8-bit retro console HUD with HP meter, pixel heart cursor and '
+                                             'chiptune spectrum'),
+                            'bento': (   'Bento Modular Grid',
+                                         'Modern Apple & Linear bento-box grid with frosted compartments for album '
+                                         'art, info and telemetry')},
               'nav_dashboard': 'Bảng điều khiển',
               'nav_gallery': 'Thư viện chủ đề',
               'nav_settings': 'Cài đặt',
@@ -1542,7 +1812,34 @@ TRANSLATIONS = {   'zh_TW': {   'app_title': 'OBS 即時音樂動態顯示器',
                             'spotify': ('การ์ดเขียวดำสไตล์ Spotify', 'เครื่องเล่นเพลงสตรีมมิงโทนสีดำเขียวคลาสสิก'),
                             'lofi_cozy': ('คาเฟ่ Lo-Fi โทนอบอุ่น', 'โทนไม้วอลนัทเข้มและแสงสีทองอำพันแสนอบอุ่น'),
                             'dynamic_island': (   'แบนเนอร์ Dynamic Island',
-                                                  'แคปซูลเคลื่อนไหวไหลลื่นสไตล์ Apple พร้อมแอนิเมชันเด้งนุ่มนวล')},
+                                                  'แคปซูลเคลื่อนไหวไหลลื่นสไตล์ Apple พร้อมแอนิเมชันเด้งนุ่มนวล'),
+                            'minimalism': (   'Minimalism Style',
+                                              'Nordic Dieter Rams minimalism with pure negative space and hairline '
+                                              'progress'),
+                            'swiss': (   'Swiss Style (Helvetica Grid)',
+                                         'International Typographic Style with asymmetric bold grid, Swiss Red accents '
+                                         'and stark contrast'),
+                            'editorial': (   'Editorial Style (Magazine & Serif)',
+                                             'High-fashion editorial aesthetic with refined serifs, antique gold '
+                                             'borders and literary elegance'),
+                            'hand_drawn': (   'Hand-Drawn Sketchbook',
+                                              'Charming indie sketchbook and doodle aesthetic with wobbly borders and '
+                                              'washi tape'),
+                            'retro': (   'Retro 70s Hi-Fi Stereo',
+                                         '1970s warm analog stereo receiver with walnut trim, retro tuner dial and '
+                                         'sunset groove stripes'),
+                            'pixel': (   'Pixel Arcade CRT',
+                                         '16-bit arcade aesthetics with CRT scanlines, stepped pixel borders and '
+                                         'vibrant neon palette'),
+                            'flat': (   'Flat 2.0 Bold Blocks',
+                                        'Pure Flat Design 2.0 with zero shadows, high-contrast solid color blocking '
+                                        'and sharp pill tags'),
+                            'eight_bit': (   '8-Bit NES / Game Boy HUD',
+                                             'Authentic 8-bit retro console HUD with HP meter, pixel heart cursor and '
+                                             'chiptune spectrum'),
+                            'bento': (   'Bento Modular Grid',
+                                         'Modern Apple & Linear bento-box grid with frosted compartments for album '
+                                         'art, info and telemetry')},
               'nav_dashboard': 'แผงควบคุม',
               'nav_gallery': 'คลังธีม',
               'nav_settings': 'การตั้งค่า',
@@ -1670,7 +1967,34 @@ TRANSLATIONS = {   'zh_TW': {   'app_title': 'OBS 即時音樂動態顯示器',
                             'lofi_cozy': (   'Przytulna Kawiarnia Lo-Fi',
                                              'Ciemne drewno orzechowe i ciepły złoty bursztyn'),
                             'dynamic_island': (   'Baner Dynamic Island',
-                                                  'Płynna kapsuła w stylu Apple ze sprężystą animacją')},
+                                                  'Płynna kapsuła w stylu Apple ze sprężystą animacją'),
+                            'minimalism': (   'Minimalism Style',
+                                              'Nordic Dieter Rams minimalism with pure negative space and hairline '
+                                              'progress'),
+                            'swiss': (   'Swiss Style (Helvetica Grid)',
+                                         'International Typographic Style with asymmetric bold grid, Swiss Red accents '
+                                         'and stark contrast'),
+                            'editorial': (   'Editorial Style (Magazine & Serif)',
+                                             'High-fashion editorial aesthetic with refined serifs, antique gold '
+                                             'borders and literary elegance'),
+                            'hand_drawn': (   'Hand-Drawn Sketchbook',
+                                              'Charming indie sketchbook and doodle aesthetic with wobbly borders and '
+                                              'washi tape'),
+                            'retro': (   'Retro 70s Hi-Fi Stereo',
+                                         '1970s warm analog stereo receiver with walnut trim, retro tuner dial and '
+                                         'sunset groove stripes'),
+                            'pixel': (   'Pixel Arcade CRT',
+                                         '16-bit arcade aesthetics with CRT scanlines, stepped pixel borders and '
+                                         'vibrant neon palette'),
+                            'flat': (   'Flat 2.0 Bold Blocks',
+                                        'Pure Flat Design 2.0 with zero shadows, high-contrast solid color blocking '
+                                        'and sharp pill tags'),
+                            'eight_bit': (   '8-Bit NES / Game Boy HUD',
+                                             'Authentic 8-bit retro console HUD with HP meter, pixel heart cursor and '
+                                             'chiptune spectrum'),
+                            'bento': (   'Bento Modular Grid',
+                                         'Modern Apple & Linear bento-box grid with frosted compartments for album '
+                                         'art, info and telemetry')},
               'nav_dashboard': 'Pulpit',
               'nav_gallery': 'Galeria szablonów',
               'nav_settings': 'Ustawienia',

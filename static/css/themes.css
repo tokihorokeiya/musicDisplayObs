@@ -3,6 +3,7 @@
    Standard Normal Fonts for Chinese & Japanese, All White Titles,
    Auto-scaling Canvas, Cute Kawaii & Lo-Fi Cozy themes
    ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Space+Mono:wght@400;700&family=VT323&display=swap');
 
 :root {
   --primary-accent: #6366f1;
@@ -241,40 +242,98 @@ body.pos-bottom #overlay-container {
 }
 
 /* ==========================================================================
-   THEME 2: CYBERPUNK 2077 HUD
+   THEME 2: CYBERPUNK 2077 HUD (Neural Netrunner Overdrive)
    ========================================================================== */
 .theme-cyberpunk .widget-card {
-  width: 860px;
-  height: 190px;
-  background: rgba(10, 10, 18, 0.92);
+  width: 880px;
+  height: 205px;
+  background: radial-gradient(rgba(0, 240, 255, 0.06) 1px, transparent 1px) #090912;
+  background-size: 16px 16px;
   border: 2px solid #00f0ff;
-  box-shadow: 0 0 25px rgba(0, 240, 255, 0.4), inset 0 0 20px rgba(255, 0, 90, 0.2);
-  clip-path: polygon(0 0, calc(100% - 30px) 0, 100% 30px, 100% 100%, 30px 100%, 0 calc(100% - 30px));
+  border-radius: 0px;
+  box-shadow: 0 0 35px rgba(0, 240, 255, 0.35), inset 0 0 30px rgba(255, 0, 85, 0.2);
+  clip-path: polygon(0 20px, 20px 0, calc(100% - 20px) 0, 100% 20px, 100% calc(100% - 20px), calc(100% - 20px) 100%, 20px 100%, 0 calc(100% - 20px));
   display: flex;
-  align-items: center;
-  padding: 24px 30px;
-  gap: 24px;
+  flex-direction: column;
+  padding: 14px 28px 18px 28px;
   position: relative;
+  overflow: hidden;
 }
 
-.theme-cyberpunk .widget-card::before {
-  content: "AUDIO_FEED // LIVE";
+.theme-cyberpunk .cyber-scanline {
   position: absolute;
-  top: 6px;
-  right: 40px;
-  font-size: 10px;
-  letter-spacing: 2px;
-  color: #ff0055;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(rgba(18, 16, 38, 0) 50%, rgba(0, 240, 255, 0.05) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.theme-cyberpunk .cyber-corner {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: #ff0055;
+  border-style: solid;
+  z-index: 3;
+}
+.theme-cyberpunk .cyber-tl { top: 6px; left: 6px; border-width: 2px 0 0 2px; }
+.theme-cyberpunk .cyber-tr { top: 6px; right: 6px; border-width: 2px 2px 0 0; }
+.theme-cyberpunk .cyber-bl { bottom: 6px; left: 6px; border-width: 0 0 2px 2px; }
+.theme-cyberpunk .cyber-br { bottom: 6px; right: 6px; border-width: 0 2px 2px 0; }
+
+.theme-cyberpunk .cyber-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  z-index: 4;
+  border-bottom: 1px dashed rgba(0, 240, 255, 0.3);
+  padding-bottom: 6px;
+}
+
+.theme-cyberpunk .cyber-sys-badge {
+  font-family: 'Space Mono', 'Courier New', var(--standard-font), monospace;
+  font-size: 11px;
   font-weight: 700;
+  color: #ffe600;
+  letter-spacing: 2px;
+  text-shadow: 0 0 8px rgba(255, 230, 0, 0.6);
+}
+
+.theme-cyberpunk .cyber-status-tag {
+  font-family: 'Space Mono', var(--standard-font), monospace;
+  font-size: 10px;
+  font-weight: 700;
+  color: #ff0055;
+  letter-spacing: 1.5px;
+  background: rgba(255, 0, 85, 0.15);
+  padding: 2px 8px;
+  border: 1px solid rgba(255, 0, 85, 0.4);
+}
+
+.theme-cyberpunk .cyber-main-row {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  z-index: 4;
+  flex: 1;
+}
+
+.theme-cyberpunk .cyber-cover-wrapper {
+  position: relative;
+  width: 118px;
+  height: 118px;
+  flex-shrink: 0;
 }
 
 .theme-cyberpunk .cover-art {
-  width: 140px;
-  height: 140px;
-  object-fit: cover;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
   border: 2px solid #ff0055;
-  filter: drop-shadow(0 0 10px rgba(255, 0, 85, 0.6));
-  flex-shrink: 0;
+  box-shadow: 0 0 16px rgba(255, 0, 85, 0.6);
+  object-fit: cover;
 }
 
 .theme-cyberpunk .info-box {
@@ -283,40 +342,63 @@ body.pos-bottom #overlay-container {
 }
 
 .theme-cyberpunk .track-title {
-  font-size: 24px;
-  font-weight: 700;
+  font-family: 'Space Mono', var(--standard-font) !important;
+  font-size: 26px;
+  font-weight: 800;
   color: #ffffff !important;
   letter-spacing: 0.5px;
-  text-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+  text-shadow: 0 0 14px rgba(0, 240, 255, 0.7);
+  line-height: 1.15;
 }
 
 .theme-cyberpunk .artist-name {
-  font-size: 16px;
+  font-family: 'Space Mono', var(--standard-font), monospace !important;
+  font-size: 15px;
+  font-weight: 700;
   color: #ffe600;
   letter-spacing: 1px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  text-shadow: 0 0 8px rgba(255, 230, 0, 0.5);
+}
+
+.theme-cyberpunk .cyber-telemetry {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: 'Space Mono', var(--standard-font), monospace;
+  font-size: 10px;
+  color: #00f0ff;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  opacity: 0.85;
 }
 
 .theme-cyberpunk .progress-bar-container {
   height: 8px;
-  background: rgba(0, 240, 255, 0.2);
+  background: rgba(0, 240, 255, 0.15);
   border: 1px solid rgba(0, 240, 255, 0.5);
+  border-radius: 0;
 }
 
 .theme-cyberpunk .progress-bar-fill {
-  background: #00f0ff;
-  box-shadow: 0 0 12px #00f0ff;
+  background: linear-gradient(90deg, #00f0ff, #ff0055);
+  box-shadow: 0 0 14px #00f0ff;
+  border-radius: 0;
 }
 
 .theme-cyberpunk .time-display {
+  font-family: 'Space Mono', var(--standard-font), monospace;
   color: #ffe600;
   font-size: 12px;
+  font-weight: 700;
   letter-spacing: 1px;
 }
 
 .theme-cyberpunk .sound-bars span {
+  width: 4px;
   background-color: #00f0ff;
-  box-shadow: 0 0 8px #00f0ff;
+  box-shadow: 0 0 10px #00f0ff;
+  border-radius: 0;
 }
 
 /* ==========================================================================
@@ -420,29 +502,55 @@ body.pos-bottom #overlay-container {
 }
 
 /* ==========================================================================
-   THEME 4: MINIMAL FLOATING PILL
+   THEME 4: MINIMAL FLOATING PILL (Frosted Crystal Capsule)
    ========================================================================== */
 .theme-minimal_pill .widget-card {
-  height: 96px;
-  width: 820px;
-  background: rgba(15, 15, 20, 0.92);
-  backdrop-filter: blur(20px);
-  border-radius: 48px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  height: 104px;
+  width: 840px;
+  background: rgba(16, 18, 26, 0.82);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border-radius: 52px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.35);
   display: flex;
   align-items: center;
-  padding: 10px 24px 10px 14px;
-  gap: 16px;
+  padding: 12px 28px 12px 14px;
+  gap: 18px;
+}
+
+.theme-minimal_pill .pill-cover-wrapper {
+  position: relative;
+  width: 78px;
+  height: 78px;
+  flex-shrink: 0;
 }
 
 .theme-minimal_pill .cover-art {
-  width: 70px;
-  height: 70px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  flex-shrink: 0;
-  border: 2px solid rgba(255, 255, 255, 0.25);
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+
+.theme-minimal_pill .pill-play-indicator {
+  position: absolute;
+  top: -2px; left: -2px; right: -2px; bottom: -2px;
+  border-radius: 50%;
+  border: 2px dashed rgba(99, 102, 241, 0.6);
+  pointer-events: none;
+}
+
+.playing.theme-minimal_pill .pill-play-indicator,
+.theme-minimal_pill .widget-card.playing .pill-play-indicator {
+  animation: spinPillRing 8s linear infinite;
+}
+
+@keyframes spinPillRing {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .theme-minimal_pill .info-box {
@@ -451,28 +559,50 @@ body.pos-bottom #overlay-container {
 }
 
 .theme-minimal_pill .track-title {
-  font-size: 19px;
+  font-size: 21px;
   font-weight: 700;
   color: #ffffff !important;
+  letter-spacing: -0.2px;
+  text-shadow: none;
+}
+
+.theme-minimal_pill .pill-sub-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
 }
 
 .theme-minimal_pill .artist-name {
   font-size: 14px;
   color: #94a3b8;
   font-weight: 500;
-  margin-bottom: 4px;
-}
-
-.theme-minimal_pill .progress-section {
-  margin-top: 2px;
+  letter-spacing: 0.3px;
 }
 
 .theme-minimal_pill .progress-bar-container {
   height: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+}
+
+.theme-minimal_pill .progress-bar-fill {
+  background: linear-gradient(90deg, #6366f1, #a855f7, #38bdf8);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.8);
+  border-radius: 2px;
 }
 
 .theme-minimal_pill .time-display {
   font-size: 11px;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.theme-minimal_pill .sound-bars span {
+  width: 3px;
+  background-color: #6366f1;
+  box-shadow: 0 0 6px rgba(99, 102, 241, 0.6);
+  border-radius: 1.5px;
 }
 
 /* ==========================================================================
@@ -567,23 +697,79 @@ body.pos-bottom #overlay-container {
 }
 
 /* ==========================================================================
-   THEME 6: BROADCAST LOWER-THIRD
+   THEME 6: BROADCAST LOWER-THIRD (Esports & Television Live Overlay)
    ========================================================================== */
 .theme-broadcast .widget-card {
   width: 920px;
-  height: 125px;
-  background: linear-gradient(90deg, rgba(15, 23, 42, 0.96) 0%, rgba(30, 41, 59, 0.92) 70%, rgba(30, 41, 59, 0) 100%);
-  border-left: 8px solid #38bdf8;
+  height: 155px;
+  background: linear-gradient(135deg, rgba(10, 15, 29, 0.98) 0%, rgba(22, 30, 49, 0.95) 60%, rgba(15, 23, 42, 0.98) 100%);
+  border-left: 10px solid #38bdf8;
+  clip-path: polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 0 100%);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  display: flex;
+  flex-direction: column;
+  padding: 12px 28px 16px 24px;
+  position: relative;
+}
+
+.theme-broadcast .broadcast-top-strip {
   display: flex;
   align-items: center;
-  padding: 14px 30px;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.theme-broadcast .broadcast-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  padding: 2px 10px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #ef4444;
+  letter-spacing: 1.5px;
+}
+
+.theme-broadcast .broadcast-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 8px #ef4444;
+  animation: broadcastBlink 1s infinite alternate;
+}
+
+@keyframes broadcastBlink {
+  0% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+.theme-broadcast .broadcast-channel-tag {
+  font-family: 'Space Mono', var(--standard-font), monospace;
+  font-size: 10px;
+  color: #38bdf8;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+.theme-broadcast .broadcast-content-row {
+  display: flex;
+  align-items: center;
   gap: 22px;
+  flex: 1;
 }
 
 .theme-broadcast .cover-art {
   width: 90px;
   height: 90px;
-  border-radius: 10px;
+  border-radius: 8px;
+  border: 2px solid rgba(56, 189, 248, 0.4);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -594,63 +780,123 @@ body.pos-bottom #overlay-container {
 }
 
 .theme-broadcast .track-title {
-  font-size: 24px;
-  font-weight: 700;
+  font-size: 26px;
+  font-weight: 800;
   color: #ffffff !important;
   letter-spacing: -0.5px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  line-height: 1.15;
 }
 
 .theme-broadcast .artist-name {
   font-size: 15px;
   color: #38bdf8;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.5px;
   margin-bottom: 6px;
 }
 
+.theme-broadcast .progress-bar-container {
+  height: 5px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+}
+
 .theme-broadcast .progress-bar-fill {
-  background: #38bdf8;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.7);
+  background: linear-gradient(90deg, #38bdf8, #818cf8);
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.8);
+  border-radius: 2px;
 }
 
-/* ==========================================================================
-   THEME 7: CUTE KAWAII PASTEL
-   ========================================================================== */
-.theme-cute_kawaii .widget-card {
-  width: 840px;
-  height: 185px;
-  background: rgba(36, 20, 38, 0.88);
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
-  border-radius: 36px;
-  border: 2px solid #f472b6;
-  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(244, 114, 182, 0.35);
-  display: flex;
-  align-items: center;
-  padding: 24px;
-  gap: 24px;
-  position: relative;
-}
-
-.theme-cute_kawaii .widget-card::before {
-  content: "💖 NOW PLAYING ✨";
-  position: absolute;
-  top: 10px;
-  right: 28px;
+.theme-broadcast .time-display {
+  font-family: 'Space Mono', var(--standard-font), monospace;
   font-size: 11px;
   font-weight: 700;
-  color: #f472b6;
+  color: #94a3b8;
   letter-spacing: 1px;
 }
 
-.theme-cute_kawaii .cover-art {
-  width: 132px;
-  height: 132px;
-  border-radius: 28px;
-  object-fit: cover;
+.theme-broadcast .sound-bars span {
+  width: 3px;
+  background-color: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+  border-radius: 1.5px;
+}
+
+/* ==========================================================================
+   THEME 7: CUTE KAWAII PASTEL (VTuber Cloud Sparkle)
+   ========================================================================== */
+.theme-cute_kawaii .widget-card {
+  width: 860px;
+  height: 200px;
+  background: rgba(46, 22, 50, 0.9);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border-radius: 44px;
+  border: 3px solid #f472b6;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 0 0 40px rgba(244, 114, 182, 0.4), inset 0 0 25px rgba(255, 182, 193, 0.2);
+  display: flex;
+  flex-direction: column;
+  padding: 12px 30px 18px 30px;
+  position: relative;
+}
+
+.theme-cute_kawaii .kawaii-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fbcfe8;
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(244, 114, 182, 0.8);
+}
+
+.theme-cute_kawaii .kawaii-body {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex: 1;
+}
+
+.theme-cute_kawaii .kawaii-cover-wrap {
+  position: relative;
+  width: 120px;
+  height: 120px;
   flex-shrink: 0;
+}
+
+.theme-cute_kawaii .cover-art {
+  width: 100%;
+  height: 100%;
+  border-radius: 30px;
+  object-fit: cover;
   border: 3px solid #f9a8d4;
-  box-shadow: 0 8px 24px rgba(244, 114, 182, 0.3);
+  box-shadow: 0 8px 25px rgba(244, 114, 182, 0.4);
+}
+
+.theme-cute_kawaii .kawaii-heart-badge {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  width: 28px;
+  height: 28px;
+  background: #f472b6;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 14px;
+  box-shadow: 0 4px 10px rgba(244, 114, 182, 0.6);
+  animation: kawaiiPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes kawaiiPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
 }
 
 .theme-cute_kawaii .info-box {
@@ -659,63 +905,99 @@ body.pos-bottom #overlay-container {
 }
 
 .theme-cute_kawaii .track-title {
-  font-size: 26px;
-  font-weight: 700;
+  font-size: 27px;
+  font-weight: 800;
   color: #ffffff !important;
-  text-shadow: 0 0 10px rgba(244, 114, 182, 0.4);
+  text-shadow: 0 0 12px rgba(244, 114, 182, 0.5);
+  line-height: 1.2;
 }
 
 .theme-cute_kawaii .artist-name {
   font-size: 17px;
   color: #fbcfe8;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 8px;
+  letter-spacing: 0.5px;
 }
 
 .theme-cute_kawaii .progress-bar-container {
-  height: 8px;
-  background: rgba(244, 114, 182, 0.2);
+  height: 9px;
+  background: rgba(244, 114, 182, 0.22);
   border-radius: 6px;
+  padding: 1px;
 }
 
 .theme-cute_kawaii .progress-bar-fill {
-  background: linear-gradient(90deg, #f472b6, #c084fc);
+  background: linear-gradient(90deg, #f472b6, #c084fc, #93c5fd);
   border-radius: 6px;
-  box-shadow: 0 0 12px rgba(244, 114, 182, 0.7);
+  box-shadow: 0 0 14px rgba(244, 114, 182, 0.8);
 }
 
 .theme-cute_kawaii .time-display {
   color: #fbcfe8;
   font-size: 13px;
+  font-weight: 700;
 }
 
 .theme-cute_kawaii .sound-bars span {
-  background-color: #f472b6;
+  width: 4px;
+  background: linear-gradient(180deg, #f472b6, #c084fc);
+  border-radius: 2px;
 }
 
 /* ==========================================================================
-   THEME 8: SPOTIFY GREEN CARD
+   THEME 8: SPOTIFY GREEN CARD (Premium Canvas Player)
    ========================================================================== */
 .theme-spotify .widget-card {
-  width: 820px;
-  height: 180px;
+  width: 860px;
+  height: 195px;
   background: #121212;
-  border-radius: 20px;
+  border-radius: 24px;
   border: 1px solid #282828;
   display: flex;
+  flex-direction: column;
+  padding: 12px 30px 18px 30px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.85), 0 0 40px rgba(30, 215, 96, 0.12);
+  position: relative;
+}
+
+.theme-spotify .spotify-badge-header {
+  display: flex;
   align-items: center;
-  padding: 24px;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #1ed760;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+}
+
+.theme-spotify .spotify-icon {
+  flex-shrink: 0;
+}
+
+.theme-spotify .spotify-body {
+  display: flex;
+  align-items: center;
   gap: 24px;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.8);
+  flex: 1;
+}
+
+.theme-spotify .spotify-cover-wrap {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
 }
 
 .theme-spotify .cover-art {
-  width: 132px;
-  height: 132px;
-  border-radius: 12px;
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
   object-fit: cover;
-  flex-shrink: 0;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .theme-spotify .info-box {
@@ -725,8 +1007,10 @@ body.pos-bottom #overlay-container {
 
 .theme-spotify .track-title {
   font-size: 26px;
-  font-weight: 700;
+  font-weight: 800;
   color: #ffffff !important;
+  letter-spacing: -0.3px;
+  line-height: 1.2;
 }
 
 .theme-spotify .artist-name {
@@ -747,55 +1031,86 @@ body.pos-bottom #overlay-container {
   font-size: 12px;
   color: #a7a7a7;
   font-family: var(--standard-font);
+  font-weight: 600;
+}
+
+.theme-spotify .progress-bar-container {
+  height: 5px;
+  background: #333333;
+  border-radius: 3px;
 }
 
 .theme-spotify .progress-bar-fill {
   background-color: #1ed760;
-  box-shadow: 0 0 8px rgba(30, 215, 96, 0.6);
+  box-shadow: 0 0 10px rgba(30, 215, 96, 0.8);
+  border-radius: 3px;
 }
 
 .theme-spotify .sound-bars span {
+  width: 4px;
   background-color: #1ed760;
+  box-shadow: 0 0 8px rgba(30, 215, 96, 0.5);
+  border-radius: 2px;
 }
 
 /* ==========================================================================
-   THEME 9: LO-FI COZY WARMTH
+   THEME 9: LO-FI COZY WARMTH (Rainy Cafe & Vinyl Study)
    ========================================================================== */
 .theme-lofi_cozy .widget-card {
-  width: 840px;
-  height: 185px;
-  background: rgba(28, 23, 20, 0.94);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 24px;
-  border: 1px solid rgba(245, 158, 11, 0.35);
-  box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 30px rgba(245, 158, 11, 0.15);
+  width: 860px;
+  height: 200px;
+  background: rgba(30, 22, 18, 0.95);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-radius: 28px;
+  border: 2px solid rgba(245, 158, 11, 0.4);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.7), 0 0 35px rgba(245, 158, 11, 0.18);
   display: flex;
-  align-items: center;
-  padding: 24px;
-  gap: 24px;
+  flex-direction: column;
+  padding: 12px 30px 18px 30px;
   position: relative;
 }
 
-.theme-lofi_cozy .widget-card::before {
-  content: "☕ LO-FI VIBES";
-  position: absolute;
-  top: 10px;
-  right: 28px;
+.theme-lofi_cozy .lofi-top-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed rgba(245, 158, 11, 0.25);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
   color: #f59e0b;
-  letter-spacing: 1px;
+  letter-spacing: 2px;
+}
+
+.theme-lofi_cozy .lofi-cassette-rpm {
+  font-family: 'Space Mono', var(--standard-font), monospace;
+  font-size: 10px;
+  color: #fbbf24;
+}
+
+.theme-lofi_cozy .lofi-main {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex: 1;
+}
+
+.theme-lofi_cozy .lofi-cover-wrap {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
 }
 
 .theme-lofi_cozy .cover-art {
-  width: 132px;
-  height: 132px;
-  border-radius: 18px;
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
   object-fit: cover;
-  flex-shrink: 0;
-  border: 2px solid rgba(245, 158, 11, 0.4);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(245, 158, 11, 0.5);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
 }
 
 .theme-lofi_cozy .info-box {
@@ -805,71 +1120,88 @@ body.pos-bottom #overlay-container {
 
 .theme-lofi_cozy .track-title {
   font-size: 26px;
-  font-weight: 700;
-  color: #ffffff !important;
+  font-weight: 800;
+  color: #fefae0 !important;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.7);
+  line-height: 1.2;
 }
 
 .theme-lofi_cozy .artist-name {
   font-size: 17px;
   color: #fbbf24;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 8px;
+  letter-spacing: 0.5px;
 }
 
 .theme-lofi_cozy .progress-bar-container {
-  height: 6px;
-  background: rgba(245, 158, 11, 0.2);
+  height: 7px;
+  background: rgba(245, 158, 11, 0.18);
+  border-radius: 4px;
 }
 
 .theme-lofi_cozy .progress-bar-fill {
-  background: linear-gradient(90deg, #f59e0b, #fb923c);
-  box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+  background: linear-gradient(90deg, #f59e0b, #fb923c, #fef08a);
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.7);
+  border-radius: 4px;
 }
 
 .theme-lofi_cozy .time-display {
   color: #fde68a;
   font-size: 13px;
+  font-weight: 700;
 }
 
 .theme-lofi_cozy .sound-bars span {
+  width: 4px;
   background-color: #f59e0b;
+  border-radius: 2px;
 }
 
 /* ==========================================================================
-   THEME 10: DYNAMIC ISLAND / POP-UP BANNER
+   THEME 10: DYNAMIC ISLAND BANNER (iOS 18 OLED Pill)
    ========================================================================== */
 .theme-dynamic_island .widget-card {
-  width: 780px;
-  height: 155px;
+  width: 820px;
+  height: 135px;
   background: #000000;
-  border-radius: 78px;
-  box-shadow: 0 20px 50px rgba(0,0,0,0.7);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 68px;
+  box-shadow: 0 25px 60px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
   display: flex;
   align-items: center;
-  padding: 16px 36px 16px 20px;
+  padding: 14px 32px 14px 18px;
   gap: 20px;
-  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.theme-dynamic_island .island-left {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  flex-shrink: 0;
 }
 
 .theme-dynamic_island .cover-art {
-  width: 112px;
-  height: 112px;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   object-fit: cover;
-  flex-shrink: 0;
-  border: 3px solid rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
 }
 
-.theme-dynamic_island .info-box {
+.theme-dynamic_island .island-center {
   flex: 1;
   min-width: 0;
 }
 
 .theme-dynamic_island .track-title {
-  font-size: 23px;
+  font-size: 24px;
   font-weight: 700;
   color: #ffffff !important;
+  letter-spacing: -0.3px;
+  margin-bottom: 2px;
 }
 
 .theme-dynamic_island .artist-name {
@@ -879,7 +1211,955 @@ body.pos-bottom #overlay-container {
   margin-bottom: 8px;
 }
 
+.theme-dynamic_island .progress-bar-container {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 2px;
+}
+
 .theme-dynamic_island .progress-bar-fill {
   background: #ffffff;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.8);
+  border-radius: 2px;
 }
+
+.theme-dynamic_island .island-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.theme-dynamic_island .island-right .sound-bars {
+  height: 24px;
+  gap: 3px;
+}
+
+.theme-dynamic_island .island-right .sound-bars span {
+  width: 3px;
+  background-color: #ffffff;
+  border-radius: 1.5px;
+}
+
+.theme-dynamic_island .time-display {
+  font-family: var(--standard-font);
+  font-size: 12px;
+  color: #e4e4e7;
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   THEME 11: MINIMALISM STYLE
+   ========================================================================== */
+.theme-minimalism .widget-card {
+  width: 820px;
+  height: 140px;
+  background: rgba(14, 14, 18, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  padding: 16px 28px;
+  gap: 22px;
+}
+
+.theme-minimalism .cover-art {
+  width: 104px;
+  height: 104px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.theme-minimalism .info-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-minimalism .minimal-meta {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #71717a;
+  margin-bottom: 4px;
+}
+
+.theme-minimalism .track-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #ffffff !important;
+  letter-spacing: -0.3px;
+  text-shadow: none;
+}
+
+.theme-minimalism .artist-name {
+  font-size: 14px;
+  color: #a1a1aa;
+  font-weight: 400;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.theme-minimalism .progress-bar-container {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 1px;
+}
+
+.theme-minimalism .progress-bar-fill {
+  background: #ffffff;
+  box-shadow: none;
+  border-radius: 1px;
+}
+
+.theme-minimalism .time-display {
+  font-size: 11px;
+  color: #71717a;
+  font-weight: 500;
+  letter-spacing: 1px;
+}
+
+.theme-minimalism .sound-bars span {
+  width: 2px;
+  background-color: #a1a1aa;
+  border-radius: 1px;
+}
+
+/* ==========================================================================
+   THEME 12: SWISS STYLE (International Typographic Style)
+   ========================================================================== */
+.theme-swiss .widget-card {
+  width: 860px;
+  height: 190px;
+  background: #000000;
+  border: 3px solid #ffffff;
+  border-radius: 0px;
+  box-shadow: 12px 12px 0px #e60000;
+  display: flex;
+  align-items: stretch;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-swiss .swiss-sidebar {
+  width: 54px;
+  background: #e60000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.theme-swiss .swiss-cross {
+  font-size: 22px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.theme-swiss .swiss-meta-vert {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  transform: rotate(180deg);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+
+.theme-swiss .swiss-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  padding: 20px 28px;
+  gap: 24px;
+  background: #000000;
+}
+
+.theme-swiss .cover-art {
+  width: 128px;
+  height: 128px;
+  border-radius: 0;
+  border: 2px solid #ffffff;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.theme-swiss .info-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-swiss .swiss-header-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #e60000;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.theme-swiss .track-title {
+  font-size: 28px;
+  font-weight: 900 !important;
+  color: #ffffff !important;
+  text-transform: uppercase;
+  letter-spacing: -0.5px;
+  text-shadow: none;
+}
+
+.theme-swiss .artist-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e60000;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.theme-swiss .progress-bar-container {
+  height: 5px;
+  background: #222222;
+  border-radius: 0;
+  border: 1px solid #444444;
+}
+
+.theme-swiss .progress-bar-fill {
+  background: #e60000;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.theme-swiss .time-display {
+  font-size: 12px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 1px;
+}
+
+.theme-swiss .sound-bars span {
+  background-color: #ffffff;
+  border-radius: 0;
+  width: 4px;
+}
+
+/* ==========================================================================
+   THEME 13: EDITORIAL STYLE (Magazine & Literary Publication)
+   ========================================================================== */
+.theme-editorial .widget-card {
+  width: 860px;
+  height: 195px;
+  background: #141210;
+  border: 1px solid rgba(197, 160, 89, 0.4);
+  border-radius: 4px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), inset 0 0 0 4px rgba(197, 160, 89, 0.08);
+  display: flex;
+  align-items: center;
+  padding: 24px 32px;
+  gap: 28px;
+  position: relative;
+}
+
+.theme-editorial .widget-card::after {
+  content: "";
+  position: absolute;
+  top: 6px; left: 6px; right: 6px; bottom: 6px;
+  border: 1px solid rgba(197, 160, 89, 0.2);
+  pointer-events: none;
+}
+
+.theme-editorial .cover-art {
+  width: 110px;
+  height: 145px;
+  border-radius: 2px;
+  border: 1px solid rgba(197, 160, 89, 0.6);
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+}
+
+.theme-editorial .info-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-editorial .editorial-meta {
+  font-family: 'Cinzel', Georgia, var(--standard-font), serif;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: #c5a059;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.theme-editorial .editorial-meta::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(197, 160, 89, 0.25);
+}
+
+.theme-editorial .track-title {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', var(--standard-font), serif !important;
+  font-size: 28px;
+  font-weight: 700;
+  font-style: italic;
+  color: #f7f5f0 !important;
+  letter-spacing: 0px;
+  text-shadow: none;
+  line-height: 1.2;
+}
+
+.theme-editorial .artist-name {
+  font-family: 'Playfair Display', Georgia, var(--standard-font), serif !important;
+  font-size: 15px;
+  font-style: italic;
+  color: #c5a059;
+  font-weight: 400;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.theme-editorial .progress-bar-container {
+  height: 2px;
+  background: rgba(197, 160, 89, 0.18);
+  border-radius: 0;
+}
+
+.theme-editorial .progress-bar-fill {
+  background: #c5a059;
+  box-shadow: 0 0 6px rgba(197, 160, 89, 0.5);
+}
+
+.theme-editorial .time-display {
+  font-family: 'Cinzel', Georgia, var(--standard-font), serif;
+  font-size: 11px;
+  color: #d4b886;
+  letter-spacing: 1.5px;
+}
+
+.theme-editorial .sound-bars span {
+  background-color: #c5a059;
+}
+
+/* ==========================================================================
+   THEME 14: HAND-DRAWN STYLE (Sketchbook & Doodle)
+   ========================================================================== */
+.theme-hand_drawn .widget-card {
+  width: 840px;
+  height: 195px;
+  background: #252220;
+  border: 3px solid #fefae0;
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+  box-shadow: 6px 6px 0px #000000, 10px 10px 25px rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  padding: 22px 30px;
+  gap: 26px;
+  position: relative;
+  transform: rotate(-0.5deg);
+}
+
+.theme-hand_drawn .washi-tape {
+  position: absolute;
+  top: -12px;
+  left: 60px;
+  width: 90px;
+  height: 24px;
+  background: rgba(254, 250, 224, 0.45);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transform: rotate(-4deg);
+  border-left: 2px dashed rgba(0,0,0,0.15);
+  border-right: 2px dashed rgba(0,0,0,0.15);
+}
+
+.theme-hand_drawn .cover-art {
+  width: 120px;
+  height: 120px;
+  border-radius: 15px 225px 15px 255px/255px 15px 225px 15px;
+  border: 3px solid #fefae0;
+  box-shadow: 4px 4px 0px #000000;
+  object-fit: cover;
+  flex-shrink: 0;
+  transform: rotate(1.5deg);
+}
+
+.theme-hand_drawn .info-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-hand_drawn .doodle-tag {
+  font-size: 12px;
+  color: #ffb703;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+
+.theme-hand_drawn .track-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #fefae0 !important;
+  letter-spacing: 0.5px;
+  text-shadow: none;
+}
+
+.theme-hand_drawn .artist-name {
+  font-size: 16px;
+  color: #ff758f;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.theme-hand_drawn .progress-bar-container {
+  height: 10px;
+  background: #191716;
+  border: 2px solid #fefae0;
+  border-radius: 20px;
+  padding: 1px;
+}
+
+.theme-hand_drawn .progress-bar-fill {
+  background: repeating-linear-gradient(45deg, #ffb703, #ffb703 6px, #fb8500 6px, #fb8500 12px);
+  border-radius: 16px;
+}
+
+.theme-hand_drawn .time-display {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fefae0;
+}
+
+.theme-hand_drawn .sound-bars span {
+  background-color: #ff758f;
+  border-radius: 2px;
+}
+
+/* ==========================================================================
+   THEME 15: RETRO STYLE (70s-80s Analog Hi-Fi & Warm Sunset)
+   ========================================================================== */
+.theme-retro .widget-card {
+  width: 860px;
+  height: 190px;
+  background: #1c1512;
+  border: 3px solid #d4a373;
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.7), inset 0 2px 0 rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  padding: 22px 28px;
+  gap: 26px;
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-retro .retro-stripes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #e76f51 0%, #f4a261 40%, #e9c46a 70%, #2a9d8f 100%);
+}
+
+.theme-retro .cover-art {
+  width: 126px;
+  height: 126px;
+  border-radius: 10px;
+  border: 3px solid #e76f51;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.theme-retro .info-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-retro .retro-deck-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  color: #f4a261;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.theme-retro .track-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #fff1e6 !important;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 10px rgba(231, 111, 81, 0.4);
+}
+
+.theme-retro .artist-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e9c46a;
+  letter-spacing: 0.8px;
+  margin-bottom: 10px;
+}
+
+.theme-retro .progress-bar-container {
+  height: 8px;
+  background: #0d0a08;
+  border: 1px solid #d4a373;
+  border-radius: 4px;
+  padding: 1px;
+}
+
+.theme-retro .progress-bar-fill {
+  background: linear-gradient(90deg, #e76f51, #f4a261, #e9c46a);
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(244, 162, 97, 0.6);
+}
+
+.theme-retro .time-display {
+  font-family: 'Space Mono', var(--standard-font), monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: #e9c46a;
+  letter-spacing: 1px;
+}
+
+.theme-retro .sound-bars span {
+  background-color: #e76f51;
+}
+
+/* ==========================================================================
+   THEME 16: PIXEL STYLE (16-Bit Arcade & CRT)
+   ========================================================================== */
+.theme-pixel .widget-card {
+  width: 860px;
+  height: 190px;
+  background: #0f0d24;
+  border: 4px solid #00f5d4;
+  border-radius: 0px;
+  box-shadow: 8px 8px 0px #f72585;
+  display: flex;
+  align-items: center;
+  padding: 22px 28px;
+  gap: 26px;
+  position: relative;
+  image-rendering: pixelated;
+}
+
+.theme-pixel .widget-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(rgba(18, 16, 38, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.theme-pixel .cover-art {
+  width: 120px;
+  height: 120px;
+  border-radius: 0;
+  border: 3px solid #f72585;
+  box-shadow: 4px 4px 0px #00f5d4;
+  object-fit: cover;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+}
+
+.theme-pixel .info-box {
+  flex: 1;
+  min-width: 0;
+  z-index: 6;
+}
+
+.theme-pixel .pixel-badge {
+  font-family: 'Space Mono', 'Courier New', var(--standard-font), monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #ffbe0b;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.theme-pixel .track-title {
+  font-family: 'VT323', 'Space Mono', var(--standard-font), monospace !important;
+  font-size: 32px;
+  font-weight: 700;
+  color: #ffffff !important;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 0px #f72585;
+  line-height: 1.1;
+}
+
+.theme-pixel .artist-name {
+  font-family: 'Space Mono', var(--standard-font), monospace !important;
+  font-size: 14px;
+  font-weight: 700;
+  color: #00f5d4;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.theme-pixel .progress-bar-container {
+  height: 10px;
+  background: #050410;
+  border: 2px solid #00f5d4;
+  border-radius: 0;
+  padding: 1px;
+}
+
+.theme-pixel .progress-bar-fill {
+  background: repeating-linear-gradient(90deg, #00f5d4, #00f5d4 8px, #0f0d24 8px, #0f0d24 10px);
+  border-radius: 0;
+}
+
+.theme-pixel .time-display {
+  font-family: 'Space Mono', var(--standard-font), monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: #f72585;
+}
+
+.theme-pixel .sound-bars span {
+  width: 6px;
+  background-color: #00f5d4;
+  border-radius: 0;
+}
+
+/* ==========================================================================
+   THEME 17: FLAT STYLE (Flat 2.0 Bold Color-Blocked UI)
+   ========================================================================== */
+.theme-flat .widget-card {
+  width: 860px;
+  height: 180px;
+  background: #181e29;
+  border-left: 12px solid #2563eb;
+  border-radius: 16px;
+  box-shadow: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  padding: 24px 30px;
+  gap: 26px;
+}
+
+.theme-flat .cover-art {
+  width: 126px;
+  height: 126px;
+  border-radius: 14px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid #2563eb;
+}
+
+.theme-flat .info-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-flat .flat-pill {
+  display: inline-block;
+  background: #f97316;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.theme-flat .track-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff !important;
+  letter-spacing: -0.2px;
+  text-shadow: none;
+}
+
+.theme-flat .artist-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #60a5fa;
+  margin-bottom: 8px;
+}
+
+.theme-flat .progress-bar-container {
+  height: 6px;
+  background: #0f141d;
+  border-radius: 3px;
+}
+
+.theme-flat .progress-bar-fill {
+  background: #2563eb;
+  border-radius: 3px;
+  box-shadow: none;
+}
+
+.theme-flat .time-display {
+  font-size: 13px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.theme-flat .sound-bars span {
+  width: 4px;
+  background-color: #2563eb;
+  border-radius: 2px;
+}
+
+/* ==========================================================================
+   THEME 18: 8 BIT STYLE (NES / Game Boy Retro Console)
+   ========================================================================== */
+.theme-eight_bit .widget-card {
+  width: 860px;
+  height: 195px;
+  background: #080c08;
+  border: 4px solid #39ff14;
+  box-shadow: inset 0 0 16px rgba(57, 255, 20, 0.2), 8px 8px 0px #000;
+  display: flex;
+  align-items: center;
+  padding: 20px 28px;
+  gap: 24px;
+  position: relative;
+  image-rendering: pixelated;
+}
+
+.theme-eight_bit .cover-art {
+  width: 120px;
+  height: 120px;
+  border: 4px solid #39ff14;
+  border-radius: 0;
+  object-fit: cover;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+}
+
+.theme-eight_bit .info-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-eight_bit .eight-bit-header {
+  font-family: 'VT323', 'Space Mono', var(--standard-font), monospace;
+  font-size: 16px;
+  color: #39ff14;
+  letter-spacing: 2px;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.theme-eight_bit .eight-bit-cursor {
+  animation: blinkPixel 0.8s steps(1) infinite;
+}
+
+@keyframes blinkPixel {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.theme-eight_bit .track-title {
+  font-family: 'VT323', var(--standard-font), monospace !important;
+  font-size: 34px;
+  font-weight: 700;
+  color: #ffffff !important;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 0px #000;
+  line-height: 1.1;
+}
+
+.theme-eight_bit .artist-name {
+  font-family: 'VT323', var(--standard-font), monospace !important;
+  font-size: 20px;
+  color: #39ff14;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+
+.theme-eight_bit .hp-label {
+  font-family: 'VT323', var(--standard-font), monospace;
+  font-size: 16px;
+  color: #e71d36;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.theme-eight_bit .progress-bar-container {
+  height: 12px;
+  background: #020402;
+  border: 2px solid #39ff14;
+  border-radius: 0;
+  padding: 1px;
+}
+
+.theme-eight_bit .progress-bar-fill {
+  background: repeating-linear-gradient(90deg, #39ff14, #39ff14 6px, #080c08 6px, #080c08 8px);
+  border-radius: 0;
+}
+
+.theme-eight_bit .time-display {
+  font-family: 'VT323', var(--standard-font), monospace;
+  font-size: 16px;
+  color: #39ff14;
+  letter-spacing: 1px;
+}
+
+.theme-eight_bit .sound-bars span {
+  width: 6px;
+  background-color: #39ff14;
+  border-radius: 0;
+}
+
+/* ==========================================================================
+   THEME 19: BENTO STYLE (Modular Frosted Bento Grid)
+   ========================================================================== */
+.theme-bento #widget-card,
+.theme-bento .widget-card {
+  width: 900px;
+  height: 200px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  display: grid;
+  grid-template-columns: 180px 1fr 180px;
+  gap: 16px;
+  padding: 0;
+}
+
+.theme-bento .bento-cell {
+  background: rgba(22, 22, 26, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  position: relative;
+}
+
+.theme-bento .bento-cover-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.theme-bento .cover-art {
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
+  object-fit: cover;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.theme-bento .bento-main-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 22px 28px;
+}
+
+.theme-bento .bento-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(139, 92, 246, 0.2);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  color: #a78bfa;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  width: fit-content;
+  margin-bottom: 8px;
+}
+
+.theme-bento .bento-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a78bfa;
+  box-shadow: 0 0 8px #a78bfa;
+}
+
+.theme-bento .track-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #ffffff !important;
+  letter-spacing: -0.3px;
+  margin-bottom: 2px;
+}
+
+.theme-bento .artist-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #94a3b8;
+  margin-bottom: 12px;
+}
+
+.theme-bento .progress-bar-container {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.theme-bento .progress-bar-fill {
+  background: linear-gradient(90deg, #8b5cf6, #ec4899);
+  border-radius: 3px;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.6);
+}
+
+.theme-bento .bento-stats-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  gap: 12px;
+}
+
+.theme-bento .bento-stats-cell .sound-bars {
+  height: 36px;
+  gap: 4px;
+}
+
+.theme-bento .bento-stats-cell .sound-bars span {
+  width: 4px;
+  background: #8b5cf6;
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
+}
+
+.theme-bento .bento-stats-cell .time-display {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 6px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+

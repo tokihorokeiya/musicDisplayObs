@@ -38,7 +38,16 @@ THEME_IDS = [
     "cute_kawaii",
     "spotify",
     "lofi_cozy",
-    "dynamic_island"
+    "dynamic_island",
+    "minimalism",
+    "swiss",
+    "editorial",
+    "hand_drawn",
+    "retro",
+    "pixel",
+    "flat",
+    "eight_bit",
+    "bento"
 ]
 
 # -------------------------------------------------------------
@@ -564,6 +573,11 @@ class AppGUI(ctk.CTk):
         self.preview_tk_images = {}
         self.toast_timer = None
         self.latest_media_data = None
+        try:
+            import tkinter.font as tkfont
+            self.available_fonts = set(tkfont.families())
+        except Exception:
+            self.available_fonts = set()
         self.font_family = get_ui_font_family(self.current_lang)
 
         # Dynamic widget placeholders
@@ -585,6 +599,20 @@ class AppGUI(ctk.CTk):
 
     def _font(self, size, weight="normal"):
         return ctk.CTkFont(family=self.font_family, size=size, weight=weight)
+
+    def _get_dropdown_menu_font(self, is_multilingual=False):
+        """
+        Returns a clean (family, size) tuple for Tkinter native menus.
+        Tkinter menus on Windows fail to parse CTkFont objects with trailing style spaces,
+        causing fallback to size 8 and 1-bit bitmap raster fonts (PMingLiU/MS UI Gothic).
+        Using a clean tuple directly guarantees standard ClearType vector rendering.
+        """
+        if is_multilingual:
+            for fam in ["Microsoft JhengHei UI", "Microsoft JhengHei", "Yu Gothic UI", "Malgun Gothic"]:
+                if fam in getattr(self, "available_fonts", set()):
+                    return (fam, 11)
+            return ("Segoe UI", 11)
+        return (self.font_family, 11)
 
     def _t(self, key, default=""):
         return get_text(self.current_lang, key, default)
@@ -1114,22 +1142,22 @@ class AppGUI(ctk.CTk):
         current_theme_name, _ = get_theme_info(self.current_lang, current_theme_id)
         theme_display_names = [get_theme_info(self.current_lang, tid)[0] for tid in THEME_IDS]
 
-        theme_dropdown_font = self._font(11)
+        theme_menu_font = self._get_dropdown_menu_font(is_multilingual=False)
         self.global_theme_dropdown = ctk.CTkOptionMenu(
             theme_row,
             values=theme_display_names,
             width=180,
             height=30,
             corner_radius=8,  # Notion 8px geometry
-            font=theme_dropdown_font,
-            dropdown_font=theme_dropdown_font,
+            font=self._font(11),
+            dropdown_font=theme_menu_font,
             fg_color="#242424",
             button_color="#2f2f2f",
             button_hover_color="#3a3a3a",
             command=self._on_global_theme_selected
         )
         try:
-            self.global_theme_dropdown._dropdown_menu.configure(font=theme_dropdown_font)
+            self.global_theme_dropdown._dropdown_menu.configure(font=theme_menu_font)
         except Exception:
             pass
         self.global_theme_dropdown.set(current_theme_name)
@@ -1426,22 +1454,22 @@ class AppGUI(ctk.CTk):
         lang_names = [name for name, _ in LANGUAGE_OPTIONS]
         current_name = next((name for name, code in LANGUAGE_OPTIONS if code == self.current_lang), "English")
 
-        lang_font = self._font(11)
+        lang_menu_font = self._get_dropdown_menu_font(is_multilingual=True)
         self.lang_menu = ctk.CTkOptionMenu(
             lang_row,
             values=lang_names,
             width=240,
             height=32,
             corner_radius=8,
-            font=lang_font,
-            dropdown_font=lang_font,
+            font=self._font(11),
+            dropdown_font=lang_menu_font,
             fg_color="#242424",
             button_color="#2f2f2f",
             button_hover_color="#3a3a3a",
             command=self._on_language_changed
         )
         try:
-            self.lang_menu._dropdown_menu.configure(font=lang_font)
+            self.lang_menu._dropdown_menu.configure(font=lang_menu_font)
         except Exception:
             pass
         self.lang_menu.set(current_name)
