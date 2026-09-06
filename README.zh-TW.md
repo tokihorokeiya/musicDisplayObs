@@ -85,7 +85,7 @@
 
 ---
 
-### 🎨 19 大內建風格主題一覽
+### 🎨 23 大內建風格主題一覽
 
 | 主題名稱 | 設計風格說明 | 實機預覽截圖 |
 |---|---|:---:|
@@ -108,6 +108,10 @@
 | **17. 扁平方塊 2.0 (Flat 2.0)** | 現代大膽色塊與幾何圓角撞色拼接，清爽純粹且視覺層次分明 | <img src="static/previews/flat.png" width="320"> |
 | **18. 紅白機 8-Bit (8-Bit Gaming)** | 經典紅白機與 Game Boy 綠黑像素風格，生命值血條化身音樂進度 | <img src="static/previews/eight_bit.png" width="320"> |
 | **19. Bento 現代模組網格 (Bento Grid)** | 蘋果發表會風格便當盒多功能獨立區塊卡片，音訊數據一目了然 | <img src="static/previews/bento.png" width="320"> |
+| **20. 英倫酒吧 (Belmore)** | 歐式傳統酒吧暖意——琥珀色調、襯線字體、桌球氈綠點綴 | <img src="static/previews/belmore.png" width="320"> |
+| **21. 懷錶雅韻 (Shizuru)** | 銅棕與奶白的古典懷錶美學，象牙色底搭配復古襯線字型 | <img src="static/previews/shizuru.png" width="320"> |
+| **22. 貓女僕茶會 (Nyaru)** | 馬卡龍粉與薄荷綠的貓耳女僕風格，柔美圓角與甜美手帳感 | <img src="static/previews/nyaru.png" width="320"> |
+| **23. 賽博騎士 (Keiya)** | 深鋼色上的電光藍，稜角分明的未來主義機甲面板設計 | <img src="static/previews/keiya.png" width="320"> |
 
 ---
 

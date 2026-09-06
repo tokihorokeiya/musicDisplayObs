@@ -86,7 +86,7 @@ You can add the music overlay to OBS Studio using either of the two methods belo
 
 ---
 
-### 🎨 19 Built-In Theme Templates
+### 🎨 23 Built-In Theme Templates
 
 | Theme Name | Style Description | Preview Screenshot |
 |---|---|:---:|
@@ -109,6 +109,10 @@ You can add the music overlay to OBS Studio using either of the two methods belo
 | **17. Flat 2.0** | Bold solid blocks, vibrant contrast cards, and modern flat interface hierarchy | <img src="static/previews/flat.png" width="320"> |
 | **18. 8-Bit Retro Gaming** | Classic NES / Game Boy green/black retro gaming aesthetic with health-bar timeline | <img src="static/previews/eight_bit.png" width="320"> |
 | **19. Bento Modular Grid** | Apple-inspired clean modular bento box layout with dedicated live telemetries | <img src="static/previews/bento.png" width="320"> |
+| **20. Belmore** | Classic European pub warmth — amber tones, serif typography, felt-green accents | <img src="static/previews/belmore.png" width="320"> |
+| **21. Shizuru** | Pocket watch elegance — copper and cream, antique ivory, vintage serif style | <img src="static/previews/shizuru.png" width="320"> |
+| **22. Nyaru** | Cat maid tea party — pastel pinks and mint green, soft rounded kawaii layout | <img src="static/previews/nyaru.png" width="320"> |
+| **23. Keiya** | Cyber knight armor — electric blue on dark steel, angular futuristic panels | <img src="static/previews/keiya.png" width="320"> |
 
 ---
 
