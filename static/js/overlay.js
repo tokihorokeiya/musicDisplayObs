@@ -39,6 +39,20 @@ const requestedPos = urlParams.get('pos') || 'center';
 const customScale = parseFloat(urlParams.get('scale') || '0');
 
 document.addEventListener('DOMContentLoaded', () => {
+    // For the global overlay the server pre-renders class="theme-{name}" on the container.
+    // Read that class so currentTheme matches what is actually painted on first load.
+    // This prevents infinite-reload: after reload the server-rendered class matches
+    // the active_theme from WebSocket, so the reload condition is never triggered again.
+    if (isGlobalTheme) {
+        const containerEl = document.getElementById('overlay-container');
+        if (containerEl) {
+            const match = containerEl.className.match(/\btheme-(\S+)\b/);
+            if (match) {
+                currentTheme = match[1];
+            }
+        }
+    }
+
     applyTheme(currentTheme);
     applyPositionAndMode();
     connectWebSocket();
@@ -269,8 +283,9 @@ function updateUI(data) {
 
     currentMedia = data;
 
-    // If using Global Active Overlay, reload page when active_theme changes.
-    // In-place CSS+HTML swapping causes visual glitches; a clean reload avoids this.
+    // If using Global Active Overlay, reload when active_theme changes.
+    // currentTheme is initialized from the server-rendered container class on startup,
+    // so after the reload it will match again and no further reload fires.
     if (isGlobalTheme && data.active_theme && data.active_theme !== currentTheme) {
         window.location.reload();
         return;
