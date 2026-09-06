@@ -1479,7 +1479,7 @@ class AppGUI(ctk.CTk):
         self._build_settings_section(
             settings_scroll,
             title=self._t("settings_category_server", "伺服器與網路"),
-            subtitle=self._t("settings_category_server_sub", "管理本機 HTTP 伺服器通訊端口與播放自動隱藏功能")
+            subtitle=self._t("settings_category_server_sub", "管理本機 HTTP 伺服器通訊端口與 OBS 捷徑")
         )
         sec2_card = ctk.CTkFrame(settings_scroll, corner_radius=12, fg_color=NOTION_SURFACE, border_width=1, border_color=NOTION_HAIRLINE)
         sec2_card.pack(fill="x", pady=(0, 20))
@@ -1518,29 +1518,6 @@ class AppGUI(ctk.CTk):
             hover_color=NOTION_PURPLE_HOVER,
             command=self._on_apply_port
         ).pack(side="right")
-
-        ctk.CTkFrame(sec2_card, height=1, fg_color=NOTION_HAIRLINE).pack(fill="x", padx=20)
-
-        # Autohide row
-        auto_row = ctk.CTkFrame(sec2_card, fg_color="transparent")
-        auto_row.pack(fill="x", padx=20, pady=16)
-
-        ctk.CTkLabel(
-            auto_row,
-            text=self._t("autohide_switch", "暫停或停止播放時自動隱藏小組件"),
-            font=self._font(12, "bold"),
-            text_color=NOTION_INK
-        ).pack(side="left")
-
-        self.settings_autohide_switch = ctk.CTkSwitch(
-            auto_row,
-            text="",
-            progress_color=NOTION_PURPLE,
-            command=self._on_autohide_toggle_settings
-        )
-        if self.config.get("autohide_on_pause", False):
-            self.settings_autohide_switch.select()
-        self.settings_autohide_switch.pack(side="right")
 
         ctk.CTkFrame(sec2_card, height=1, fg_color=NOTION_HAIRLINE).pack(fill="x", padx=20)
 
@@ -1729,23 +1706,6 @@ class AppGUI(ctk.CTk):
         val = bool(self.autohide_switch.get())
         self.config["autohide_on_pause"] = val
         save_config(self.config)
-        if hasattr(self, "settings_autohide_switch") and self.settings_autohide_switch.winfo_exists():
-            if val:
-                self.settings_autohide_switch.select()
-            else:
-                self.settings_autohide_switch.deselect()
-        self._refresh_all_urls()
-        self.show_inapp_toast(self._t("autohide_enabled", "暫停時自動隱藏已開啟") if val else self._t("autohide_disabled", "暫停時自動隱藏已關閉"))
-
-    def _on_autohide_toggle_settings(self):
-        val = bool(self.settings_autohide_switch.get())
-        self.config["autohide_on_pause"] = val
-        save_config(self.config)
-        if hasattr(self, "autohide_switch") and self.autohide_switch.winfo_exists():
-            if val:
-                self.autohide_switch.select()
-            else:
-                self.autohide_switch.deselect()
         self._refresh_all_urls()
         self.show_inapp_toast(self._t("autohide_enabled", "暫停時自動隱藏已開啟") if val else self._t("autohide_disabled", "暫停時自動隱藏已關閉"))
 
