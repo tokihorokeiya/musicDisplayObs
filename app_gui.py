@@ -1142,8 +1142,30 @@ class AppGUI(ctk.CTk):
         )
         self.global_url_entry.insert(0, self._get_global_overlay_url())
         self.global_url_entry.configure(state="readonly")
-        self.global_url_entry.pack(fill="x", pady=(0, 12))
+        self.global_url_entry.pack(fill="x", pady=(0, 10))
         self._setup_drag_on_widget(self.global_url_entry, self._get_global_overlay_url)
+
+        # Global auto-hide switch row
+        auto_row = ctk.CTkFrame(sync_inner, fg_color="transparent")
+        auto_row.pack(fill="x", pady=(0, 12))
+
+        ctk.CTkLabel(
+            auto_row,
+            text=self._t("autohide_switch", "暫停或停止播放時自動隱藏小組件"),
+            font=self._font(11),
+            text_color=NOTION_CHARCOAL
+        ).pack(side="left")
+
+        self.autohide_switch = ctk.CTkSwitch(
+            auto_row,
+            text="",
+            width=42,
+            progress_color=NOTION_PURPLE,
+            command=self._on_autohide_toggle
+        )
+        if self.config.get("autohide_on_pause", False):
+            self.autohide_switch.select()
+        self.autohide_switch.pack(side="right")
 
         # Action Buttons
         btn_box = ctk.CTkFrame(sync_inner, fg_color="transparent")
@@ -1674,13 +1696,25 @@ class AppGUI(ctk.CTk):
         val = bool(self.autohide_switch.get())
         self.config["autohide_on_pause"] = val
         save_config(self.config)
+        if hasattr(self, "settings_autohide_switch") and self.settings_autohide_switch.winfo_exists():
+            if val:
+                self.settings_autohide_switch.select()
+            else:
+                self.settings_autohide_switch.deselect()
         self._refresh_all_urls()
+        self.show_inapp_toast("暫停時自動隱藏已開啟" if val else "暫停時自動隱藏已關閉")
 
     def _on_autohide_toggle_settings(self):
         val = bool(self.settings_autohide_switch.get())
         self.config["autohide_on_pause"] = val
         save_config(self.config)
+        if hasattr(self, "autohide_switch") and self.autohide_switch.winfo_exists():
+            if val:
+                self.autohide_switch.select()
+            else:
+                self.autohide_switch.deselect()
         self._refresh_all_urls()
+        self.show_inapp_toast("暫停時自動隱藏已開啟" if val else "暫停時自動隱藏已關閉")
 
     def _refresh_all_urls(self):
         if hasattr(self, "global_url_entry") and self.global_url_entry.winfo_exists():
