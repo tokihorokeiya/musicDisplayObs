@@ -105,10 +105,41 @@ function setupAutoScale() {
     autoScale();
 }
 
+const dom = {
+    container: null,
+    widgetCard: null,
+    titleEl: null,
+    titleWrapper: null,
+    artistEl: null,
+    coverEl: null,
+    vinylCenter: null,
+    fillEl: null,
+    timeDisplayEl: null,
+    timeCurrentEl: null,
+    timeDurationEl: null
+};
+
+function cacheDOMElements() {
+    dom.container = document.getElementById('overlay-container');
+    dom.widgetCard = document.getElementById('widget-card');
+    dom.titleEl = document.getElementById('track-title');
+    dom.titleWrapper = document.getElementById('title-wrapper');
+    dom.artistEl = document.getElementById('artist-name');
+    dom.coverEl = document.getElementById('cover-img');
+    dom.vinylCenter = document.getElementById('vinyl-center-img');
+    dom.fillEl = document.getElementById('progress-fill');
+    dom.timeDisplayEl = document.getElementById('time-display');
+    dom.timeCurrentEl = document.getElementById('time-current');
+    dom.timeDurationEl = document.getElementById('time-duration');
+}
+
 function applyTheme(themeName) {
     const container = document.getElementById('overlay-container');
-    container.className = `theme-${themeName}`;
+    if (container) {
+        container.className = `theme-${themeName}`;
+    }
     renderThemeHTML(themeName);
+    cacheDOMElements();
 }
 
 function formatTime(seconds) {
@@ -264,19 +295,19 @@ function updateUI(data) {
         applyTheme(currentTheme);
     }
 
-    const container = document.getElementById('overlay-container');
-    const widgetCard = document.getElementById('widget-card');
-    const titleEl = document.getElementById('track-title');
-    const titleWrapper = document.getElementById('title-wrapper');
-    const artistEl = document.getElementById('artist-name');
-    const coverEl = document.getElementById('cover-img');
-    const vinylCenter = document.getElementById('vinyl-center-img');
+    const container = dom.container;
+    const widgetCard = dom.widgetCard;
+    const titleEl = dom.titleEl;
+    const titleWrapper = dom.titleWrapper;
+    const artistEl = dom.artistEl;
+    const coverEl = dom.coverEl;
+    const vinylCenter = dom.vinylCenter;
 
     const hasMedia = data.has_media && (data.title || data.artist);
     const isPlaying = data.is_playing;
 
     // Handle auto-hide
-    if (autoHideEnabled) {
+    if (autoHideEnabled && container) {
         if (!hasMedia || !isPlaying) {
             if (!hideTimeout) {
                 hideTimeout = setTimeout(() => {
@@ -290,7 +321,7 @@ function updateUI(data) {
             }
             container.classList.remove('hidden-overlay');
         }
-    } else {
+    } else if (container) {
         container.classList.remove('hidden-overlay');
     }
 
@@ -329,31 +360,26 @@ function updateUI(data) {
 }
 
 function renderTimelineTick() {
-    const fillEl = document.getElementById('progress-fill');
-    const timeDisplayEl = document.getElementById('time-display');
-    const timeCurrentEl = document.getElementById('time-current');
-    const timeDurationEl = document.getElementById('time-duration');
-
     const duration = currentMedia.duration || 0;
     const pos = getEstimatedPosition();
 
     const percent = duration > 0 ? Math.min(100, Math.max(0, (pos / duration) * 100)) : 0;
 
-    if (fillEl) {
-        fillEl.style.width = `${percent}%`;
+    if (dom.fillEl) {
+        dom.fillEl.style.width = `${percent}%`;
     }
 
     const curFormatted = formatTime(pos);
     const durFormatted = duration > 0 ? formatTime(duration) : "--:--";
 
-    if (timeDisplayEl) {
-        timeDisplayEl.textContent = `${curFormatted} / ${durFormatted}`;
+    if (dom.timeDisplayEl) {
+        dom.timeDisplayEl.textContent = `${curFormatted} / ${durFormatted}`;
     }
-    if (timeCurrentEl) {
-        timeCurrentEl.textContent = curFormatted;
+    if (dom.timeCurrentEl) {
+        dom.timeCurrentEl.textContent = curFormatted;
     }
-    if (timeDurationEl) {
-        timeDurationEl.textContent = durFormatted;
+    if (dom.timeDurationEl) {
+        dom.timeDurationEl.textContent = durFormatted;
     }
 }
 

@@ -13,6 +13,7 @@ class MediaServer:
         self.site = None
         self.ws_clients = set()
         self.is_running = False
+        self._template_cache = {}
 
         if getattr(sys, 'frozen', False):
             bundle_dir = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
@@ -21,6 +22,20 @@ class MediaServer:
             self.base_dir = os.path.dirname(os.path.abspath(__file__))
 
         self._setup_routes()
+
+    def _get_template(self, name):
+        """Returns in-memory cached template content to eliminate blocking disk I/O on async loop."""
+        if name not in self._template_cache:
+            path = os.path.join(self.base_dir, "templates", name)
+            if os.path.exists(path):
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        self._template_cache[name] = f.read()
+                except Exception:
+                    self._template_cache[name] = None
+            else:
+                self._template_cache[name] = None
+        return self._template_cache[name]
 
     def _setup_routes(self):
         # Static files
@@ -44,17 +59,15 @@ class MediaServer:
         }
 
     async def _handle_dashboard(self, request):
-        path = os.path.join(self.base_dir, "templates", "dashboard.html")
-        if os.path.exists(path):
-            with open(path, "r", encoding="utf-8") as f:
-                return web.Response(text=f.read(), content_type="text/html", headers=self._no_cache_headers())
+        content = self._get_template("dashboard.html")
+        if content is not None:
+            return web.Response(text=content, content_type="text/html", headers=self._no_cache_headers())
         return web.Response(text="<h1>Dashboard Not Found</h1>", content_type="text/html", status=404)
 
     async def _handle_overlay(self, request):
-        path = os.path.join(self.base_dir, "templates", "overlay.html")
-        if os.path.exists(path):
-            with open(path, "r", encoding="utf-8") as f:
-                return web.Response(text=f.read(), content_type="text/html", headers=self._no_cache_headers())
+        content = self._get_template("overlay.html")
+        if content is not None:
+            return web.Response(text=content, content_type="text/html", headers=self._no_cache_headers())
         return web.Response(text="<h1>Overlay Not Found</h1>", content_type="text/html", status=404)
 
     async def _handle_api_status(self, request):
@@ -83,15 +96,20 @@ class MediaServer:
         if not self.ws_clients:
             return
         payload = json.dumps(data)
-        dead_clients = []
-        for ws in self.ws_clients:
+        clients = list(self.ws_clients)
+
+        async def _safe_send(client):
             try:
-                await ws.send_str(payload)
+                await client.send_str(payload)
+                return None
             except Exception:
-                dead_clients.append(ws)
-        
-        for ws in dead_clients:
-            self.ws_clients.discard(ws)
+                return client
+
+        # Broadcast concurrently across all connected OBS browser sources
+        results = await asyncio.gather(*[_safe_send(ws) for ws in clients], return_exceptions=True)
+        for r in results:
+            if isinstance(r, web.WebSocketResponse):
+                self.ws_clients.discard(r)
 
     async def start(self):
         self.runner = web.AppRunner(self.app)

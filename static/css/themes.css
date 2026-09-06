@@ -8,7 +8,7 @@
   --primary-accent: #6366f1;
   --text-main: #ffffff;
   --text-sub: #cbd5e1;
-  --standard-font: "Segoe UI", "Microsoft JhengHei", "Yu Gothic", "Meiryo", "Malgun Gothic", "Leelawadee UI", -apple-system, BlinkMacSystemFont, "Noto Sans TC", "Noto Sans JP", Roboto, sans-serif;
+  --standard-font: "Segoe UI", "Microsoft JhengHei UI", "Microsoft JhengHei", "Yu Gothic UI", "Yu Gothic", "Meiryo UI", "Meiryo", "Malgun Gothic", "Leelawadee UI", -apple-system, BlinkMacSystemFont, "PingFang TC", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Apple SD Gothic Neo", "Noto Sans TC", "Noto Sans JP", "Noto Sans KR", Roboto, sans-serif;
 }
 
 * {

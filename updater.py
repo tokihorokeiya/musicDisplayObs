@@ -10,18 +10,24 @@ import subprocess
 import urllib.request
 import urllib.error
 
-APP_VERSION = "v1.0.3"
+from functools import lru_cache
+
+APP_VERSION = "v1.1.0"
 GITHUB_REPO = "tokihorokeiya/musicDisplayObs"
 GITHUB_API_LATEST = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 
+RE_VERSION_CLEAN = re.compile(r'^[^\d]*')
+RE_DIGITS = re.compile(r'^\d+')
+
+@lru_cache(maxsize=32)
 def parse_version_tuple(v_str):
     """Parses a version string like 'v1.0.3' or '1.2.0' into a comparable tuple of integers (1, 0, 3)."""
     if not v_str:
         return (0, 0, 0)
-    clean = re.sub(r'^[^\d]*', '', str(v_str).strip())
+    clean = RE_VERSION_CLEAN.sub('', str(v_str).strip())
     parts = []
     for p in clean.split('.'):
-        digits = re.match(r'^\d+', p)
+        digits = RE_DIGITS.match(p)
         if digits:
             parts.append(int(digits.group(0)))
         else:

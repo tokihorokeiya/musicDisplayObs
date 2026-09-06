@@ -5,13 +5,15 @@ import sys
 import subprocess
 import webbrowser
 import threading
+import tempfile
+import time
 import tkinter as tk
 import customtkinter as ctk
 from PIL import Image, ImageTk
 import pystray
 from pystray import MenuItem as item
 
-# Native Windows OLE drag-and-drop into OBS Studio (UniformResourceLocator / URL)
+# Native Windows OLE drag-and-drop into OBS Studio
 from ole_drag import setup_native_drag_and_drop
 from i18n import get_text, get_theme_info, TRANSLATIONS
 from config import save_config
@@ -38,26 +40,88 @@ THEME_IDS = [
     "dynamic_island"
 ]
 
+# -------------------------------------------------------------
+# Notion Design System Design Tokens (notion.design.md)
+# -------------------------------------------------------------
+NOTION_PURPLE = "#5645d4"          # Notion signature primary CTA
+NOTION_PURPLE_HOVER = "#4534b3"    # Pressed state
+NOTION_PURPLE_DEEP = "#3a2a99"     # Deep emphasis
+NOTION_NAVY = "#0a1530"            # Hero band background
+NOTION_NAVY_MID = "#141f3d"        # Hero border / accent
+NOTION_CANVAS = "#191919"          # Notion dark workspace canvas
+NOTION_SIDEBAR = "#141414"         # Notion sidebar background
+NOTION_SIDEBAR_HOVER = "#222222"   # Sidebar hover
+NOTION_SIDEBAR_ACTIVE = "#262626"  # Sidebar active item
+NOTION_SURFACE = "#202020"         # Notion card surface
+NOTION_SURFACE_HOVER = "#272727"   # Card hover
+NOTION_HAIRLINE = "#2e2e2e"        # Hairline border (1px)
+NOTION_HAIRLINE_STRONG = "#3e3e3e" # Strong border
+NOTION_INK = "#ffffff"             # Pure white text
+NOTION_CHARCOAL = "#e6e5e3"        # Body text
+NOTION_STEEL = "#9b9994"           # Secondary muted text
+NOTION_STONE = "#73726e"           # Muted micro text
+NOTION_MUTED = "#55534e"           # Disabled text
+
+# Notion Pastel Database Property Badges
+TAG_MINT_BG = "#163820"
+TAG_MINT_TEXT = "#4ade80"
+TAG_MINT_BORDER = "#235832"
+
+TAG_LAVENDER_BG = "#2d2146"
+TAG_LAVENDER_TEXT = "#c084fc"
+TAG_LAVENDER_BORDER = "#483470"
+
+TAG_PEACH_BG = "#292524"
+TAG_PEACH_TEXT = "#a8a29e"
+TAG_PEACH_BORDER = "#3e3835"
+
+TAG_PURPLE_BG = "#2b1d42"
+TAG_PURPLE_TEXT = "#d6b6f6"
+TAG_PURPLE_BORDER = "#452d6b"
+
+TAG_YELLOW_BG = "#3d3314"
+TAG_YELLOW_TEXT = "#fde047"
+TAG_YELLOW_BORDER = "#63521b"
+
 def get_ui_font_family(lang):
+    try:
+        import tkinter.font as tkfont
+        available = set(tkfont.families())
+    except Exception:
+        available = set()
+
     if lang == "ja":
+        for f in ["Yu Gothic UI", "Yu Gothic", "Meiryo UI", "Meiryo"]:
+            if f in available:
+                return f
         return "Yu Gothic UI"
     elif lang == "ko":
+        for f in ["Malgun Gothic", "Noto Sans KR"]:
+            if f in available:
+                return f
         return "Malgun Gothic"
     elif lang == "zh_TW":
+        for f in ["Microsoft JhengHei UI", "Microsoft JhengHei", "PingFang TC", "Noto Sans TC"]:
+            if f in available:
+                return f
         return "Microsoft JhengHei UI"
     elif lang == "th":
+        for f in ["Leelawadee UI", "Leelawadee"]:
+            if f in available:
+                return f
         return "Leelawadee UI"
+
+    for f in ["Segoe UI", "-apple-system", "Helvetica Neue"]:
+        if f in available:
+            return f
     return "Segoe UI"
 
-
 RESOLUTION_MODES = [
-    ("1920 × 700 (Stream Banner / 橫幅模式)", "1920x700", "&w=1920&h=700&mode=1920x700"),
-    ("1000 × 400 (Compact Widget / 精簡小組件)", "1000x400", "&w=1000&h=400"),
-    ("1920 × 1080 (Full Screen Bottom / 底部全螢幕)", "1920x1080", "&w=1920&h=1080&pos=bottom")
+    ("1920 × 700 (横幅模式)", "1920x700", "&w=1920&h=700&mode=1920x700"),
+    ("1000 × 400 (精簡小組件)", "1000x400", "&w=1000&h=400"),
+    ("1920 × 1080 (全螢幕底部)", "1920x1080", "&w=1920&h=1080&pos=bottom")
 ]
 
-# 8 Major Languages (Excluding Simplified Chinese)
-# 14 Major Global Languages (Excluding Simplified Chinese)
 LANGUAGE_OPTIONS = [
     ("繁體中文 (Traditional Chinese)", "zh_TW"),
     ("English", "en"),
@@ -83,6 +147,14 @@ def format_time_str(seconds):
     return f"{m:02d}:{s:02d}"
 
 class AppGUI(ctk.CTk):
+    """
+    Notion Workspace Design System implementation of OBS Real-Time Music Display.
+    - Deep Navy Hero Band (#0a1530)
+    - Notion Signature Purple Primary CTA (#5645d4)
+    - Sober-editorial 8px rectangular buttons (strictly NOT pills)
+    - 12px rounded cards & pastel database property status badges
+    - Zero emojis for a professional broadcast studio aesthetic
+    """
     def __init__(self, config, on_port_change_callback, on_theme_change_callback, on_exit_callback=None):
         super().__init__()
         self.config = config
@@ -95,10 +167,12 @@ class AppGUI(ctk.CTk):
             self.current_lang = "zh_TW"
 
         self.current_res_mode = self.config.get("resolution_mode", "1920x700")
+        self.current_page = "dashboard"
 
-        self.title("Real-Time Music Display for OBS Studio")
-        self.geometry("980x820")
-        self.minsize(900, 740)
+        self.title("OBS Real-Time Music Display")
+        self.geometry("980x740")
+        self.minsize(880, 640)
+        self.configure(fg_color=NOTION_CANVAS)
 
         ctk.set_appearance_mode("Dark")
         ctk.set_default_color_theme("blue")
@@ -113,6 +187,11 @@ class AppGUI(ctk.CTk):
 
         self.current_thumbnail_data = None
         self._cached_cover_img = None
+        self._cached_default_cover_img = None
+        self._last_rendered_title = None
+        self._last_rendered_artist = None
+        self._last_rendered_status = None
+        self._last_rendered_time_str = None
         self.tray_icon = None
         self.preview_tk_images = {}
         self.toast_timer = None
@@ -125,7 +204,12 @@ class AppGUI(ctk.CTk):
         self.time_label = None
         self.progress_bar = None
         self.status_badge = None
+        self.status_badge_text = None
         self.cover_label = None
+        self.hero_status_chip = None
+        self.nav_buttons = {}
+        self.gallery_url_entries = {}
+        self.gallery_card_widgets = {}
 
         self._build_ui()
         self.protocol("WM_DELETE_WINDOW", self._on_close)
@@ -141,206 +225,538 @@ class AppGUI(ctk.CTk):
         return ""
 
     def show_inapp_toast(self, message):
-        """Displays a clean in-app toast notification bar (NO modal alert popup!)"""
-        if hasattr(self, "toast_label"):
+        """Displays a floating overlay toast notification at the bottom-right corner."""
+        if hasattr(self, "toast_label") and hasattr(self, "toast_frame"):
             self.toast_label.configure(text=message)
-            self.toast_frame.pack(fill="x", padx=20, pady=(0, 8), before=self.tabview)
-            
+            self.toast_frame.place(relx=1.0, rely=1.0, x=-24, y=-24, anchor="se")
+            self.toast_frame.lift()
             if self.toast_timer:
                 self.after_cancel(self.toast_timer)
-            self.toast_timer = self.after(3000, lambda: self.toast_frame.pack_forget())
+            self.toast_timer = self.after(3000, lambda: self.toast_frame.place_forget())
 
     def _build_ui(self):
-        self.current_thumbnail_data = None
+        """Constructs the Notion workspace interface layout."""
+        # Clear existing widgets if re-building
         for child in self.winfo_children():
             child.destroy()
 
-        # Top App Header
-        self.header_frame = ctk.CTkFrame(self, corner_radius=14, fg_color="#181824", height=64)
-        self.header_frame.pack(fill="x", padx=20, pady=(16, 10))
+        self.main_wrapper = ctk.CTkFrame(self, fg_color=NOTION_CANVAS, corner_radius=0)
+        self.main_wrapper.pack(fill="both", expand=True)
 
-        self.title_label = ctk.CTkLabel(
-            self.header_frame,
-            text=self._t("app_title"),
-            font=self._font(19, "bold"),
-            text_color="#ffffff"
+        # -------------------------------------------------------------
+        # 1. Notion Workspace Left Sidebar (width=220, NOTION_SIDEBAR)
+        # -------------------------------------------------------------
+        self.sidebar_frame = ctk.CTkFrame(
+            self.main_wrapper,
+            width=220,
+            corner_radius=0,
+            fg_color=NOTION_SIDEBAR,
+            border_width=1,
+            border_color=NOTION_HAIRLINE
         )
-        self.title_label.pack(side="left", padx=20, pady=12)
+        self.sidebar_frame.pack(side="left", fill="y")
+        self.sidebar_frame.pack_propagate(False)
 
-        # Right side: Language selector + Status Badge
-        header_right = ctk.CTkFrame(self.header_frame, fg_color="transparent")
-        header_right.pack(side="right", padx=16, pady=12)
+        # Workspace brand header
+        brand_box = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
+        brand_box.pack(fill="x", padx=16, pady=(18, 16))
 
-        lang_names = [opt[0] for opt in LANGUAGE_OPTIONS]
-        current_lang_name = next((opt[0] for opt in LANGUAGE_OPTIONS if opt[1] == self.current_lang), lang_names[0])
-
-        # Standard multilingual font for clean rendering of Traditional Chinese and Japanese in dropdown
-        multilingual_font = ctk.CTkFont(family="Microsoft JhengHei UI", size=12)
-        self.lang_menu = ctk.CTkOptionMenu(
-            header_right,
-            values=lang_names,
-            command=self._on_language_changed,
-            width=210,
-            height=30,
+        # Notion-style workspace icon box
+        icon_box = ctk.CTkFrame(
+            brand_box,
+            width=32,
+            height=32,
             corner_radius=8,
-            font=multilingual_font,
-            dropdown_font=multilingual_font,
-            fg_color="#27273a",
-            button_color="#373752"
+            fg_color="#222222",
+            border_width=1,
+            border_color=NOTION_HAIRLINE_STRONG
         )
-        self.lang_menu.set(current_lang_name)
-        self.lang_menu.pack(side="left", padx=(0, 12))
+        icon_box.pack(side="left")
+        icon_box.pack_propagate(False)
 
-        self.status_badge = ctk.CTkLabel(
-            header_right,
-            text=self._t("status_idle"),
-            font=self._font(12, "bold"),
-            text_color="#94a3b8",
-            fg_color="#1e293b",
-            corner_radius=8,
-            padx=12,
-            pady=4
+        ctk.CTkLabel(
+            icon_box,
+            text="OBS",
+            font=self._font(10, "bold"),
+            text_color=NOTION_INK
+        ).place(relx=0.5, rely=0.5, anchor="center")
+
+        brand_title_box = ctk.CTkFrame(brand_box, fg_color="transparent")
+        brand_title_box.pack(side="left", padx=(10, 0))
+
+        ctk.CTkLabel(
+            brand_title_box,
+            text="OBS Display",
+            font=self._font(13, "bold"),
+            text_color=NOTION_INK
+        ).pack(anchor="w")
+
+        ctk.CTkLabel(
+            brand_title_box,
+            text="Workspace",
+            font=self._font(10),
+            text_color=NOTION_STONE
+        ).pack(anchor="w")
+
+        # Hairline divider
+        ctk.CTkFrame(
+            self.sidebar_frame,
+            height=1,
+            fg_color=NOTION_HAIRLINE
+        ).pack(fill="x", padx=16, pady=(0, 14))
+
+        # Nav items container
+        nav_list = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
+        nav_list.pack(fill="x", padx=12)
+
+        self.nav_buttons = {}
+        nav_configs = [
+            ("dashboard", self._t("nav_dashboard", "即時控制台")),
+            ("gallery", self._t("nav_gallery", "風格模板庫")),
+            ("settings", self._t("nav_settings", "系統設定")),
+        ]
+
+        for page_id, label_text in nav_configs:
+            is_active = (self.current_page == page_id)
+            btn = ctk.CTkButton(
+                nav_list,
+                text=f"   {label_text}",
+                anchor="w",
+                height=36,
+                corner_radius=8,  # Notion 8px rectangular geometry
+                font=self._font(12, "bold" if is_active else "normal"),
+                fg_color=NOTION_SIDEBAR_ACTIVE if is_active else "transparent",
+                text_color=NOTION_INK if is_active else NOTION_STEEL,
+                hover_color=NOTION_SIDEBAR_HOVER,
+                command=lambda pid=page_id: self._navigate_page(pid)
+            )
+            btn.pack(fill="x", pady=2)
+            self.nav_buttons[page_id] = btn
+
+        # Bottom sidebar container: server status and version
+        sidebar_bottom = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
+        sidebar_bottom.pack(side="bottom", fill="x", padx=16, pady=16)
+
+        # Server online badge
+        port_num = self.config.get("port", 11150)
+        status_row = ctk.CTkFrame(sidebar_bottom, fg_color="transparent")
+        status_row.pack(fill="x", pady=(0, 4))
+
+        ctk.CTkLabel(
+            status_row,
+            text="●",
+            font=self._font(10),
+            text_color=TAG_MINT_TEXT
+        ).pack(side="left", padx=(0, 6))
+
+        ctk.CTkLabel(
+            status_row,
+            text=f"Port {port_num} (Online)",
+            font=self._font(11),
+            text_color=NOTION_STEEL
+        ).pack(side="left")
+
+        # Version label
+        ver_str = APP_VERSION if APP_VERSION.startswith("v") else f"v{APP_VERSION}"
+        ctk.CTkLabel(
+            sidebar_bottom,
+            text=ver_str,
+            font=self._font(10),
+            text_color=NOTION_STONE
+        ).pack(anchor="w")
+
+        # -------------------------------------------------------------
+        # 2. Right Main Work Area
+        # -------------------------------------------------------------
+        self.main_content_frame = ctk.CTkFrame(self.main_wrapper, fg_color=NOTION_CANVAS, corner_radius=0)
+        self.main_content_frame.pack(side="right", fill="both", expand=True)
+
+        # -------------------------------------------------------------
+        # Notion Deep Navy Hero Band (#0a1530)
+        # -------------------------------------------------------------
+        self.hero_band = ctk.CTkFrame(
+            self.main_content_frame,
+            height=72,
+            corner_radius=0,
+            fg_color=NOTION_NAVY,
+            border_width=1,
+            border_color=NOTION_NAVY_MID
         )
-        self.status_badge.pack(side="left")
+        self.hero_band.pack(fill="x")
+        self.hero_band.pack_propagate(False)
 
-        # In-App Non-blocking Toast Banner (Hidden by default)
-        self.toast_frame = ctk.CTkFrame(self, corner_radius=10, fg_color="#064e3b", height=36)
+        hero_left = ctk.CTkFrame(self.hero_band, fg_color="transparent")
+        hero_left.pack(side="left", padx=24, pady=12)
+
+        self.hero_subtitle_label = ctk.CTkLabel(
+            hero_left,
+            text="OBS REAL-TIME MUSIC DISPLAY",
+            font=self._font(9, "bold"),
+            text_color=NOTION_STONE
+        )
+        self.hero_subtitle_label.pack(anchor="w")
+
+        self.hero_title_label = ctk.CTkLabel(
+            hero_left,
+            text=self._get_page_hero_title(self.current_page),
+            font=self._font(17, "bold"),
+            text_color=NOTION_INK
+        )
+        self.hero_title_label.pack(anchor="w")
+
+        # Hero right side: pastel status chip
+        hero_right = ctk.CTkFrame(self.hero_band, fg_color="transparent")
+        hero_right.pack(side="right", padx=24, pady=16)
+
+        self.hero_status_chip = ctk.CTkLabel(
+            hero_right,
+            text="  Live Connected  ",
+            font=self._font(11, "bold"),
+            text_color=TAG_MINT_TEXT,
+            fg_color=TAG_MINT_BG,
+            corner_radius=6
+        )
+        self.hero_status_chip.pack(side="right")
+
+        # Floating toast notification overlay at bottom-right (independent of page layout)
+        self.toast_frame = ctk.CTkFrame(
+            self,
+            fg_color="#181818",
+            border_color=NOTION_PURPLE,
+            border_width=1,
+            corner_radius=8
+        )
         self.toast_label = ctk.CTkLabel(
             self.toast_frame,
             text="",
-            font=self._font(13, "bold"),
-            text_color="#6ee7b7"
+            font=self._font(11, "bold"),
+            text_color="#f3f4f6"
         )
-        self.toast_label.pack(pady=6)
+        self.toast_label.pack(padx=18, pady=10)
 
-        # Tabview with standard UI font for tabs
-        self.tabview = ctk.CTkTabview(
-            self,
-            corner_radius=14,
-            fg_color="#131722",
-            segmented_button_selected_color="#4f46e5",
-            segmented_button_unselected_color="#1e1e2d",
-            segmented_button_font=self._font(13, "bold")
-        )
-        self.tabview.pack(fill="both", expand=True, padx=20, pady=(0, 16))
+        # Persistent Content Container
+        self.content_container = ctk.CTkFrame(self.main_content_frame, fg_color=NOTION_CANVAS, corner_radius=0)
+        self.content_container.pack(fill="both", expand=True, padx=24, pady=16)
 
-        self.tab_playing = self.tabview.add(self._t("tab_playing"))
-        self.tab_gallery = self.tabview.add(self._t("tab_gallery"))
+        # Pre-create and keep all 3 pages loaded in memory for 0ms, seamless switching
+        self.pages = {}
+        self.page_dashboard = ctk.CTkFrame(self.content_container, fg_color="transparent")
+        self.page_gallery = ctk.CTkFrame(self.content_container, fg_color="transparent")
+        self.page_settings = ctk.CTkFrame(self.content_container, fg_color="transparent")
 
-        self._build_now_playing_tab()
-        self._build_gallery_tab()
+        self.pages["dashboard"] = self.page_dashboard
+        self.pages["gallery"] = self.page_gallery
+        self.pages["settings"] = self.page_settings
+
+        self._build_dashboard_page(self.page_dashboard)
+        self._build_gallery_page(self.page_gallery)
+        self._build_settings_page(self.page_settings)
+
+        # Display initially active page
+        self.pages[self.current_page].pack(fill="both", expand=True)
 
         if self.latest_media_data:
             self.update_media_display(self.latest_media_data)
 
-    def _build_now_playing_tab(self):
-        content = ctk.CTkFrame(self.tab_playing, fg_color="transparent")
-        content.pack(fill="both", expand=True, padx=10, pady=10)
+    def _get_page_hero_title(self, page_id):
+        if page_id == "dashboard":
+            return self._t("nav_dashboard", "即時控制台")
+        elif page_id == "gallery":
+            return self._t("nav_gallery", "風格模板庫")
+        elif page_id == "settings":
+            return self._t("nav_settings", "系統設定")
+        return "Notion Workspace"
 
-        # Left Column: Media Information Card
-        self.media_card = ctk.CTkFrame(content, corner_radius=16, fg_color="#181824", width=420)
-        self.media_card.pack(side="left", fill="both", expand=True, padx=(0, 10))
+    def _navigate_page(self, page_id):
+        if self.current_page == page_id:
+            return
+        old_page = self.current_page
+        self.current_page = page_id
+
+        # Update sidebar button states
+        for pid, btn in self.nav_buttons.items():
+            if pid == page_id:
+                btn.configure(
+                    fg_color=NOTION_SIDEBAR_ACTIVE,
+                    text_color=NOTION_INK,
+                    font=self._font(12, "bold")
+                )
+            else:
+                btn.configure(
+                    fg_color="transparent",
+                    text_color=NOTION_STEEL,
+                    font=self._font(12, "normal")
+                )
+
+        # Update hero title
+        if hasattr(self, "hero_title_label"):
+            self.hero_title_label.configure(text=self._get_page_hero_title(page_id))
+
+        # Seamless switch: hide old page, show new page instantly without destroying!
+        if old_page in self.pages:
+            self.pages[old_page].pack_forget()
+        if page_id in self.pages:
+            self.pages[page_id].pack(fill="both", expand=True)
+
+    # -------------------------------------------------------------
+    # Page 1: Dashboard (Notion Document Card + OBS Quick Connect)
+    # -------------------------------------------------------------
+    def _build_dashboard_page(self, parent=None):
+        if parent is None:
+            parent = getattr(self, "page_dashboard", self.content_container)
+
+        # Top Card: Live Media Player Card (Notion 12px rounded card)
+        player_card = ctk.CTkFrame(
+            parent,
+            corner_radius=12,
+            fg_color=NOTION_SURFACE,
+            border_width=1,
+            border_color=NOTION_HAIRLINE
+        )
+        player_card.pack(fill="x", pady=(0, 16))
+
+        # Card header with Notion database property pill
+        player_header = ctk.CTkFrame(player_card, fg_color="transparent")
+        player_header.pack(fill="x", padx=18, pady=(14, 10))
 
         ctk.CTkLabel(
-            self.media_card,
-            text=self._t("now_playing_header"),
+            player_header,
+            text=self._t("now_playing_header", "當前媒體播放狀態"),
             font=self._font(11, "bold"),
-            text_color="#6366f1"
-        ).pack(anchor="w", padx=20, pady=(16, 10))
+            text_color=NOTION_STEEL
+        ).pack(side="left")
 
-        # Album Artwork (Uses songIcon.jpg)
-        self.cover_label = ctk.CTkLabel(self.media_card, text="", width=170, height=170)
-        self.cover_label.pack(pady=6)
-        self._set_default_thumbnail()
+        # Notion Pastel Property Status Tag
+        self.status_badge = ctk.CTkFrame(
+            player_header,
+            corner_radius=6,
+            fg_color=TAG_PEACH_BG,
+            border_width=1,
+            border_color=TAG_PEACH_BORDER
+        )
+        self.status_badge.pack(side="right")
 
-        # Song Title (Pure White Text & Normal Font)
+        self.status_badge_text = ctk.CTkLabel(
+            self.status_badge,
+            text=self._t("status_idle", "閒置"),
+            font=self._font(10, "bold"),
+            text_color=TAG_PEACH_TEXT
+        )
+        self.status_badge_text.pack(padx=8, pady=2)
+
+        # Player Body: Cover + Metadata + Progress
+        player_body = ctk.CTkFrame(player_card, fg_color="transparent")
+        player_body.pack(fill="x", padx=18, pady=(0, 16))
+
+        # Album Art Thumbnail (90x90, 8px rounded)
+        cover_container = ctk.CTkFrame(
+            player_body,
+            width=90,
+            height=90,
+            corner_radius=8,
+            fg_color="#121212",
+            border_width=1,
+            border_color=NOTION_HAIRLINE_STRONG
+        )
+        cover_container.pack(side="left", padx=(0, 16))
+        cover_container.pack_propagate(False)
+
+        self.cover_label = ctk.CTkLabel(cover_container, text="", image=None)
+        self.cover_label.place(relx=0.5, rely=0.5, anchor="center")
+        self._load_default_cover(target_label=self.cover_label, size=(90, 90))
+
+        # Right side: Metadata & Notion Property Grid
+        meta_box = ctk.CTkFrame(player_body, fg_color="transparent")
+        meta_box.pack(side="left", fill="both", expand=True)
+
         self.track_title_label = ctk.CTkLabel(
-            self.media_card,
-            text=self._t("waiting_media"),
-            font=self._font(17, "bold"),
-            text_color="#ffffff",
-            wraplength=380,
-            justify="center"
+            meta_box,
+            text=self._t("waiting_media", "等待媒體播放中..."),
+            font=self._font(16, "bold"),
+            text_color=NOTION_INK,
+            anchor="w"
         )
-        self.track_title_label.pack(padx=16, pady=(10, 4))
+        self.track_title_label.pack(fill="x", pady=(0, 2))
 
-        # Artist(s) / Singers
         self.track_artist_label = ctk.CTkLabel(
-            self.media_card,
-            text=self._t("play_instruction"),
-            font=self._font(13),
-            text_color="#94a3b8",
-            wraplength=380,
-            justify="center"
+            meta_box,
+            text=self._t("play_instruction", "在 YouTube、YouTube Music 或 Spotify 播放音樂"),
+            font=self._font(12),
+            text_color=NOTION_STEEL,
+            anchor="w"
         )
-        self.track_artist_label.pack(padx=16, pady=(0, 10))
+        self.track_artist_label.pack(fill="x", pady=(0, 8))
 
-        # Progress bar & Timestamp
-        self.progress_frame = ctk.CTkFrame(self.media_card, fg_color="transparent")
-        self.progress_frame.pack(fill="x", padx=26, pady=(0, 16))
+        # Notion Database Properties Row
+        props_row = ctk.CTkFrame(meta_box, fg_color="transparent")
+        props_row.pack(fill="x", pady=(0, 10))
 
-        self.progress_bar = ctk.CTkProgressBar(self.progress_frame, height=8, corner_radius=4, progress_color="#6366f1")
+        # Active Theme Tag Chip
+        active_theme_id = self.config.get("selected_theme", "glassmorphism")
+        current_theme_name, _ = get_theme_info(self.current_lang, active_theme_id)
+
+        theme_tag = ctk.CTkFrame(
+            props_row,
+            corner_radius=6,
+            fg_color=TAG_PURPLE_BG,
+            border_width=1,
+            border_color=TAG_PURPLE_BORDER
+        )
+        theme_tag.pack(side="left", padx=(0, 8))
+
+        self.player_theme_chip = ctk.CTkLabel(
+            theme_tag,
+            text=f"Theme: {current_theme_name}",
+            font=self._font(10, "bold"),
+            text_color=TAG_PURPLE_TEXT
+        )
+        self.player_theme_chip.pack(padx=8, pady=2)
+
+        # Progress Bar & Timing
+        progress_row = ctk.CTkFrame(meta_box, fg_color="transparent")
+        progress_row.pack(fill="x")
+
+        self.progress_bar = ctk.CTkProgressBar(
+            progress_row,
+            height=6,
+            corner_radius=3,
+            progress_color=NOTION_PURPLE,
+            fg_color="#333333"
+        )
         self.progress_bar.set(0)
-        self.progress_bar.pack(fill="x", pady=(0, 4))
+        self.progress_bar.pack(side="left", fill="x", expand=True, padx=(0, 12))
 
         self.time_label = ctk.CTkLabel(
-            self.progress_frame,
+            progress_row,
             text="00:00 / 00:00",
-            font=ctk.CTkFont(size=12, family="Consolas"),
-            text_color="#cbd5e1"
-        )
-        self.time_label.pack()
-
-        # Right Column: Global Active Overlay & Server Settings
-        self.controls_card = ctk.CTkFrame(content, corner_radius=16, fg_color="#181824", width=390)
-        self.controls_card.pack(side="right", fill="both", expand=True, padx=(10, 0))
-
-        # --- Section 1: Global Active Overlay (OBS Auto-Sync) ---
-        ctk.CTkLabel(
-            self.controls_card,
-            text=self._t("global_theme_header", "🌐 全域使用中模板 (OBS 自動同步)"),
-            font=self._font(13, "bold"),
-            text_color="#6366f1"
-        ).pack(anchor="w", padx=20, pady=(16, 6))
-
-        global_box = ctk.CTkFrame(self.controls_card, corner_radius=12, fg_color="#12121c")
-        global_box.pack(fill="x", padx=20, pady=(0, 14))
-
-        ctk.CTkLabel(
-            global_box,
-            text=self._t("global_theme_desc"),
             font=self._font(11),
-            text_color="#94a3b8",
-            wraplength=350,
-            justify="left"
-        ).pack(anchor="w", padx=14, pady=(12, 8))
+            text_color=NOTION_STEEL
+        )
+        self.time_label.pack(side="right")
 
-        # Active Theme Dropdown Row
-        theme_row = ctk.CTkFrame(global_box, fg_color="transparent")
-        theme_row.pack(fill="x", padx=14, pady=(0, 8))
+        # -------------------------------------------------------------
+        # Bottom Card: OBS Quick Connect Dock (Notion 12px rounded card)
+        # -------------------------------------------------------------
+        dock_card = ctk.CTkFrame(
+            parent,
+            corner_radius=12,
+            fg_color=NOTION_SURFACE,
+            border_width=1,
+            border_color=NOTION_HAIRLINE
+        )
+        dock_card.pack(fill="both", expand=True)
+
+        dock_header = ctk.CTkFrame(dock_card, fg_color="transparent")
+        dock_header.pack(fill="x", padx=18, pady=(16, 12))
+
+        ctk.CTkLabel(
+            dock_header,
+            text=self._t("obs_dock_title", "OBS 快速掛載中心"),
+            font=self._font(13, "bold"),
+            text_color=NOTION_INK
+        ).pack(anchor="w")
+
+        ctk.CTkLabel(
+            dock_header,
+            text=self._t("global_theme_desc", "在 OBS 中使用此全域網址，您只需在此切換樣式，OBS 畫面將即時自動同步更換！"),
+            font=self._font(11),
+            text_color=NOTION_STEEL
+        ).pack(anchor="w", pady=(2, 0))
+
+        # 2-Column Grid inside dock
+        columns_frame = ctk.CTkFrame(dock_card, fg_color="transparent")
+        columns_frame.pack(fill="both", expand=True, padx=18, pady=(0, 18))
+
+        # Column 1: Interactive Notion OLE Drag Tile
+        self.drag_tile = ctk.CTkFrame(
+            columns_frame,
+            corner_radius=12,
+            fg_color="#181818",
+            border_width=2,
+            border_color=NOTION_HAIRLINE_STRONG
+        )
+        self.drag_tile.pack(side="left", fill="both", expand=True, padx=(0, 10))
+
+        drag_inner = ctk.CTkFrame(self.drag_tile, fg_color="transparent")
+        drag_inner.place(relx=0.5, rely=0.5, anchor="center")
+
+        # Notion drag card typography
+        ctk.CTkLabel(
+            drag_inner,
+            text=self._t("obs_dock_drag_title", "按住此卡片直接拖入 OBS 畫布"),
+            font=self._font(13, "bold"),
+            text_color=NOTION_INK
+        ).pack(pady=(0, 4))
+
+        ctk.CTkLabel(
+            drag_inner,
+            text=self._t("obs_dock_drag_sub", "OBS 將自動新增為透明瀏覽器來源"),
+            font=self._font(11),
+            text_color=NOTION_STEEL
+        ).pack(pady=(0, 12))
+
+        drag_pill = ctk.CTkFrame(
+            drag_inner,
+            corner_radius=6,
+            fg_color="#242424",
+            border_width=1,
+            border_color=NOTION_HAIRLINE_STRONG
+        )
+        drag_pill.pack()
+
+        ctk.CTkLabel(
+            drag_pill,
+            text="DRAG TO OBS CANVAS",
+            font=self._font(9, "bold"),
+            text_color=NOTION_CHARCOAL
+        ).pack(padx=12, pady=4)
+
+        # Hook Windows OLE Drag on drag tile
+        self._setup_drag_on_widget(self.drag_tile, self._get_global_overlay_url)
+        for w in drag_inner.winfo_children():
+            self._setup_drag_on_widget(w, self._get_global_overlay_url)
+        self._setup_drag_on_widget(drag_pill, self._get_global_overlay_url)
+
+        # Column 2: Global Auto-Sync Template Settings
+        sync_tile = ctk.CTkFrame(
+            columns_frame,
+            corner_radius=12,
+            fg_color="#181818",
+            border_width=1,
+            border_color=NOTION_HAIRLINE
+        )
+        sync_tile.pack(side="right", fill="both", expand=True, padx=(10, 0))
+
+        sync_inner = ctk.CTkFrame(sync_tile, fg_color="transparent")
+        sync_inner.pack(fill="both", expand=True, padx=16, pady=16)
+
+        # Theme selector row
+        theme_row = ctk.CTkFrame(sync_inner, fg_color="transparent")
+        theme_row.pack(fill="x", pady=(0, 12))
 
         ctk.CTkLabel(
             theme_row,
             text=self._t("active_theme_label", "目前全域模板："),
-            font=self._font(12, "bold")
+            font=self._font(11, "bold"),
+            text_color=NOTION_INK
         ).pack(side="left")
 
         current_theme_id = self.config.get("selected_theme", "glassmorphism")
         current_theme_name, _ = get_theme_info(self.current_lang, current_theme_id)
         theme_display_names = [get_theme_info(self.current_lang, tid)[0] for tid in THEME_IDS]
 
-        theme_dropdown_font = self._font(12)
+        theme_dropdown_font = self._font(11)
         self.global_theme_dropdown = ctk.CTkOptionMenu(
             theme_row,
             values=theme_display_names,
-            width=220,
+            width=180,
             height=30,
-            corner_radius=8,
+            corner_radius=8,  # Notion 8px geometry
             font=theme_dropdown_font,
             dropdown_font=theme_dropdown_font,
-            fg_color="#312e81",
-            button_color="#4338ca",
-            button_hover_color="#4f46e5",
+            fg_color="#242424",
+            button_color="#2f2f2f",
+            button_hover_color="#3a3a3a",
             command=self._on_global_theme_selected
         )
         try:
@@ -350,881 +766,985 @@ class AppGUI(ctk.CTk):
         self.global_theme_dropdown.set(current_theme_name)
         self.global_theme_dropdown.pack(side="right")
 
-        # Global URL Entry
-        global_url = self._get_global_overlay_url()
+        # Global URL Readonly Entry
         self.global_url_entry = ctk.CTkEntry(
-            global_box,
-            height=28,
-            font=ctk.CTkFont(size=11),
-            text_color="#a5b4fc",
-            fg_color="#0a0a10"
+            sync_inner,
+            height=30,
+            corner_radius=8,  # Notion 8px geometry
+            font=self._font(11),
+            text_color="#c084fc",
+            fg_color="#121212",
+            border_color=NOTION_HAIRLINE_STRONG
         )
-        self.global_url_entry.insert(0, global_url)
+        self.global_url_entry.insert(0, self._get_global_overlay_url())
         self.global_url_entry.configure(state="readonly")
-        self.global_url_entry.pack(fill="x", padx=14, pady=(0, 6))
+        self.global_url_entry.pack(fill="x", pady=(0, 12))
         self._setup_drag_on_widget(self.global_url_entry, self._get_global_overlay_url)
 
-        # Global Drag Hint Badge
-        drag_global_badge = tk.Label(
-            global_box,
-            text=f"⠿ {self._t('drag_hint')}",
-            bg="#1e293b",
-            fg="#4ade80",
-            font=(self.font_family, 10, "bold"),
-            padx=8,
-            pady=2,
-            cursor="hand2"
-        )
-        drag_global_badge.pack(anchor="w", padx=14, pady=(0, 8))
-        self._setup_drag_on_widget(drag_global_badge, self._get_global_overlay_url)
+        # Action Buttons
+        btn_box = ctk.CTkFrame(sync_inner, fg_color="transparent")
+        btn_box.pack(fill="x")
 
-        # Global Action Buttons
-        global_btn_row = ctk.CTkFrame(global_box, fg_color="transparent")
-        global_btn_row.pack(fill="x", padx=14, pady=(0, 12))
-
+        # Notion Signature Purple Primary CTA Button
         self.btn_copy_global = ctk.CTkButton(
-            global_btn_row,
-            text=self._t("btn_copy_global_url", "📋 複製全域網址"),
-            height=32,
-            corner_radius=8,
-            font=self._font(12, "bold"),
-            fg_color="#4f46e5",
-            hover_color="#4338ca",
+            btn_box,
+            text=self._t("btn_copy_global_url", "複製全域網址 (推薦)"),
+            height=34,
+            corner_radius=8,  # Notion 8px rectangular button
+            font=self._font(11, "bold"),
+            fg_color=NOTION_PURPLE,
+            hover_color=NOTION_PURPLE_HOVER,
             command=self._copy_global_url
         )
-        self.btn_copy_global.pack(side="left", fill="x", expand=True, padx=(0, 4))
+        self.btn_copy_global.pack(side="left", fill="x", expand=True, padx=(0, 8))
 
+        # Secondary Button (Sober Notion 8px button)
         self.btn_preview_global = ctk.CTkButton(
-            global_btn_row,
-            text=self._t("btn_preview_global", "👁️ 預覽"),
+            btn_box,
+            text=self._t("preview_btn", "預覽"),
             width=70,
-            height=32,
-            corner_radius=8,
-            font=self._font(12),
-            fg_color="#27273a",
-            hover_color="#373752",
+            height=34,
+            corner_radius=8,  # Notion 8px rectangular button
+            font=self._font(11),
+            fg_color="#242424",
+            hover_color="#303030",
+            border_width=1,
+            border_color=NOTION_HAIRLINE_STRONG,
             command=lambda: webbrowser.open(self._get_global_overlay_url())
         )
-        self.btn_preview_global.pack(side="right", padx=(4, 0))
+        self.btn_preview_global.pack(side="right")
 
-        # --- Section 2: Server Settings ---
-        ctk.CTkLabel(
-            self.controls_card,
-            text=self._t("server_settings_header", "⚙️ 系統與伺服器設定"),
-            font=self._font(13, "bold"),
-            text_color="#6366f1"
-        ).pack(anchor="w", padx=20, pady=(4, 6))
+    # -------------------------------------------------------------
+    # Page 2: Theme Gallery (Notion Database Gallery View)
+    # -------------------------------------------------------------
+    def _build_gallery_page(self, parent=None):
+        if parent is None:
+            parent = getattr(self, "page_gallery", self.content_container)
 
-        server_box = ctk.CTkFrame(self.controls_card, corner_radius=12, fg_color="#12121c")
-        server_box.pack(fill="x", padx=20, pady=(0, 12))
-
-        port_row = ctk.CTkFrame(server_box, fg_color="transparent")
-        port_row.pack(fill="x", padx=14, pady=10)
-
-        ctk.CTkLabel(
-            port_row,
-            text=self._t("server_port"),
-            font=self._font(12, "bold")
-        ).pack(side="left")
-
-        self.port_entry = ctk.CTkEntry(port_row, width=80, height=30, corner_radius=8)
-        self.port_entry.insert(0, str(self.config.get("port", 11150)))
-        self.port_entry.pack(side="left", padx=10)
-
-        self.port_save_btn = ctk.CTkButton(
-            port_row,
-            text=self._t("apply_port"),
-            width=80,
-            height=30,
-            corner_radius=8,
-            font=self._font(12),
-            fg_color="#374151",
-            hover_color="#4b5563",
-            command=self._apply_port
-        )
-        self.port_save_btn.pack(side="right")
-
-        # Update / Version Row in Server Settings
-        update_row = ctk.CTkFrame(server_box, fg_color="transparent")
-        update_row.pack(fill="x", padx=14, pady=(0, 10))
-
-        version_container = ctk.CTkFrame(update_row, fg_color="transparent")
-        version_container.pack(side="left")
-
-        ctk.CTkLabel(
-            version_container,
-            text=self._t("version_label", "軟體版本："),
-            font=self._font(12, "bold")
-        ).pack(side="left")
-
-        self.version_badge = ctk.CTkLabel(
-            version_container,
-            text=APP_VERSION,
-            font=self._font(11, "bold"),
-            text_color="#a5b4fc",
-            fg_color="#1e1e2f",
-            corner_radius=6,
-            padx=8,
-            pady=2
-        )
-        self.version_badge.pack(side="left", padx=6)
-
-        self.btn_check_update = ctk.CTkButton(
-            update_row,
-            text=self._t("btn_check_update", "🚀 檢查與直接更新"),
-            height=30,
-            corner_radius=8,
-            font=self._font(12, "bold"),
-            fg_color="#312e81",
-            hover_color="#4338ca",
-            command=self._on_check_update_click
-        )
-        self.btn_check_update.pack(side="right")
-
-        # Quick navigation button to Gallery
-        self.go_gallery_btn = ctk.CTkButton(
-            self.controls_card,
-            text=self._t("btn_go_gallery", "🎨 前往「模板庫」探索各樣式 ➔"),
-            height=36,
-            corner_radius=8,
-            font=self._font(12, "bold"),
-            fg_color="#1e1e2f",
-            hover_color="#2d2d44",
+        top_bar = ctk.CTkFrame(
+            parent,
+            corner_radius=12,
+            fg_color=NOTION_SURFACE,
             border_width=1,
-            border_color="#4338ca",
-            command=lambda: self.tabview.set(self._t("tab_gallery"))
+            border_color=NOTION_HAIRLINE
         )
-        self.go_gallery_btn.pack(fill="x", padx=20, pady=(0, 16))
-
-    def _build_gallery_tab(self):
-        top_bar = ctk.CTkFrame(self.tab_gallery, corner_radius=12, fg_color="#181824")
-        top_bar.pack(fill="x", padx=10, pady=(10, 12))
+        top_bar.pack(fill="x", pady=(0, 14))
 
         ctk.CTkLabel(
             top_bar,
-            text=self._t("drag_banner_text"),
-            font=self._font(12, "bold"),
-            text_color="#a5b4fc"
-        ).pack(side="left", padx=16, pady=12)
+            text=self._t("drag_banner_text", "直接拖曳任意模板預覽圖至 OBS 視窗即可新增，亦可點選「複製網址」貼上！"),
+            font=self._font(11),
+            text_color=NOTION_STEEL
+        ).pack(side="left", padx=18, pady=12)
 
-        # Auto-Hide Toggle moved to template gallery top bar!
         self.autohide_switch = ctk.CTkSwitch(
             top_bar,
-            text=self._t("autohide_switch"),
-            font=self._font(12, "bold"),
-            progress_color="#4f46e5",
+            text=self._t("autohide_switch", "暫停或停止播放時自動隱藏小組件"),
+            font=self._font(11, "bold"),
+            progress_color=NOTION_PURPLE,
             command=self._on_autohide_toggle
         )
         if self.config.get("autohide_on_pause", False):
             self.autohide_switch.select()
-        self.autohide_switch.pack(side="right", padx=16, pady=10)
+        self.autohide_switch.pack(side="right", padx=18, pady=10)
 
-        # Scrollable gallery
-        self.scrollable_gallery = ctk.CTkScrollableFrame(self.tab_gallery, fg_color="transparent")
-        self.scrollable_gallery.pack(fill="both", expand=True, padx=5, pady=(0, 10))
+        # Scrollable gallery (Notion database card grid)
+        self.scrollable_gallery = ctk.CTkScrollableFrame(parent, fg_color="transparent")
+        self.scrollable_gallery.pack(fill="both", expand=True)
 
         previews_dir = os.path.join(self.assets_dir, "static", "previews")
         self.gallery_url_entries = {}
+        self.gallery_card_widgets = {}
+        active_theme_id = self.config.get("selected_theme", "glassmorphism")
 
         for i, theme_id in enumerate(THEME_IDS, 1):
-            name, desc = get_theme_info(self.current_lang, theme_id)
-            url = self._get_theme_url(theme_id)
+            is_active = (theme_id == active_theme_id)
+            title, desc = get_theme_info(self.current_lang, theme_id)
 
-            card = ctk.CTkFrame(self.scrollable_gallery, corner_radius=14, fg_color="#181824")
-            card.pack(fill="x", pady=8, padx=6)
+            # Notion Gallery Card (12px rounded, 2px purple border if active)
+            card = ctk.CTkFrame(
+                self.scrollable_gallery,
+                corner_radius=12,
+                fg_color=NOTION_SURFACE,
+                border_width=2 if is_active else 1,
+                border_color=NOTION_PURPLE if is_active else NOTION_HAIRLINE
+            )
+            card.pack(fill="x", pady=6, padx=4)
 
-            # Left: Preview Image Frame
-            preview_container = tk.Frame(card, bg="#0f111a", width=340, height=136)
-            preview_container.pack(side="left", padx=14, pady=12)
-            preview_container.pack_propagate(False)
+            inner = ctk.CTkFrame(card, fg_color="transparent")
+            inner.pack(fill="x", padx=16, pady=14)
 
-            preview_img_path = os.path.join(previews_dir, f"{theme_id}.png")
-            photo_img = None
+            # Preview Image Thumbnail (160x90, 8px rounded)
+            preview_img = self._load_preview_thumbnail(previews_dir, theme_id, (160, 90))
+            img_container = ctk.CTkFrame(
+                inner,
+                width=160,
+                height=90,
+                corner_radius=8,
+                fg_color="#121212",
+                border_width=1,
+                border_color=NOTION_HAIRLINE_STRONG
+            )
+            img_container.pack(side="left", padx=(0, 16))
+            img_container.pack_propagate(False)
 
-            if os.path.exists(preview_img_path):
-                try:
-                    pil_img = Image.open(preview_img_path)
-                    pil_img = pil_img.resize((340, 136), Image.Resampling.LANCZOS)
-                    photo_img = ImageTk.PhotoImage(pil_img)
-                    self.preview_tk_images[theme_id] = photo_img
-                except Exception:
-                    pass
+            img_label = ctk.CTkLabel(img_container, text="", image=preview_img)
+            img_label.place(relx=0.5, rely=0.5, anchor="center")
 
-            if photo_img:
-                img_label = tk.Label(
-                    preview_container,
-                    image=photo_img,
-                    bg="#0f111a",
-                    cursor="hand2"
-                )
-                img_label.pack(fill="both", expand=True)
-            else:
-                img_label = tk.Label(
-                    preview_container,
-                    text=f"({name})",
-                    fg="#6366f1",
-                    bg="#0f111a",
-                    font=("Segoe UI", 12, "bold"),
-                    cursor="hand2"
-                )
-                img_label.pack(fill="both", expand=True)
+            theme_url_getter = lambda tid=theme_id: self._get_theme_url(tid)
+            self._setup_drag_on_widget(img_container, theme_url_getter)
+            self._setup_drag_on_widget(img_label, theme_url_getter)
 
-            # Bind native drag on the preview image, container, and entry (click=copy, drag=add to OBS)
-            self._setup_drag_on_widget(img_label, lambda t=theme_id: self._get_theme_url(t))
-            self._setup_drag_on_widget(preview_container, lambda t=theme_id: self._get_theme_url(t))
+            # Details
+            details = ctk.CTkFrame(inner, fg_color="transparent")
+            details.pack(side="left", fill="both", expand=True)
 
-            # Center: Information & Direct URL field
-            center_box = ctk.CTkFrame(card, fg_color="transparent")
-            center_box.pack(side="left", fill="both", expand=True, padx=12, pady=12)
+            title_row = ctk.CTkFrame(details, fg_color="transparent")
+            title_row.pack(fill="x", pady=(0, 2))
 
             ctk.CTkLabel(
-                center_box,
-                text=f"{i}. {name}",
-                font=self._font(15, "bold"),
-                text_color="#ffffff"
-            ).pack(anchor="w")
+                title_row,
+                text=f"{i}. {title}",
+                font=self._font(13, "bold"),
+                text_color=NOTION_INK
+            ).pack(side="left")
+
+            badge = ctk.CTkFrame(
+                title_row,
+                corner_radius=6,
+                fg_color=TAG_PURPLE_BG,
+                border_width=1,
+                border_color=TAG_PURPLE_BORDER
+            )
+            ctk.CTkLabel(
+                badge,
+                text=self._t("active_theme_badge", "目前使用中"),
+                font=self._font(9, "bold"),
+                text_color=TAG_PURPLE_TEXT
+            ).pack(padx=6, pady=1)
+
+            if is_active:
+                badge.pack(side="left", padx=8)
 
             ctk.CTkLabel(
-                center_box,
+                details,
                 text=desc,
-                font=self._font(12),
-                text_color="#94a3b8",
-                wraplength=270,
+                font=self._font(11),
+                text_color=NOTION_STEEL,
+                anchor="w",
                 justify="left"
-            ).pack(anchor="w", pady=(2, 4))
+            ).pack(fill="x", pady=(0, 8))
 
-            # Dedicated Drag Handle Badge
-            drag_handle_box = tk.Label(
-                center_box,
-                text=f"⠿ {self._t('drag_hint')}",
-                bg="#1e293b",
-                fg="#4ade80",
-                font=(self.font_family, 10, "bold"),
-                padx=8,
-                pady=2,
-                cursor="hand2"
-            )
-            drag_handle_box.pack(anchor="w", pady=(0, 4))
-            self._setup_drag_on_widget(drag_handle_box, lambda t=theme_id: self._get_theme_url(t))
+            # URL Bar + Buttons
+            url_row = ctk.CTkFrame(details, fg_color="transparent")
+            url_row.pack(fill="x")
 
-            drag_entry = ctk.CTkEntry(
-                center_box,
-                height=26,
-                font=ctk.CTkFont(size=11),
-                text_color="#a5b4fc",
-                fg_color="#12121c"
-            )
-            drag_entry.insert(0, url)
-            drag_entry.configure(state="readonly")
-            drag_entry.pack(fill="x", pady=(2, 0))
-            self._setup_drag_on_widget(drag_entry, lambda t=theme_id: self._get_theme_url(t))
-            self.gallery_url_entries[theme_id] = drag_entry
-
-            # Right: Action Buttons
-            btn_box = ctk.CTkFrame(card, fg_color="transparent")
-            btn_box.pack(side="right", padx=14, pady=12)
-
-            copy_btn = ctk.CTkButton(
-                btn_box,
-                text=self._t("copy_url_btn"),
-                width=100,
-                height=32,
-                corner_radius=8,
-                font=self._font(12),
-                fg_color="#4f46e5",
-                hover_color="#4338ca",
-                command=lambda t=theme_id: self._copy_specific_theme(t)
-            )
-            copy_btn.pack(pady=3)
-
-            preview_btn = ctk.CTkButton(
-                btn_box,
-                text=self._t("preview_btn"),
-                width=100,
+            entry = ctk.CTkEntry(
+                url_row,
                 height=30,
                 corner_radius=8,
-                font=self._font(12),
-                fg_color="#27273a",
-                hover_color="#373752",
-                command=lambda t=theme_id: webbrowser.open(self._get_theme_url(t))
+                font=self._font(11),
+                fg_color="#121212",
+                border_color=NOTION_HAIRLINE_STRONG,
+                text_color=NOTION_CHARCOAL
             )
-            preview_btn.pack(pady=3)
+            entry.insert(0, self._get_theme_url(theme_id))
+            entry.configure(state="readonly")
+            entry.pack(side="left", fill="x", expand=True, padx=(0, 8))
+            self._setup_drag_on_widget(entry, theme_url_getter)
+            self.gallery_url_entries[theme_id] = entry
 
+            # Action Buttons
             set_btn = ctk.CTkButton(
-                btn_box,
-                text=self._t("set_active_btn"),
-                width=100,
+                url_row,
+                text=self._t("set_active_btn", "設為當前"),
+                width=80,
                 height=30,
                 corner_radius=8,
-                font=self._font(12),
-                fg_color="#374151",
-                hover_color="#4b5563",
-                command=lambda t=theme_id: self._set_theme_from_gallery(t)
+                font=self._font(11, "bold"),
+                fg_color=NOTION_PURPLE if is_active else "#242424",
+                hover_color=NOTION_PURPLE_HOVER if is_active else "#303030",
+                border_width=0 if is_active else 1,
+                border_color=NOTION_HAIRLINE_STRONG,
+                command=lambda tid=theme_id: self._on_set_active_theme(tid)
             )
-            set_btn.pack(pady=3)
+            set_btn.pack(side="left", padx=(0, 6))
 
-    def _setup_drag_on_widget(self, widget, get_url_func):
-        """Sets up native Windows OLE drag-and-drop into OBS Studio as a Browser Source with direct HTTP URL."""
-        setup_native_drag_and_drop(
-            widget=widget,
-            get_url_func=get_url_func,
-            on_drag_success_callback=lambda: self.show_inapp_toast(self._t("drag_done_toast", "✔ 已拖曳至 OBS！")),
-            on_click_callback=self._copy_url_to_clipboard
+            self.gallery_card_widgets[theme_id] = {
+                "card": card,
+                "badge": badge,
+                "btn": set_btn
+            }
+
+            ctk.CTkButton(
+                url_row,
+                text=self._t("copy_url_btn", "複製網址"),
+                width=76,
+                height=30,
+                corner_radius=8,
+                font=self._font(11),
+                fg_color="#242424",
+                hover_color="#303030",
+                border_width=1,
+                border_color=NOTION_HAIRLINE_STRONG,
+                command=lambda tid=theme_id: self._copy_theme_url(tid)
+            ).pack(side="left", padx=(0, 6))
+
+            ctk.CTkButton(
+                url_row,
+                text=self._t("preview_btn", "預覽"),
+                width=55,
+                height=30,
+                corner_radius=8,
+                font=self._font(11),
+                fg_color="#242424",
+                hover_color="#303030",
+                border_width=1,
+                border_color=NOTION_HAIRLINE_STRONG,
+                command=lambda tid=theme_id: webbrowser.open(self._get_theme_url(tid))
+            ).pack(side="left")
+
+    # -------------------------------------------------------------
+    # Page 3: Settings (Notion Workspace Preferences)
+    # -------------------------------------------------------------
+    def _build_settings_page(self, parent=None):
+        if parent is None:
+            parent = getattr(self, "page_settings", self.content_container)
+        settings_scroll = ctk.CTkScrollableFrame(parent, fg_color="transparent")
+        settings_scroll.pack(fill="both", expand=True)
+
+        # Section 1: Language & Region
+        self._build_settings_section(
+            settings_scroll,
+            title=self._t("settings_category_lang", "語言與地區"),
+            subtitle="選擇軟體操作介面顯示語言 (繁體中文、English 等 14 種語言)"
         )
+        sec1_card = ctk.CTkFrame(settings_scroll, corner_radius=12, fg_color=NOTION_SURFACE, border_width=1, border_color=NOTION_HAIRLINE)
+        sec1_card.pack(fill="x", pady=(0, 20))
 
-    def _copy_url_to_clipboard(self, url):
-        if not url:
-            return
-        self.clipboard_clear()
-        self.clipboard_append(url)
-        self.show_inapp_toast(self._t("copied_toast"))
+        lang_row = ctk.CTkFrame(sec1_card, fg_color="transparent")
+        lang_row.pack(fill="x", padx=20, pady=16)
 
-    def _on_language_changed(self, chosen_label):
-        lang_code = next((opt[1] for opt in LANGUAGE_OPTIONS if opt[0] == chosen_label), "zh_TW")
-        self.current_lang = lang_code
-        self.config["language"] = lang_code
-        self.font_family = get_ui_font_family(lang_code)
-        save_config(self.config)
-        self._build_ui()
+        ctk.CTkLabel(
+            lang_row,
+            text=self._t("language_label", "語言 / Language:"),
+            font=self._font(12, "bold"),
+            text_color=NOTION_INK
+        ).pack(side="left")
 
-    def _get_global_overlay_url(self):
-        port = self.config.get("port", 11150)
-        autohide = 1 if self.config.get("autohide_on_pause", False) else 0
-        return f"http://localhost:{port}/overlay?autohide={autohide}"
+        lang_names = [name for name, _ in LANGUAGE_OPTIONS]
+        current_name = next((name for name, code in LANGUAGE_OPTIONS if code == self.current_lang), "English")
+
+        lang_font = self._font(11)
+        self.lang_menu = ctk.CTkOptionMenu(
+            lang_row,
+            values=lang_names,
+            width=240,
+            height=32,
+            corner_radius=8,
+            font=lang_font,
+            dropdown_font=lang_font,
+            fg_color="#242424",
+            button_color="#2f2f2f",
+            button_hover_color="#3a3a3a",
+            command=self._on_language_changed
+        )
+        try:
+            self.lang_menu._dropdown_menu.configure(font=lang_font)
+        except Exception:
+            pass
+        self.lang_menu.set(current_name)
+        self.lang_menu.pack(side="right")
+
+        # Section 2: Server & Network
+        self._build_settings_section(
+            settings_scroll,
+            title=self._t("settings_category_server", "伺服器與網路"),
+            subtitle="管理本機 HTTP 伺服器通訊端口與播放自動隱藏功能"
+        )
+        sec2_card = ctk.CTkFrame(settings_scroll, corner_radius=12, fg_color=NOTION_SURFACE, border_width=1, border_color=NOTION_HAIRLINE)
+        sec2_card.pack(fill="x", pady=(0, 20))
+
+        # Port row
+        port_row = ctk.CTkFrame(sec2_card, fg_color="transparent")
+        port_row.pack(fill="x", padx=20, pady=(16, 12))
+
+        ctk.CTkLabel(
+            port_row,
+            text=self._t("server_port", "伺服器端口："),
+            font=self._font(12, "bold"),
+            text_color=NOTION_INK
+        ).pack(side="left")
+
+        self.port_entry = ctk.CTkEntry(
+            port_row,
+            width=90,
+            height=32,
+            corner_radius=8,
+            font=self._font(11),
+            fg_color="#121212",
+            border_color=NOTION_HAIRLINE_STRONG
+        )
+        self.port_entry.insert(0, str(self.config.get("port", 11150)))
+        self.port_entry.pack(side="right", padx=(8, 0))
+
+        ctk.CTkButton(
+            port_row,
+            text=self._t("apply_port", "套用端口"),
+            width=80,
+            height=32,
+            corner_radius=8,
+            font=self._font(11, "bold"),
+            fg_color=NOTION_PURPLE,
+            hover_color=NOTION_PURPLE_HOVER,
+            command=self._on_apply_port
+        ).pack(side="right")
+
+        ctk.CTkFrame(sec2_card, height=1, fg_color=NOTION_HAIRLINE).pack(fill="x", padx=20)
+
+        # Autohide row
+        auto_row = ctk.CTkFrame(sec2_card, fg_color="transparent")
+        auto_row.pack(fill="x", padx=20, pady=16)
+
+        ctk.CTkLabel(
+            auto_row,
+            text=self._t("autohide_switch", "暫停或停止播放時自動隱藏小組件"),
+            font=self._font(12, "bold"),
+            text_color=NOTION_INK
+        ).pack(side="left")
+
+        self.settings_autohide_switch = ctk.CTkSwitch(
+            auto_row,
+            text="",
+            progress_color=NOTION_PURPLE,
+            command=self._on_autohide_toggle_settings
+        )
+        if self.config.get("autohide_on_pause", False):
+            self.settings_autohide_switch.select()
+        self.settings_autohide_switch.pack(side="right")
+
+        ctk.CTkFrame(sec2_card, height=1, fg_color=NOTION_HAIRLINE).pack(fill="x", padx=20)
+
+        # Shortcuts row
+        sc_row = ctk.CTkFrame(sec2_card, fg_color="transparent")
+        sc_row.pack(fill="x", padx=20, pady=16)
+
+        ctk.CTkLabel(
+            sc_row,
+            text="OBS 捷徑檔快速開啟",
+            font=self._font(12, "bold"),
+            text_color=NOTION_INK
+        ).pack(side="left")
+
+        ctk.CTkButton(
+            sc_row,
+            text=self._t("open_folder_btn", "開啟捷徑資料夾"),
+            height=32,
+            corner_radius=8,
+            font=self._font(11),
+            fg_color="#242424",
+            hover_color="#303030",
+            border_width=1,
+            border_color=NOTION_HAIRLINE_STRONG,
+            command=self._open_shortcuts_folder
+        ).pack(side="right")
+
+        # Section 3: Software Version & Updates
+        self._build_settings_section(
+            settings_scroll,
+            title=self._t("settings_category_update", "軟體版本與更新"),
+            subtitle="檢查 GitHub 最新發行版本，支援一鍵直接下載重啟更新"
+        )
+        sec3_card = ctk.CTkFrame(settings_scroll, corner_radius=12, fg_color=NOTION_SURFACE, border_width=1, border_color=NOTION_HAIRLINE)
+        sec3_card.pack(fill="x", pady=(0, 20))
+
+        ver_row = ctk.CTkFrame(sec3_card, fg_color="transparent")
+        ver_row.pack(fill="x", padx=20, pady=16)
+
+        ver_display = APP_VERSION if APP_VERSION.startswith("v") else f"v{APP_VERSION}"
+        ctk.CTkLabel(
+            ver_row,
+            text=f"{self._t('version_label', '軟體版本：')} {ver_display}",
+            font=self._font(12, "bold"),
+            text_color=NOTION_INK
+        ).pack(side="left")
+
+        self.btn_check_update = ctk.CTkButton(
+            ver_row,
+            text=self._t("btn_check_update", "檢查與線上更新"),
+            height=32,
+            corner_radius=8,
+            font=self._font(11, "bold"),
+            fg_color=NOTION_PURPLE,
+            hover_color=NOTION_PURPLE_HOVER,
+            command=self._on_check_update_clicked
+        )
+        self.btn_check_update.pack(side="right")
+
+        # Update dynamic banner
+        self.update_info_frame = ctk.CTkFrame(sec3_card, fg_color="transparent")
+        self.update_info_frame.pack(fill="x", padx=20, pady=(0, 16))
+
+        self.update_status_label = ctk.CTkLabel(
+            self.update_info_frame,
+            text="",
+            font=self._font(11),
+            text_color=NOTION_STEEL,
+            anchor="w"
+        )
+        self.update_status_label.pack(fill="x")
+
+        self.update_progress_bar = ctk.CTkProgressBar(
+            self.update_info_frame,
+            height=6,
+            corner_radius=3,
+            progress_color=NOTION_PURPLE,
+            fg_color="#333333"
+        )
+        self.update_progress_bar.set(0)
+
+        self.update_action_box = ctk.CTkFrame(self.update_info_frame, fg_color="transparent")
+
+    def _build_settings_section(self, parent, title, subtitle):
+        box = ctk.CTkFrame(parent, fg_color="transparent")
+        box.pack(fill="x", pady=(10, 8))
+
+        ctk.CTkLabel(
+            box,
+            text=title,
+            font=self._font(13, "bold"),
+            text_color=NOTION_INK
+        ).pack(anchor="w")
+
+        ctk.CTkLabel(
+            box,
+            text=subtitle,
+            font=self._font(10),
+            text_color=NOTION_STONE
+        ).pack(anchor="w", pady=(2, 0))
+
+    # -------------------------------------------------------------
+    # Logic & Event Handlers
+    # -------------------------------------------------------------
+    def _setup_drag_on_widget(self, widget, url_getter):
+        """Attaches native Windows OLE drag to OBS canvas."""
+        setup_native_drag_and_drop(widget, url_getter, on_drag_success_callback=self._on_drag_completed)
+
+    def _on_drag_completed(self):
+        self.show_inapp_toast(self._t("drag_done_toast", "成功拖曳至 OBS！"))
 
     def _get_theme_url(self, theme_id):
         port = self.config.get("port", 11150)
         autohide = 1 if self.config.get("autohide_on_pause", False) else 0
         return f"http://localhost:{port}/overlay?theme={theme_id}&autohide={autohide}"
 
-    def _update_all_url_fields(self):
-        """Refreshes all displayed URL entry fields when port or autohide changes."""
-        if hasattr(self, "global_url_entry") and self.global_url_entry and self.global_url_entry.winfo_exists():
-            g_url = self._get_global_overlay_url()
-            self.global_url_entry.configure(state="normal")
-            self.global_url_entry.delete(0, "end")
-            self.global_url_entry.insert(0, g_url)
-            self.global_url_entry.configure(state="readonly")
-
-        for tid, entry in getattr(self, "gallery_url_entries", {}).items():
-            if entry and entry.winfo_exists():
-                new_url = self._get_theme_url(tid)
-                entry.configure(state="normal")
-                entry.delete(0, "end")
-                entry.insert(0, new_url)
-                entry.configure(state="readonly")
-
-    def _set_default_thumbnail(self):
-        # songIcon.jpg is only used in template gallery, NOT on the main page.
-        # Main page has NO placeholder/temp image - kept clean and empty as requested.
-        if hasattr(self, "cover_label") and self.cover_label and self.cover_label.winfo_exists():
-            if hasattr(self, "_cached_cover_img") and self._cached_cover_img:
-                self.cover_label.configure(image=self._cached_cover_img, text="")
-            else:
-                empty_img = Image.new("RGBA", (1, 1), (0, 0, 0, 0))
-                ctk_empty = ctk.CTkImage(light_image=empty_img, dark_image=empty_img, size=(1, 1))
-                self.cover_label.configure(image=ctk_empty, text="")
-
-    def _get_current_obs_url(self):
-        return self._get_global_overlay_url()
-
-    def _copy_obs_url(self):
-        self._copy_global_url()
+    def _get_global_overlay_url(self):
+        port = self.config.get("port", 11150)
+        autohide = 1 if self.config.get("autohide_on_pause", False) else 0
+        return f"http://localhost:{port}/overlay?autohide={autohide}"
 
     def _copy_global_url(self):
         url = self._get_global_overlay_url()
         self.clipboard_clear()
         self.clipboard_append(url)
-        self.show_inapp_toast(self._t("copied_toast"))
-        if hasattr(self, "btn_copy_global") and self.btn_copy_global and self.btn_copy_global.winfo_exists():
-            self.btn_copy_global.configure(text=f"✔ {self._t('copied_title')}", fg_color="#10b981")
-            self.after(2000, lambda: self.btn_copy_global.configure(text=self._t("btn_copy_global_url"), fg_color="#4f46e5"))
+        self.update()
+        self.show_inapp_toast(self._t("copied_toast", "已複製全域網址至剪貼簿！可在 OBS 直接貼上"))
 
-    def _copy_specific_theme(self, theme_id, url=None):
-        target_url = self._get_theme_url(theme_id)
+    def _copy_theme_url(self, theme_id):
+        url = self._get_theme_url(theme_id)
         self.clipboard_clear()
-        self.clipboard_append(target_url)
-        # Non-blocking in-app notification! NO modal alert popup window!
-        self.show_inapp_toast(self._t("copied_toast"))
-
-    def _set_theme_from_gallery(self, theme_id):
-        self.config["selected_theme"] = theme_id
-        save_config(self.config)
-        name, _ = get_theme_info(self.current_lang, theme_id)
-        if hasattr(self, "global_theme_dropdown") and self.global_theme_dropdown and self.global_theme_dropdown.winfo_exists():
-            self.global_theme_dropdown.set(name)
-        if self.on_theme_change_callback:
-            self.on_theme_change_callback(theme_id)
-        self.show_inapp_toast(self._t("set_active_toast", f"⭐ 已將「{name}」設為全域使用中模板！").format(name=name))
+        self.clipboard_append(url)
+        self.update()
+        self.show_inapp_toast(self._t("copied_toast", "已複製 OBS 網址至剪貼簿！可在 OBS 直接貼上"))
 
     def _on_global_theme_selected(self, chosen_display_name):
+        selected_tid = "glassmorphism"
         for tid in THEME_IDS:
             name, _ = get_theme_info(self.current_lang, tid)
             if name == chosen_display_name:
-                self.config["selected_theme"] = tid
-                save_config(self.config)
-                if self.on_theme_change_callback:
-                    self.on_theme_change_callback(tid)
-                self.show_inapp_toast(self._t("set_active_toast", f"⭐ 已將「{name}」設為全域使用中模板！").format(name=name))
+                selected_tid = tid
                 break
 
-    def _apply_port(self):
-        try:
-            new_port = int(self.port_entry.get().strip())
-            if new_port < 1024 or new_port > 65535:
-                self.show_inapp_toast(self._t("port_error"))
-                return
-            self.config["port"] = new_port
-            save_config(self.config)
-            self._update_all_url_fields()
-            if self.on_port_change_callback:
-                self.on_port_change_callback(new_port)
-            self.show_inapp_toast(self._t("port_updated_toast").format(port=new_port))
-        except Exception as e:
-            self.show_inapp_toast(str(e))
+        self.config["selected_theme"] = selected_tid
+        save_config(self.config)
+        if self.on_theme_change_callback:
+            self.on_theme_change_callback(selected_tid)
+
+        self._update_active_theme_ui(selected_tid)
+        self.show_inapp_toast(self._t("theme_set_toast", f"已將全域模板設為「{chosen_display_name}」！OBS 即時同步生效").format(name=chosen_display_name))
+
+    def _on_set_active_theme(self, theme_id):
+        self.config["selected_theme"] = theme_id
+        save_config(self.config)
+        if self.on_theme_change_callback:
+            self.on_theme_change_callback(theme_id)
+
+        theme_name, _ = get_theme_info(self.current_lang, theme_id)
+        self._update_active_theme_ui(theme_id)
+        self.show_inapp_toast(self._t("theme_set_toast", f"已切換至「{theme_name}」模板！").format(name=theme_name))
+
+    def _update_active_theme_ui(self, theme_id):
+        """Updates borders, badges, and buttons of theme cards in-place without re-rendering or duplicating."""
+        theme_name, _ = get_theme_info(self.current_lang, theme_id)
+
+        # 1. In-place update for Theme Gallery cards
+        if hasattr(self, "gallery_card_widgets"):
+            for tid, widgets in self.gallery_card_widgets.items():
+                is_active = (tid == theme_id)
+                card = widgets.get("card")
+                badge = widgets.get("badge")
+                btn = widgets.get("btn")
+                if card and card.winfo_exists():
+                    card.configure(
+                        border_width=2 if is_active else 1,
+                        border_color=NOTION_PURPLE if is_active else NOTION_HAIRLINE
+                    )
+                if badge and badge.winfo_exists():
+                    if is_active:
+                        badge.pack(side="left", padx=8)
+                    else:
+                        badge.pack_forget()
+                if btn and btn.winfo_exists():
+                    btn.configure(
+                        fg_color=NOTION_PURPLE if is_active else "#242424",
+                        hover_color=NOTION_PURPLE_HOVER if is_active else "#303030",
+                        border_width=0 if is_active else 1,
+                        border_color=NOTION_HAIRLINE_STRONG
+                    )
+
+        # 2. Update Dashboard widgets if they exist
+        if hasattr(self, "player_theme_chip") and self.player_theme_chip.winfo_exists():
+            self.player_theme_chip.configure(text=f"Theme: {theme_name}")
+
+        if hasattr(self, "global_theme_dropdown") and self.global_theme_dropdown.winfo_exists():
+            self.global_theme_dropdown.set(theme_name)
 
     def _on_autohide_toggle(self):
-        enabled = bool(self.autohide_switch.get())
-        self.config["autohide_on_pause"] = enabled
+        val = bool(self.autohide_switch.get())
+        self.config["autohide_on_pause"] = val
         save_config(self.config)
-        self._update_all_url_fields()
+        self._refresh_all_urls()
 
-    def update_media_display(self, data):
-        self.latest_media_data = data
-        def _update():
-            if not data:
-                return
-            if getattr(self, "track_title_label", None) is None:
-                return
-            try:
-                if not self.track_title_label.winfo_exists():
-                    return
-            except Exception:
-                return
+    def _on_autohide_toggle_settings(self):
+        val = bool(self.settings_autohide_switch.get())
+        self.config["autohide_on_pause"] = val
+        save_config(self.config)
+        self._refresh_all_urls()
 
-            has_media = data.get("has_media", False)
-            title = data.get("title", "") or (self._t("waiting_media") if not has_media else "Untitled Track")
-            artist = data.get("artist", "") or (self._t("play_instruction") if not has_media else "Unknown Artist")
-            status = data.get("status", "Stopped")
+    def _refresh_all_urls(self):
+        if hasattr(self, "global_url_entry") and self.global_url_entry.winfo_exists():
+            self.global_url_entry.configure(state="normal")
+            self.global_url_entry.delete(0, "end")
+            self.global_url_entry.insert(0, self._get_global_overlay_url())
+            self.global_url_entry.configure(state="readonly")
 
-            try:
+        if hasattr(self, "gallery_url_entries"):
+            for tid, entry in self.gallery_url_entries.items():
+                if entry.winfo_exists():
+                    entry.configure(state="normal")
+                    entry.delete(0, "end")
+                    entry.insert(0, self._get_theme_url(tid))
+                    entry.configure(state="readonly")
+
+    def _on_apply_port(self):
+        try:
+            p = int(self.port_entry.get().strip())
+            if 1024 <= p <= 65535:
+                self.config["port"] = p
+                save_config(self.config)
+                if self.on_port_change_callback:
+                    self.on_port_change_callback(p)
+                self._refresh_all_urls()
+                self.show_inapp_toast(self._t("port_updated_toast", f"端口已更新為 {p}！").format(port=p))
+            else:
+                self.show_inapp_toast(self._t("port_error", "端口號必須介於 1024 至 65535 之間"))
+        except ValueError:
+            self.show_inapp_toast(self._t("port_error", "端口號必須介於 1024 至 65535 之間"))
+
+    def _on_language_changed(self, chosen_name):
+        selected_code = "zh_TW"
+        for name, code in LANGUAGE_OPTIONS:
+            if name == chosen_name:
+                selected_code = code
+                break
+
+        if selected_code != self.current_lang:
+            self.current_lang = selected_code
+            self.config["language"] = selected_code
+            save_config(self.config)
+            self.font_family = get_ui_font_family(selected_code)
+            self._build_ui()
+
+    def _open_shortcuts_folder(self):
+        folder = os.path.join(self.assets_dir, "obs_shortcuts")
+        if os.path.exists(folder):
+            os.startfile(folder)
+
+    # -------------------------------------------------------------
+    # Media State Updates
+    # -------------------------------------------------------------
+    def update_media_display(self, media_data):
+        """Called dynamically by backend observer whenever music plays/pauses."""
+        # Ensure thread-safety: dispatch to Tkinter main thread if called from async worker thread
+        if threading.current_thread() is not threading.main_thread():
+            self.after(0, self.update_media_display, media_data)
+            return
+
+        self.latest_media_data = media_data
+        if not media_data:
+            return
+
+        title = media_data.get("title") or self._t("waiting_media", "等待媒體播放中...")
+        artist = media_data.get("artist") or self._t("play_instruction", "在 YouTube、YouTube Music 或 Spotify 播放音樂")
+        status = (media_data.get("status") or "").strip().lower()
+        pos = media_data.get("position", 0)
+        dur = media_data.get("duration", 0)
+        has_media = media_data.get("has_media", False)
+        thumb_b64 = media_data.get("thumbnail")
+
+        # Update Standard Dashboard Page widgets if active (with state-diffing to eliminate redundant Tkinter canvas redraws)
+        if hasattr(self, "track_title_label") and self.track_title_label and self.track_title_label.winfo_exists():
+            if title != self._last_rendered_title:
                 self.track_title_label.configure(text=title)
-                if hasattr(self, "track_artist_label") and self.track_artist_label and self.track_artist_label.winfo_exists():
-                    self.track_artist_label.configure(text=artist)
+                self._last_rendered_title = title
+            if artist != self._last_rendered_artist:
+                self.track_artist_label.configure(text=artist)
+                self._last_rendered_artist = artist
 
-                pos = data.get("position", 0)
-                dur = data.get("duration", 0)
-                cur_str = format_time_str(pos)
-                dur_str = format_time_str(dur) if dur > 0 else "--:--"
-                if hasattr(self, "time_label") and self.time_label and self.time_label.winfo_exists():
-                    self.time_label.configure(text=f"{cur_str} / {dur_str}")
-                
-                if hasattr(self, "progress_bar") and self.progress_bar and self.progress_bar.winfo_exists():
-                    if dur > 0:
-                        self.progress_bar.set(min(1.0, max(0.0, pos / dur)))
-                    else:
-                        self.progress_bar.set(0)
+            # Update Notion Pastel Status Badge only when status changes
+            if status != self._last_rendered_status and hasattr(self, "status_badge") and self.status_badge.winfo_exists():
+                self._last_rendered_status = status
+                if status == "playing":
+                    self.status_badge.configure(fg_color=TAG_MINT_BG, border_color=TAG_MINT_BORDER)
+                    self.status_badge_text.configure(text=self._t("status_playing", "播放中"), text_color=TAG_MINT_TEXT)
+                elif status == "paused":
+                    self.status_badge.configure(fg_color=TAG_LAVENDER_BG, border_color=TAG_LAVENDER_BORDER)
+                    self.status_badge_text.configure(text=self._t("status_paused", "已暫停"), text_color=TAG_LAVENDER_TEXT)
+                else:
+                    self.status_badge.configure(fg_color=TAG_PEACH_BG, border_color=TAG_PEACH_BORDER)
+                    self.status_badge_text.configure(text=self._t("status_idle", "閒置"), text_color=TAG_PEACH_TEXT)
 
-                if hasattr(self, "status_badge") and self.status_badge and self.status_badge.winfo_exists():
-                    if status == "Playing":
-                        self.status_badge.configure(text=self._t("status_playing"), text_color="#4ade80", fg_color="#143422")
-                    elif status == "Paused":
-                        self.status_badge.configure(text=self._t("status_paused"), text_color="#facc15", fg_color="#362d08")
-                    else:
-                        self.status_badge.configure(text=self._t("status_idle"), text_color="#94a3b8", fg_color="#1e293b")
+            # Progress Bar
+            if hasattr(self, "progress_bar") and self.progress_bar.winfo_exists():
+                frac = (pos / dur) if (dur and dur > 0) else 0.0
+                self.progress_bar.set(max(0.0, min(1.0, frac)))
 
-                thumb_b64 = data.get("thumbnail", "")
-                if hasattr(self, "cover_label") and self.cover_label and self.cover_label.winfo_exists():
-                    if thumb_b64:
-                        if thumb_b64 != self.current_thumbnail_data or not getattr(self, "_cached_cover_img", None):
-                            self.current_thumbnail_data = thumb_b64
-                            try:
-                                raw_b64 = thumb_b64.split(",", 1)[1] if "," in thumb_b64 else thumb_b64
-                                img_bytes = base64.b64decode(raw_b64)
-                                pil_img = Image.open(io.BytesIO(img_bytes)).convert("RGBA")
-                                pil_img = pil_img.resize((170, 170), Image.Resampling.LANCZOS)
-                                ctk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=(170, 170))
-                                self._cached_cover_img = ctk_img
-                                self.cover_label.configure(image=ctk_img, text="")
-                            except Exception:
-                                self._cached_cover_img = None
-                                self._set_default_thumbnail()
-                        elif hasattr(self, "_cached_cover_img") and self._cached_cover_img:
-                            self.cover_label.configure(image=self._cached_cover_img, text="")
-                    else:
-                        self._cached_cover_img = None
-                        self.current_thumbnail_data = None
-                        self._set_default_thumbnail()
+            # Time label only when formatted string changes
+            time_str = f"{format_time_str(pos)} / {format_time_str(dur)}"
+            if time_str != self._last_rendered_time_str and hasattr(self, "time_label") and self.time_label.winfo_exists():
+                self.time_label.configure(text=time_str)
+                self._last_rendered_time_str = time_str
+
+            # Album Art
+            if thumb_b64 and thumb_b64 != self.current_thumbnail_data:
+                self.current_thumbnail_data = thumb_b64
+                self._update_cover_image(thumb_b64, self.cover_label, size=(90, 90))
+            elif not has_media and self.current_thumbnail_data is not None:
+                self.current_thumbnail_data = None
+                self._load_default_cover(target_label=self.cover_label, size=(90, 90))
+
+    def _load_default_cover(self, target_label, size=(90, 90)):
+        if not target_label or not target_label.winfo_exists():
+            return
+        if self._cached_default_cover_img is not None:
+            target_label.configure(image=self._cached_default_cover_img)
+            self._cached_cover_img = self._cached_default_cover_img
+            return
+        default_cover_path = os.path.join(self.assets_dir, "songIcon.jpg")
+        try:
+            if os.path.exists(default_cover_path):
+                img = Image.open(default_cover_path).convert("RGBA").resize(size, Image.Resampling.BILINEAR)
+                tk_img = ctk.CTkImage(light_image=img, dark_image=img, size=size)
+                self._cached_default_cover_img = tk_img
+                target_label.configure(image=tk_img)
+                self._cached_cover_img = tk_img
+        except Exception as e:
+            print(f"[GUI] Error loading default cover: {e}")
+
+    def _update_cover_image(self, b64_str, target_label, size=(90, 90)):
+        if not target_label or not target_label.winfo_exists():
+            return
+        if not b64_str:
+            self._load_default_cover(target_label=target_label, size=size)
+            return
+        try:
+            # Strip data URI header if present (e.g. data:image/jpeg;base64,...)
+            clean_b64 = b64_str.split(",", 1)[1] if "," in b64_str else b64_str
+            clean_b64 = clean_b64.strip()
+            img_data = base64.b64decode(clean_b64)
+            if not img_data or len(img_data) < 32:
+                self._load_default_cover(target_label=target_label, size=size)
+                return
+            bio = io.BytesIO(img_data)
+            pil_img = Image.open(bio).convert("RGBA").resize(size, Image.Resampling.BILINEAR)
+            tk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=size)
+            target_label.configure(image=tk_img)
+            self._cached_cover_img = tk_img
+        except Exception:
+            # Gracefully fallback to default cover image without crashing or console error
+            self._load_default_cover(target_label=target_label, size=size)
+
+    def _load_preview_thumbnail(self, previews_dir, theme_id, size=(160, 90)):
+        if theme_id in self.preview_tk_images:
+            return self.preview_tk_images[theme_id]
+        img_path = os.path.join(previews_dir, f"{theme_id}.png")
+        try:
+            if os.path.exists(img_path):
+                pil_img = Image.open(img_path).convert("RGBA").resize(size, Image.Resampling.BILINEAR)
+            else:
+                pil_img = Image.new("RGBA", size, "#1e2238")
+        except Exception:
+            pil_img = Image.new("RGBA", size, "#1e2238")
+
+        tk_img = ctk.CTkImage(light_image=pil_img, dark_image=pil_img, size=size)
+        self.preview_tk_images[theme_id] = tk_img
+        return tk_img
+
+    # -------------------------------------------------------------
+    # GitHub Updates
+    # -------------------------------------------------------------
+    def _check_update_background_quiet(self):
+        def _bg():
+            try:
+                info = check_github_update()
+                if info.get("has_update"):
+                    self.after(0, lambda: self._show_update_available_banner(info))
             except Exception:
                 pass
+        threading.Thread(target=_bg, daemon=True).start()
 
-        self.after(0, _update)
+    def _show_update_available_banner(self, info):
+        latest = info.get("latest_version")
+        if hasattr(self, "hero_status_chip") and self.hero_status_chip.winfo_exists():
+            self.hero_status_chip.configure(
+                text=f"  Update Available: {latest}  ",
+                fg_color=TAG_YELLOW_BG,
+                text_color=TAG_YELLOW_TEXT
+            )
 
+    def _on_check_update_clicked(self):
+        self.btn_check_update.configure(state="disabled")
+        self.update_status_label.configure(text=self._t("checking_update", "正在檢查 GitHub 最新版本..."))
+
+        def _bg():
+            info = check_github_update()
+            self.after(0, lambda: self._handle_update_check_result(info))
+
+        threading.Thread(target=_bg, daemon=True).start()
+
+    def _handle_update_check_result(self, info):
+        self.btn_check_update.configure(state="normal")
+        if not info.get("success"):
+            err_msg = info.get("error", "Unknown error")
+            self.update_status_label.configure(text=self._t("update_error", f"更新失敗：{err_msg}").format(error=err_msg))
+            return
+
+        if not info.get("has_update"):
+            cur = info.get("current_version", APP_VERSION)
+            self.update_status_label.configure(text=self._t("already_latest", f"目前已是最新版本 ({cur})！").format(version=cur))
+            return
+
+        # An update is available
+        latest_tag = info.get("latest_version")
+        self.update_status_label.configure(
+            text=f"{self._t('update_available_title', f'發現新版本 {latest_tag}！').format(version=latest_tag)}   (v{info.get('current_version')} -> {latest_tag})"
+        )
+
+        for w in self.update_action_box.winfo_children():
+            w.destroy()
+        self.update_action_box.pack(fill="x", pady=(10, 0))
+
+        ctk.CTkButton(
+            self.update_action_box,
+            text=self._t("btn_start_update", "立即直接更新"),
+            height=32,
+            corner_radius=8,
+            font=self._font(11, "bold"),
+            fg_color=NOTION_PURPLE,
+            hover_color=NOTION_PURPLE_HOVER,
+            command=lambda: self._start_one_click_update(info)
+        ).pack(side="left", padx=(0, 8))
+
+        ctk.CTkButton(
+            self.update_action_box,
+            text=self._t("btn_view_release", "查看 GitHub 更新日誌"),
+            height=32,
+            corner_radius=8,
+            font=self._font(11),
+            fg_color="#242424",
+            hover_color="#303030",
+            border_width=1,
+            border_color=NOTION_HAIRLINE_STRONG,
+            command=lambda: webbrowser.open(info.get("release_url", "https://github.com/tokihorokeiya/musicDisplayObs/releases"))
+        ).pack(side="left")
+
+    def _start_one_click_update(self, info):
+        self.update_progress_bar.pack(fill="x", pady=(8, 8))
+        self.update_progress_bar.set(0)
+        self.update_status_label.configure(text=self._t("downloading_update", "正在下載更新檔... 0%").format(progress=0))
+
+        def _worker():
+            try:
+                if is_frozen():
+                    asset_url = info.get("asset_url")
+                    if not asset_url:
+                        raise RuntimeError("Release asset zip not found on GitHub")
+                    temp_dir = tempfile.gettempdir()
+                    zip_path = os.path.join(temp_dir, f"OBSMusicDisplay_update_{int(time.time())}.zip")
+
+                    def _progress_cb(pct):
+                        self.after(0, lambda: self._update_download_progress(pct))
+
+                    download_file_with_progress(asset_url, zip_path, progress_callback=_progress_cb)
+                    self.after(0, lambda: self.update_status_label.configure(text=self._t("restarting_app", "下載完成！正在重啟並套用更新...")))
+                    time.sleep(1.0)
+                    apply_frozen_update(zip_path)
+                elif is_git_repo():
+                    self.after(0, lambda: self.update_status_label.configure(text=self._t("downloading_update", "正在自 GitHub 拉取最新程式碼...").format(progress=50)))
+                    apply_git_update(info.get("latest_version"))
+                    self.after(0, lambda: self.update_status_label.configure(text=self._t("restarting_app", "更新完成！正在重新啟動程式...")))
+                    time.sleep(1.0)
+                    os.execl(sys.executable, sys.executable, *sys.argv)
+                else:
+                    webbrowser.open(info.get("release_url", "https://github.com/tokihorokeiya/musicDisplayObs/releases"))
+            except Exception as e:
+                err_str = str(e)
+                self.after(0, lambda: self.update_status_label.configure(text=self._t("update_error", f"更新失敗：{err_str}").format(error=err_str)))
+
+        threading.Thread(target=_worker, daemon=True).start()
+
+    def _update_download_progress(self, pct):
+        frac = pct / 100.0
+        self.update_progress_bar.set(frac)
+        self.update_status_label.configure(text=self._t("downloading_update", f"正在下載更新檔... {pct:.0f}%").format(progress=pct))
+
+    # -------------------------------------------------------------
+    # Window Close & System Tray
+    # -------------------------------------------------------------
     def _on_close(self):
-        self._show_exit_dialog()
-
-    def _show_exit_dialog(self):
-        if hasattr(self, "_exit_dialog") and self._exit_dialog and self._exit_dialog.winfo_exists():
-            self._exit_dialog.lift()
-            self._exit_dialog.focus_force()
+        if self._exit_dialog is not None and self._exit_dialog.winfo_exists():
+            self._exit_dialog.focus()
             return
 
         dialog = ctk.CTkToplevel(self)
-        self._exit_dialog = dialog
-        dialog.title(self._t("close_dialog_title", "Close Application"))
-        dialog.geometry("490x230")
+        dialog.title(self._t("close_dialog_title", "關閉程式確認"))
+        dialog.geometry("440x210")
         dialog.resizable(False, False)
-        dialog.attributes("-topmost", True)
         dialog.transient(self)
+        dialog.grab_set()
+        dialog.configure(fg_color=NOTION_SURFACE)
+        self._exit_dialog = dialog
 
-        # Center over main window
-        try:
-            x = self.winfo_x() + (self.winfo_width() // 2) - 245
-            y = self.winfo_y() + (self.winfo_height() // 2) - 115
-            dialog.geometry(f"+{max(0, x)}+{max(0, y)}")
-        except Exception:
-            pass
+        dialog.update_idletasks()
+        x = self.winfo_x() + (self.winfo_width() - 440) // 2
+        y = self.winfo_y() + (self.winfo_height() - 210) // 2
+        dialog.geometry(f"+{x}+{y}")
 
-        content = ctk.CTkFrame(dialog, fg_color="#181824", corner_radius=14)
-        content.pack(fill="both", expand=True, padx=12, pady=12)
-
-        header_frame = ctk.CTkFrame(content, fg_color="transparent")
-        header_frame.pack(fill="x", padx=16, pady=(14, 8))
+        content_box = ctk.CTkFrame(dialog, fg_color="transparent")
+        content_box.pack(fill="both", expand=True, padx=24, pady=20)
 
         ctk.CTkLabel(
-            header_frame,
-            text=f"❓ {self._t('close_dialog_title', 'Close Application')}",
-            font=self._font(15, "bold"),
-            text_color="#ffffff"
-        ).pack(anchor="w")
+            content_box,
+            text=self._t("close_dialog_title", "關閉程式確認"),
+            font=self._font(14, "bold"),
+            text_color=NOTION_INK
+        ).pack(anchor="w", pady=(0, 6))
 
         ctk.CTkLabel(
-            content,
-            text=self._t("close_dialog_msg", "Do you want to minimize to the system tray to keep music displaying in OBS, or exit the application completely?"),
-            font=self._font(12),
-            text_color="#cbd5e1",
-            wraplength=430,
+            content_box,
+            text=self._t("close_dialog_msg", "請問您要將程式最小化至系統匣（以保持 OBS 音樂顯示正常運作），還是完全退出程式？"),
+            font=self._font(11),
+            text_color=NOTION_STEEL,
+            wraplength=390,
             justify="left"
-        ).pack(anchor="w", padx=16, pady=(0, 16))
+        ).pack(anchor="w", pady=(0, 18))
 
-        btn_row = ctk.CTkFrame(content, fg_color="transparent")
-        btn_row.pack(fill="x", padx=16, pady=(6, 12))
+        btn_box = ctk.CTkFrame(content_box, fg_color="transparent")
+        btn_box.pack(fill="x", side="bottom")
 
-        def on_minimize():
+        def _do_minimize():
             dialog.destroy()
-            self.withdraw()
-            self._setup_tray()
-            self.show_inapp_toast(self._t("minimized_toast", "Minimized to system tray"))
+            self._exit_dialog = None
+            self._minimize_to_tray()
 
-        def on_exit():
+        def _do_exit():
             dialog.destroy()
-            self._quit_app()
+            self._exit_dialog = None
+            self._full_exit()
 
-        def on_cancel():
+        def _do_cancel():
             dialog.destroy()
+            self._exit_dialog = None
 
-        exit_btn = ctk.CTkButton(
-            btn_row,
-            text=self._t("btn_exit_app", "Exit Completely"),
-            font=self._font(12, "bold"),
+        ctk.CTkButton(
+            btn_box,
+            text=self._t("btn_minimize_tray", "縮小至系統匣"),
+            font=self._font(11, "bold"),
+            height=34,
+            corner_radius=8,
+            fg_color=NOTION_PURPLE,
+            hover_color=NOTION_PURPLE_HOVER,
+            command=_do_minimize
+        ).pack(side="left", padx=(0, 8))
+
+        ctk.CTkButton(
+            btn_box,
+            text=self._t("btn_exit_app", "完全退出程式"),
+            font=self._font(11),
+            height=34,
+            corner_radius=8,
             fg_color="#dc2626",
             hover_color="#b91c1c",
-            width=130,
+            command=_do_exit
+        ).pack(side="left", padx=(0, 8))
+
+        ctk.CTkButton(
+            btn_box,
+            text=self._t("btn_cancel", "取消"),
+            font=self._font(11),
             height=34,
             corner_radius=8,
-            command=on_exit
-        )
-        exit_btn.pack(side="right", padx=(6, 0))
+            fg_color="#242424",
+            hover_color="#303030",
+            border_width=1,
+            border_color=NOTION_HAIRLINE_STRONG,
+            command=_do_cancel
+        ).pack(side="right")
 
-        min_btn = ctk.CTkButton(
-            btn_row,
-            text=self._t("btn_minimize_tray", "Minimize to Tray"),
-            font=self._font(12, "bold"),
-            fg_color="#4f46e5",
-            hover_color="#4338ca",
-            width=135,
-            height=34,
-            corner_radius=8,
-            command=on_minimize
-        )
-        min_btn.pack(side="right", padx=(6, 0))
+    def _minimize_to_tray(self):
+        self.withdraw()
+        self.show_inapp_toast(self._t("minimized_toast", "已最小化至系統匣，可在右下角圖示隨時開啟"))
+        if not self.tray_icon:
+            self._create_tray_icon()
 
-        cancel_btn = ctk.CTkButton(
-            btn_row,
-            text=self._t("btn_cancel", "Cancel"),
-            font=self._font(12),
-            fg_color="#374151",
-            hover_color="#4b5563",
-            width=80,
-            height=34,
-            corner_radius=8,
-            command=on_cancel
-        )
-        cancel_btn.pack(side="right")
+    def _create_tray_icon(self):
+        icon_path = os.path.join(self.assets_dir, "songIcon.jpg")
+        try:
+            pil_icon = Image.open(icon_path) if os.path.exists(icon_path) else Image.new("RGB", (64, 64), "#5645d4")
+        except Exception:
+            pil_icon = Image.new("RGB", (64, 64), "#5645d4")
 
-        dialog.protocol("WM_DELETE_WINDOW", on_cancel)
-        dialog.grab_set()
-
-    def _setup_tray(self):
-        if self.tray_icon:
-            return
-        img = Image.new("RGB", (64, 64), color=(99, 102, 241))
-        menu = (
-            item("Open Controller", self._restore_from_tray),
-            item("Copy Global OBS URL", self._copy_obs_url),
-            item("Exit", self._quit_app)
+        menu = pystray.Menu(
+            item(self._t("app_title", "OBS Real-Time Music Display"), self._restore_from_tray, default=True),
+            item(self._t("btn_exit_app", "完全退出"), self._full_exit)
         )
-        self.tray_icon = pystray.Icon("OBSMusicDisplay", img, "OBS Music Display", menu)
+        self.tray_icon = pystray.Icon("OBSMusicDisplay", pil_icon, "OBS Music Display", menu)
         threading.Thread(target=self.tray_icon.run, daemon=True).start()
 
     def _restore_from_tray(self, icon=None, item=None):
-        if self.tray_icon:
-            self.tray_icon.stop()
-            self.tray_icon = None
-        self.after(0, self.deiconify)
+        self.after(0, self._restore_main_window)
 
-    def _quit_app(self, icon=None, item=None):
+    def _restore_main_window(self):
+        self.deiconify()
+        self.lift()
+        self.focus_force()
+
+    def _full_exit(self, icon=None, item=None):
         if self.tray_icon:
             try:
                 self.tray_icon.stop()
             except Exception:
                 pass
-            self.tray_icon = None
-        if hasattr(self, "on_exit_callback") and self.on_exit_callback:
-            try:
-                self.on_exit_callback()
-            except Exception:
-                pass
-        self.after(0, self.destroy)
-
-    def _check_update_background_quiet(self):
-        """Silently checks for updates in background without toasts unless update found."""
-        def _bg():
-            try:
-                info = check_github_update()
-                self.after(0, lambda: self._handle_update_result(info, manual=False))
-            except Exception:
-                pass
-        threading.Thread(target=_bg, daemon=True).start()
-
-    def _on_check_update_click(self):
-        """User manually clicked the update button."""
-        if getattr(self, "_is_checking_update", False):
-            return
-        self._is_checking_update = True
-        if hasattr(self, "btn_check_update") and self.btn_check_update.winfo_exists():
-            self.btn_check_update.configure(state="disabled", text=self._t("checking_update", "⏳ 正在檢查更新..."))
-        self.show_inapp_toast(self._t("checking_update", "⏳ 正在檢查 GitHub 最新版本..."))
-
-        def _bg_check():
-            try:
-                info = check_github_update()
-                self.after(0, lambda: self._handle_update_result(info, manual=True))
-            except Exception as e:
-                err_msg = str(e)
-                self.after(0, lambda: self._handle_update_error(err_msg))
-
-        threading.Thread(target=_bg_check, daemon=True).start()
-
-    def _handle_update_error(self, err_msg):
-        self._is_checking_update = False
-        if hasattr(self, "btn_check_update") and self.btn_check_update.winfo_exists():
-            self.btn_check_update.configure(state="normal", text=self._t("btn_check_update", "🚀 檢查與直接更新"))
-        self.show_inapp_toast(self._t("update_error", f"更新失敗：{err_msg}").format(error=err_msg))
-
-    def _handle_update_result(self, info, manual=False):
-        self._is_checking_update = False
-        if hasattr(self, "btn_check_update") and self.btn_check_update.winfo_exists():
-            self.btn_check_update.configure(state="normal", text=self._t("btn_check_update", "🚀 檢查與直接更新"))
-
-        if not info.get("has_update"):
-            if manual:
-                self.show_inapp_toast(self._t("already_latest", f"✔ 目前已是最新版本 ({APP_VERSION})！").format(version=APP_VERSION))
-            return
-
-        # An update is available!
-        latest_tag = info.get("latest_version", "")
-        if hasattr(self, "btn_check_update") and self.btn_check_update.winfo_exists():
-            self.btn_check_update.configure(
-                text=f"✨ 更新至 {latest_tag} ➔",
-                fg_color="#059669",
-                hover_color="#10b981"
-            )
-        if hasattr(self, "version_badge") and self.version_badge.winfo_exists():
-            self.version_badge.configure(
-                text=f"{APP_VERSION} (可更新: {latest_tag})",
-                fg_color="#064e3b",
-                text_color="#6ee7b7"
-            )
-
-        if manual:
-            self._show_update_modal(info)
-
-    def _show_update_modal(self, info):
-        """Displays a modal dialog for applying the update directly."""
-        latest_tag = info.get("latest_version", "")
-        dialog = ctk.CTkToplevel(self)
-        dialog.title(self._t("update_available_title", f"發現新版本 {latest_tag}！").format(version=latest_tag))
-        dialog.geometry("520x430")
-        dialog.resizable(False, False)
-        dialog.configure(fg_color="#131722")
-        dialog.transient(self)
-
-        self.update_idletasks()
-        rx = self.winfo_x() + (self.winfo_width() - 520) // 2
-        ry = self.winfo_y() + (self.winfo_height() - 430) // 2
-        dialog.geometry(f"+{max(10, rx)}+{max(10, ry)}")
-
-        content_box = ctk.CTkFrame(dialog, corner_radius=12, fg_color="#181824")
-        content_box.pack(fill="both", expand=True, padx=16, pady=16)
-
-        title_lbl = ctk.CTkLabel(
-            content_box,
-            text=self._t("update_available_title", f"🎉 發現新版本 {latest_tag}！").format(version=latest_tag),
-            font=self._font(16, "bold"),
-            text_color="#4ade80"
-        )
-        title_lbl.pack(anchor="w", padx=16, pady=(16, 4))
-
-        sub_lbl = ctk.CTkLabel(
-            content_box,
-            text=f"{self._t('version_label', '軟體版本：')} {info.get('current_version')}   ➔   {latest_tag}",
-            font=self._font(12),
-            text_color="#94a3b8"
-        )
-        sub_lbl.pack(anchor="w", padx=16, pady=(0, 10))
-
-        desc_frame = ctk.CTkScrollableFrame(content_box, corner_radius=8, fg_color="#0f111a", height=140)
-        desc_frame.pack(fill="both", expand=True, padx=16, pady=(0, 10))
-
-        rel_name = info.get("release_name", "")
-        if rel_name:
-            ctk.CTkLabel(desc_frame, text=rel_name, font=self._font(13, "bold"), text_color="#ffffff").pack(anchor="w", pady=(2, 4))
-
-        raw_notes = info.get("release_notes", "") or "點選下方按鈕直接更新或前往 GitHub 查看完整說明。"
-        clean_notes = raw_notes.replace("\r\n", "\n")
-        ctk.CTkLabel(desc_frame, text=clean_notes, font=self._font(11), text_color="#cbd5e1", justify="left", wraplength=440).pack(anchor="w")
-
-        progress_bar = ctk.CTkProgressBar(content_box, height=12, progress_color="#10b981")
-        progress_bar.set(0)
-
-        status_lbl = ctk.CTkLabel(content_box, text="", font=self._font(11, "bold"), text_color="#a5b4fc")
-        status_lbl.pack(anchor="w", padx=16, pady=(0, 6))
-
-        btn_row = ctk.CTkFrame(content_box, fg_color="transparent")
-        btn_row.pack(fill="x", padx=16, pady=(0, 14))
-
-        cancel_event = threading.Event()
-
-        def on_close():
-            cancel_event.set()
-            dialog.destroy()
-
-        dialog.protocol("WM_DELETE_WINDOW", on_close)
-
-        def do_update():
-            btn_start.configure(state="disabled")
-            btn_github.configure(state="disabled")
-            progress_bar.pack(fill="x", padx=16, pady=(0, 8), before=status_lbl)
-            progress_bar.set(0)
-
-            def _bg_worker():
-                if is_frozen():
-                    download_url = info.get("download_url")
-                    if not download_url:
-                        self.after(0, lambda: (
-                            status_lbl.configure(text="未找到 Windows 更新檔案，正在為您開啟 GitHub 發行頁面..."),
-                            webbrowser.open(info.get("html_url", ""))
-                        ))
-                        return
-
-                    temp_zip = os.path.join(tempfile.gettempdir(), f"OBSMusicDisplay_update_{latest_tag}.zip")
-
-                    def _on_prog(pct, cur, total):
-                        self.after(0, lambda p=pct: (
-                            progress_bar.set(p / 100.0),
-                            status_lbl.configure(text=self._t("downloading_update", f"正在下載更新檔... {p:.0f}%").format(progress=p))
-                        ))
-
-                    try:
-                        download_file_with_progress(download_url, temp_zip, progress_callback=_on_prog, cancel_event=cancel_event)
-                        self.after(0, lambda: status_lbl.configure(text=self._t("restarting_app", "下載完成！正在重啟並套用更新...")))
-                        time.sleep(1.0)
-                        apply_frozen_update(temp_zip, self.base_dir, self._quit_app)
-                    except Exception as e:
-                        if not cancel_event.is_set():
-                            err_str = str(e)
-                            self.after(0, lambda: (
-                                status_lbl.configure(text=self._t("update_error", f"更新失敗：{err_str}").format(error=err_str)),
-                                btn_start.configure(state="normal"),
-                                btn_github.configure(state="normal")
-                            ))
-                elif is_git_repo(self.base_dir):
-                    self.after(0, lambda: status_lbl.configure(text="正在透過 Git 拉取最新程式碼..."))
-                    ok, msg = apply_git_update(self.base_dir)
-                    if ok:
-                        self.after(0, lambda: status_lbl.configure(text="✔ 原始碼更新成功！正在重新啟動..."))
-                        time.sleep(1.5)
-                        self.after(0, self._restart_python_app)
-                    else:
-                        self.after(0, lambda: (
-                            status_lbl.configure(text=f"Git 更新失敗: {msg}"),
-                            btn_start.configure(state="normal"),
-                            btn_github.configure(state="normal")
-                        ))
-                else:
-                    self.after(0, lambda: (
-                        status_lbl.configure(text="正在開啟 GitHub 下載最新版本..."),
-                        webbrowser.open(info.get("html_url", ""))
-                    ))
-
-            threading.Thread(target=_bg_worker, daemon=True).start()
-
-        btn_start = ctk.CTkButton(
-            btn_row,
-            text=self._t("btn_start_update", "🚀 立即直接更新"),
-            font=self._font(12, "bold"),
-            fg_color="#10b981",
-            hover_color="#059669",
-            height=34,
-            corner_radius=8,
-            command=do_update
-        )
-        btn_start.pack(side="left", padx=(0, 6), fill="x", expand=True)
-
-        btn_github = ctk.CTkButton(
-            btn_row,
-            text=self._t("btn_view_release", "🌐 查看 GitHub"),
-            font=self._font(12),
-            fg_color="#27273a",
-            hover_color="#373752",
-            height=34,
-            width=110,
-            corner_radius=8,
-            command=lambda: webbrowser.open(info.get("html_url", ""))
-        )
-        btn_github.pack(side="left", padx=(0, 6))
-
-        btn_cancel = ctk.CTkButton(
-            btn_row,
-            text=self._t("btn_cancel", "取消"),
-            font=self._font(12),
-            fg_color="#374151",
-            hover_color="#4b5563",
-            height=34,
-            width=70,
-            corner_radius=8,
-            command=on_close
-        )
-        btn_cancel.pack(side="right")
-
-        dialog.grab_set()
-
-    def _restart_python_app(self):
-        if hasattr(self, "on_exit_callback") and self.on_exit_callback:
-            try:
-                self.on_exit_callback()
-            except Exception:
-                pass
-        python = sys.executable
-        os.execl(python, python, *sys.argv)
+        if self.on_exit_callback:
+            self.on_exit_callback()
+        self.after(50, self.destroy)

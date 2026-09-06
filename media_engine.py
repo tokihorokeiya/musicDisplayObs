@@ -4,16 +4,34 @@ import time
 import datetime
 import re
 import traceback
+from functools import lru_cache
 from winsdk.windows.media.control import (
     GlobalSystemMediaTransportControlsSessionManager as MediaManager,
     GlobalSystemMediaTransportControlsSessionPlaybackStatus as PlaybackStatus
 )
 from winsdk.windows.storage.streams import DataReader
 
+# Pre-compiled regex patterns for high-throughput string cleaning & extraction
+RE_TOPIC = re.compile(r'\s*-\s*Topic$', re.IGNORECASE)
+CLUTTER_PATTERNS = [
+    re.compile(r'\s*[\(\[\{【](?:official\s+)?(?:music\s+video|video|audio|lyric\s+video|visualizer|mv|hd|4k|remastered|performance\s+video|live|official)[\)\]\}】]', re.IGNORECASE),
+    re.compile(r'\s*[\(\[\{【](?:full\s+ver\.|full\s+version|mv)[\)\]\}】]', re.IGNORECASE),
+    re.compile(r'\s*\|?\s*Official\s+(?:Music\s+)?Video\s*$', re.IGNORECASE),
+    re.compile(r'\s*\|?\s*Official\s+Audio\s*$', re.IGNORECASE),
+    re.compile(r'\s*【MV】\s*$', re.IGNORECASE),
+    re.compile(r'\s*\[MV\]\s*$', re.IGNORECASE),
+    re.compile(r'\s*\(MV\)\s*$', re.IGNORECASE)
+]
+RE_DASH = re.compile(r'^([^-\u2013\u2014]+)\s*[-\u2013\u2014]\s*(.+)$')
+RE_FEAT = re.compile(r'[\(\[\{]?\s*(?:feat\.|ft\.|featuring)\s*([^\)\]\}]+)[\)\]\}]?', re.IGNORECASE)
+RE_SPACES = re.compile(r'\s{2,}')
+
+@lru_cache(maxsize=256)
 def parse_song_and_artist(raw_title, raw_artist):
     """
     Intelligently extracts clean song title and all artists/singers (including collaborations and features)
     from YouTube and YouTube Music metadata.
+    Memoized with LRU cache for O(1) instantaneous lookups during polling.
     """
     if not raw_title:
         return "", raw_artist or ""
@@ -22,24 +40,15 @@ def parse_song_and_artist(raw_title, raw_artist):
     artist = raw_artist.strip() if raw_artist else ""
 
     # 1. Clean "- Topic" from artist channel names (YouTube Music auto-generated)
-    artist = re.sub(r'\s*-\s*Topic$', '', artist, flags=re.IGNORECASE)
+    artist = RE_TOPIC.sub('', artist)
 
     # 2. Strip common YouTube video junk from title
-    clutter_patterns = [
-        r'\s*[\(\[\{【](?:official\s+)?(?:music\s+video|video|audio|lyric\s+video|visualizer|mv|hd|4k|remastered|performance\s+video|live|official)[\)\]\}】]',
-        r'\s*[\(\[\{【](?:full\s+ver\.|full\s+version|mv)[\)\]\}】]',
-        r'\s*\|?\s*Official\s+(?:Music\s+)?Video\s*$',
-        r'\s*\|?\s*Official\s+Audio\s*$',
-        r'\s*【MV】\s*$',
-        r'\s*\[MV\]\s*$',
-        r'\s*\(MV\)\s*$'
-    ]
-    for cp in clutter_patterns:
-        title = re.sub(cp, '', title, flags=re.IGNORECASE)
+    for cp in CLUTTER_PATTERNS:
+        title = cp.sub('', title)
     title = title.strip()
 
     # 3. Check for "Artist(s) - Title" format (very common in YouTube music videos)
-    dash_match = re.match(r'^([^-\u2013\u2014]+)\s*[-\u2013\u2014]\s*(.+)$', title)
+    dash_match = RE_DASH.match(title)
     extracted_artist = ""
     extracted_title = title
 
@@ -57,7 +66,8 @@ def parse_song_and_artist(raw_title, raw_artist):
             extracted_title = part2
         elif len(part1.split()) <= 8:
             # If artist is a record label or channel name, prefer part1 if it has collaboration indicators
-            if any(w in part1.lower() for w in ['feat', 'ft.', '&', ' x ', 'with', ',', '/']):
+            part1_lower = part1.lower()
+            if any(w in part1_lower for w in ('feat', 'ft.', '&', ' x ', 'with', ',', '/')):
                 extracted_artist = part1
                 extracted_title = part2
 
@@ -66,7 +76,7 @@ def parse_song_and_artist(raw_title, raw_artist):
         title = extracted_title
 
     # 4. Check for featured artists in the title: e.g. "Fortnight (feat. Post Malone)"
-    feat_match = re.search(r'[\(\[\{]?\s*(?:feat\.|ft\.|featuring)\s*([^\)\]\}]+)[\)\]\}]?', title, flags=re.IGNORECASE)
+    feat_match = RE_FEAT.search(title)
     if feat_match:
         featured = feat_match.group(1).strip()
         # If featured artist is not already in artist string
@@ -76,11 +86,11 @@ def parse_song_and_artist(raw_title, raw_artist):
             else:
                 artist = f"ft. {featured}"
         # Remove the feat segment from the title
-        title = re.sub(r'[\(\[\{]?\s*(?:feat\.|ft\.|featuring)\s*([^\)\]\}]+)[\)\]\}]?', '', title, flags=re.IGNORECASE).strip()
+        title = RE_FEAT.sub('', title).strip()
 
     # Clean double spaces
-    title = re.sub(r'\s{2,}', ' ', title).strip()
-    artist = re.sub(r'\s{2,}', ' ', artist).strip()
+    title = RE_SPACES.sub(' ', title).strip()
+    artist = RE_SPACES.sub(' ', artist).strip()
 
     return title, artist
 
@@ -106,6 +116,9 @@ class MediaEngine:
         self._last_broadcast_time = 0
         self._last_smooth_pos = 0.0
         self._last_smooth_song = ""
+        self._media_manager = None
+        self._cached_track_key = None
+        self._cached_thumbnail_b64 = ""
 
     def set_active_theme(self, theme_id):
         """Updates active theme for dynamic overlay updates."""
@@ -131,7 +144,9 @@ class MediaEngine:
 
     async def get_current_media_info(self):
         try:
-            manager = await MediaManager.request_async()
+            if self._media_manager is None:
+                self._media_manager = await MediaManager.request_async()
+            manager = self._media_manager
             if not manager:
                 return None
             
@@ -148,6 +163,8 @@ class MediaEngine:
                     target_session = sessions[0]
 
             if not target_session:
+                self._cached_track_key = None
+                self._cached_thumbnail_b64 = ""
                 return {
                     "title": "",
                     "artist": "",
@@ -188,7 +205,7 @@ class MediaEngine:
             if not raw_artist and properties and properties.album_artist:
                 raw_artist = properties.album_artist
 
-            # Clean and extract multiple singers & title
+            # Clean and extract multiple singers & title (O(1) cached lookup)
             clean_title, clean_artist = parse_song_and_artist(raw_title, raw_artist)
 
             # Timeline info (current position & duration)
@@ -227,10 +244,16 @@ class MediaEngine:
                 self._last_smooth_song = song_key
                 self._last_smooth_pos = pos
 
-            # Thumbnail
-            thumbnail_b64 = ""
-            if properties and properties.thumbnail:
-                thumbnail_b64 = await self._extract_thumbnail(properties.thumbnail)
+            # Thumbnail: Cache based on song identity to avoid COM stream I/O and base64 re-encoding every 500ms
+            track_key = (raw_title, raw_artist, album)
+            if track_key == self._cached_track_key and self._cached_thumbnail_b64:
+                thumbnail_b64 = self._cached_thumbnail_b64
+            else:
+                thumbnail_b64 = ""
+                if properties and properties.thumbnail:
+                    thumbnail_b64 = await self._extract_thumbnail(properties.thumbnail)
+                self._cached_track_key = track_key
+                self._cached_thumbnail_b64 = thumbnail_b64
 
             has_media = bool(clean_title or clean_artist)
 
@@ -247,6 +270,7 @@ class MediaEngine:
                 "updated_at": time.time()
             }
         except Exception:
+            self._media_manager = None
             return None
 
     async def start_monitoring(self, poll_interval=0.5):
@@ -266,9 +290,10 @@ class MediaEngine:
                         abs(info["duration"] - self.current_data.get("duration", 0)) > 2
                     )
 
-                    # Periodic time synchronization (every 1 second or immediately on seek)
+                    # Periodic time synchronization (every 3 seconds or immediately on seek)
+                    # Note: overlay.js client has its own smooth 500ms local ticker, so 3s sync eliminates redundant network traffic
                     time_jump = abs(info["position"] - self.current_data.get("position", 0)) > 2.0
-                    periodic_sync = (now - self._last_broadcast_time >= 1.0)
+                    periodic_sync = (now - self._last_broadcast_time >= 3.0)
 
                     if meta_changed or time_jump or periodic_sync:
                         info["active_theme"] = self.active_theme
