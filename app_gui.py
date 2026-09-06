@@ -155,7 +155,7 @@ class UpdateDialog(ctk.CTkToplevel):
     def __init__(self, parent):
         super().__init__(parent)
         self.parent_gui = parent
-        self.title("OBS Music Display - 線上更新管理")
+        self.title(f"OBS Music Display - {self._t('update_window_title', '線上更新管理')}")
         self.geometry("620x570")
         self.minsize(580, 500)
         self.configure(fg_color=NOTION_SURFACE)
@@ -174,6 +174,9 @@ class UpdateDialog(ctk.CTkToplevel):
         self.is_updating = False
         self._build_ui()
         self.after(300, self._start_check)
+
+    def _t(self, key, default=""):
+        return self.parent_gui._t(key, default)
 
     def log(self, message):
         """Thread-safe append of timestamped message to the debug log terminal."""
@@ -221,14 +224,14 @@ class UpdateDialog(ctk.CTkToplevel):
 
         ctk.CTkLabel(
             title_meta,
-            text="線上軟體版本更新",
+            text=self._t("update_dialog_title", "線上軟體版本更新"),
             font=self.parent_gui._font(14, "bold"),
             text_color=NOTION_INK
         ).pack(anchor="w")
 
         ctk.CTkLabel(
             title_meta,
-            text="GitHub Releases 即時檢查、解壓縮校驗與自動套用重啟",
+            text=self._t("update_dialog_sub", "GitHub Releases 即時檢查、解壓縮校驗與自動套用重啟"),
             font=self.parent_gui._font(11),
             text_color=NOTION_STEEL
         ).pack(anchor="w")
@@ -248,9 +251,10 @@ class UpdateDialog(ctk.CTkToplevel):
         ver_line.pack(fill="x", padx=16, pady=(12, 6))
 
         cur_v = APP_VERSION if APP_VERSION.startswith("v") else f"v{APP_VERSION}"
+        cur_v_label = f"{self._t('update_cur_ver', '本地目前版本')}: {cur_v}"
         ctk.CTkLabel(
             ver_line,
-            text=f"本地目前版本: {cur_v}",
+            text=cur_v_label,
             font=self.parent_gui._font(12, "bold"),
             text_color=NOTION_CHARCOAL
         ).pack(side="left")
@@ -266,7 +270,7 @@ class UpdateDialog(ctk.CTkToplevel):
 
         self.latest_badge_label = ctk.CTkLabel(
             self.latest_badge,
-            text="正在檢查中...",
+            text=self._t("update_checking", "正在檢查中..."),
             font=self.parent_gui._font(10, "bold"),
             text_color=TAG_PEACH_TEXT
         )
@@ -275,7 +279,7 @@ class UpdateDialog(ctk.CTkToplevel):
         # Release Title & Asset line
         self.release_meta_label = ctk.CTkLabel(
             self.status_card,
-            text="正在連線 GitHub Releases API...",
+            text=self._t("update_connecting", "正在連線 GitHub Releases API..."),
             font=self.parent_gui._font(11),
             text_color=NOTION_STEEL,
             anchor="w"
@@ -298,7 +302,7 @@ class UpdateDialog(ctk.CTkToplevel):
 
         self.progress_label = ctk.CTkLabel(
             prog_row,
-            text="準備就緒",
+            text=self._t("update_ready", "準備就緒"),
             font=self.parent_gui._font(11),
             text_color=NOTION_STEEL,
             anchor="w"
@@ -311,7 +315,7 @@ class UpdateDialog(ctk.CTkToplevel):
 
         ctk.CTkLabel(
             console_box,
-            text="即時進度與除錯紀錄 (Debug Log):",
+            text=self._t("update_debug_log_title", "即時進度與除錯紀錄 (Debug Log):"),
             font=self.parent_gui._font(11, "bold"),
             text_color=NOTION_CHARCOAL
         ).pack(anchor="w", pady=(0, 4))
@@ -324,7 +328,7 @@ class UpdateDialog(ctk.CTkToplevel):
             border_width=1,
             border_color=NOTION_HAIRLINE_STRONG,
             text_color="#e2e8f0",
-            font=ctk.CTkFont(family="Consolas", size=11),
+            font=self.parent_gui._font(11),
             wrap="word"
         )
         self.log_box.pack(fill="both", expand=True)
@@ -336,7 +340,7 @@ class UpdateDialog(ctk.CTkToplevel):
 
         self.btn_primary = ctk.CTkButton(
             btn_bar,
-            text="立即直接更新",
+            text=self._t("update_btn_apply", "立即直接更新"),
             height=34,
             corner_radius=8,
             font=self.parent_gui._font(11, "bold"),
@@ -349,7 +353,7 @@ class UpdateDialog(ctk.CTkToplevel):
 
         self.btn_force = ctk.CTkButton(
             btn_bar,
-            text="重新下載修復",
+            text=self._t("update_btn_force", "重新下載修復"),
             height=34,
             corner_radius=8,
             font=self.parent_gui._font(11),
@@ -364,7 +368,7 @@ class UpdateDialog(ctk.CTkToplevel):
 
         self.btn_github = ctk.CTkButton(
             btn_bar,
-            text="在 GitHub 查看",
+            text=self._t("update_btn_github", "在 GitHub 查看"),
             height=34,
             corner_radius=8,
             font=self.parent_gui._font(11),
@@ -378,7 +382,7 @@ class UpdateDialog(ctk.CTkToplevel):
 
         self.btn_close = ctk.CTkButton(
             btn_bar,
-            text="關閉",
+            text=self._t("btn_close", "關閉"),
             width=70,
             height=34,
             corner_radius=8,
@@ -410,9 +414,9 @@ class UpdateDialog(ctk.CTkToplevel):
             err = info.get("error", "未知網路錯誤")
             self.log(f"[錯誤] 檢查更新失敗: {err}")
             self.latest_badge.configure(fg_color="#381a1a", border_color="#582323")
-            self.latest_badge_label.configure(text="連線失敗", text_color="#f87171")
-            self.release_meta_label.configure(text=f"無法連接至 GitHub: {err}")
-            self.progress_label.configure(text="檢查失敗，請檢查網路連線或前往 GitHub 查看")
+            self.latest_badge_label.configure(text=self._t("update_status_failed", "連線失敗"), text_color="#f87171")
+            self.release_meta_label.configure(text=f"{self._t('update_conn_err', '無法連接至 GitHub')}: {err}")
+            self.progress_label.configure(text=self._t("update_check_failed", "檢查失敗，請檢查網路連線或前往 GitHub 查看"))
             return
 
         latest_tag = info.get("latest_version")
@@ -425,29 +429,29 @@ class UpdateDialog(ctk.CTkToplevel):
             self.log(f"發現新版本可供更新: {latest_tag}{size_mb}")
             self.log(f"發行標題: {release_name}")
             self.latest_badge.configure(fg_color=TAG_PURPLE_BG, border_color=TAG_PURPLE_BORDER)
-            self.latest_badge_label.configure(text=f"發現新版本: {latest_tag}", text_color=TAG_PURPLE_TEXT)
+            self.latest_badge_label.configure(text=f"{self._t('update_status_found', '發現新版本')}: {latest_tag}", text_color=TAG_PURPLE_TEXT)
             self.release_meta_label.configure(text=f"{release_name}{size_mb}")
-            self.progress_label.configure(text="發現新版本！請點選下方「立即直接更新」按鈕")
+            self.progress_label.configure(text=self._t("update_found_hint", "發現新版本！請點選下方「立即直接更新」按鈕"))
             self.btn_primary.configure(state="normal")
         else:
             cur = info.get("current_version", APP_VERSION)
             self.log(f"目前已是最新版本 ({cur})，無需更新。")
             self.latest_badge.configure(fg_color=TAG_MINT_BG, border_color=TAG_MINT_BORDER)
-            self.latest_badge_label.configure(text=f"已是最新 ({cur})", text_color=TAG_MINT_TEXT)
-            self.release_meta_label.configure(text=f"{release_name} - 系統已是最新狀態")
-            self.progress_label.configure(text="目前已是最新版本")
+            self.latest_badge_label.configure(text=f"{self._t('update_status_latest', '已是最新')} ({cur})", text_color=TAG_MINT_TEXT)
+            self.release_meta_label.configure(text=f"{release_name} - {self._t('update_system_latest', '系統已是最新狀態')}")
+            self.progress_label.configure(text=self._t("update_status_latest_msg", "目前已是最新版本"))
             self.btn_force.configure(state="normal")
 
     def _update_download_progress(self, pct, cur_mb, tot_mb, speed_str=""):
         self.progress_bar.set(pct / 100.0)
         speed_part = f" - 速度: {speed_str}" if speed_str else ""
         self.progress_label.configure(
-            text=f"正在下載更新檔... {pct:.1f}% ({cur_mb:.1f} MB / {tot_mb:.1f} MB){speed_part}"
+            text=f"{self._t('update_downloading_file', '正在下載更新檔...')} {pct:.1f}% ({cur_mb:.1f} MB / {tot_mb:.1f} MB){speed_part}"
         )
 
     def _on_update_error(self, err_msg):
         self.is_updating = False
-        self.progress_label.configure(text=f"更新失敗：{err_msg}")
+        self.progress_label.configure(text=f"{self._t('update_failed_prefix', '更新失敗')}：{err_msg}")
         self.btn_close.configure(state="normal")
         self.btn_primary.configure(state="normal")
         self.btn_force.configure(state="normal")
@@ -481,23 +485,23 @@ class UpdateDialog(ctk.CTkToplevel):
 
                     download_file_with_progress(asset_url, zip_path, progress_callback=_progress_cb, log_callback=self.log)
 
-                    self.after(0, lambda: self.progress_label.configure(text="下載完成！正在驗證並解壓縮檔案..."))
+                    self.after(0, lambda: self.progress_label.configure(text=self._t("update_extracting", "下載完成！正在驗證並解壓縮檔案...")))
                     src_app_dir = extract_and_validate_zip(zip_path, extract_dir, log_callback=self.log)
 
-                    self.after(0, lambda: self.progress_label.configure(text="解壓縮完成！正在套用更新並重啟程式..."))
+                    self.after(0, lambda: self.progress_label.configure(text=self._t("update_applying", "解壓縮完成！正在套用更新並重啟程式...")))
                     self.log("所有更新檔案已就緒，即將重啟程式...")
                     time.sleep(1.0)
                     apply_frozen_update(src_app_dir, target_app_dir=self.parent_gui.base_dir, zip_path=zip_path, log_callback=self.log)
 
                 elif is_git_repo(self.parent_gui.base_dir):
                     self.log("檢測到目前執行於 Git 原始碼目錄環境。")
-                    self.after(0, lambda: self.progress_label.configure(text="正在透過 git pull 更新程式碼..."))
+                    self.after(0, lambda: self.progress_label.configure(text=self._t("update_git_pulling", "正在透過 git pull 更新程式碼...")))
                     success, msg = apply_git_update(self.parent_gui.base_dir, log_callback=self.log)
                     if not success:
                         raise RuntimeError(f"Git pull 失敗: {msg}")
 
                     self.log("程式碼更新完成！即將重新啟動應用程式...")
-                    self.after(0, lambda: self.progress_label.configure(text="更新完成！正在重啟..."))
+                    self.after(0, lambda: self.progress_label.configure(text=self._t("update_restarting", "更新完成！正在重啟...")))
                     time.sleep(1.0)
                     os.execl(sys.executable, sys.executable, *sys.argv)
                 else:
@@ -657,7 +661,7 @@ class AppGUI(ctk.CTk):
 
         ctk.CTkLabel(
             brand_title_box,
-            text="Workspace",
+            text=self._t("sidebar_workspace", "工作區"),
             font=self._font(10),
             text_color=NOTION_STONE
         ).pack(anchor="w")
@@ -713,9 +717,10 @@ class AppGUI(ctk.CTk):
             text_color=TAG_MINT_TEXT
         ).pack(side="left", padx=(0, 6))
 
+        online_txt = self._t("status_online", "在線")
         ctk.CTkLabel(
             status_row,
-            text=f"Port {port_num} (Online)",
+            text=f"Port {port_num} ({online_txt})",
             font=self._font(11),
             text_color=NOTION_STEEL
         ).pack(side="left")
@@ -774,7 +779,7 @@ class AppGUI(ctk.CTk):
 
         self.hero_status_chip = ctk.CTkLabel(
             hero_right,
-            text="  Live Connected  ",
+            text=f"  {self._t('hero_live_connected', '即時連線中')}  ",
             font=self._font(11, "bold"),
             text_color=TAG_MINT_TEXT,
             fg_color=TAG_MINT_BG,
@@ -970,7 +975,7 @@ class AppGUI(ctk.CTk):
 
         self.player_theme_chip = ctk.CTkLabel(
             theme_tag,
-            text=f"Theme: {current_theme_name}",
+            text=f"{self._t('theme_label', '模板')}: {current_theme_name}",
             font=self._font(10, "bold"),
             text_color=TAG_PURPLE_TEXT
         )
@@ -1070,7 +1075,7 @@ class AppGUI(ctk.CTk):
 
         ctk.CTkLabel(
             drag_pill,
-            text="DRAG TO OBS CANVAS",
+            text=self._t("drag_pill_text", "拖曳至 OBS 畫布"),
             font=self._font(9, "bold"),
             text_color=NOTION_CHARCOAL
         ).pack(padx=12, pady=4)
@@ -1403,7 +1408,7 @@ class AppGUI(ctk.CTk):
         self._build_settings_section(
             settings_scroll,
             title=self._t("settings_category_lang", "語言與地區"),
-            subtitle="選擇軟體操作介面顯示語言 (繁體中文、English 等 14 種語言)"
+            subtitle=self._t("settings_category_lang_sub", "選擇軟體操作介面顯示語言")
         )
         sec1_card = ctk.CTkFrame(settings_scroll, corner_radius=12, fg_color=NOTION_SURFACE, border_width=1, border_color=NOTION_HAIRLINE)
         sec1_card.pack(fill="x", pady=(0, 20))
@@ -1446,7 +1451,7 @@ class AppGUI(ctk.CTk):
         self._build_settings_section(
             settings_scroll,
             title=self._t("settings_category_server", "伺服器與網路"),
-            subtitle="管理本機 HTTP 伺服器通訊端口與播放自動隱藏功能"
+            subtitle=self._t("settings_category_server_sub", "管理本機 HTTP 伺服器通訊端口與播放自動隱藏功能")
         )
         sec2_card = ctk.CTkFrame(settings_scroll, corner_radius=12, fg_color=NOTION_SURFACE, border_width=1, border_color=NOTION_HAIRLINE)
         sec2_card.pack(fill="x", pady=(0, 20))
@@ -1517,7 +1522,7 @@ class AppGUI(ctk.CTk):
 
         ctk.CTkLabel(
             sc_row,
-            text="OBS 捷徑檔快速開啟",
+            text=self._t("shortcuts_title", "OBS 捷徑快速開啟"),
             font=self._font(12, "bold"),
             text_color=NOTION_INK
         ).pack(side="left")
@@ -1539,7 +1544,7 @@ class AppGUI(ctk.CTk):
         self._build_settings_section(
             settings_scroll,
             title=self._t("settings_category_update", "軟體版本與更新"),
-            subtitle="檢查 GitHub 最新發行版本，支援一鍵直接下載重啟更新"
+            subtitle=self._t("settings_category_update_sub", "檢查 GitHub 最新發行版本，支援一鍵直接下載重啟更新")
         )
         sec3_card = ctk.CTkFrame(settings_scroll, corner_radius=12, fg_color=NOTION_SURFACE, border_width=1, border_color=NOTION_HAIRLINE)
         sec3_card.pack(fill="x", pady=(0, 20))
@@ -1572,7 +1577,7 @@ class AppGUI(ctk.CTk):
 
         ctk.CTkLabel(
             hint_row,
-            text="點選「檢查與線上更新」可開啟專屬更新視窗，自動比對版本並查看即時下載與解壓縮進度日誌。",
+            text=self._t("update_hint_desc", "點選「檢查與線上更新」可開啟專屬更新視窗，自動比對版本並查看即時下載與解壓縮進度日誌。"),
             font=self._font(11),
             text_color=NOTION_STEEL,
             anchor="w"
@@ -1687,7 +1692,7 @@ class AppGUI(ctk.CTk):
 
         # 2. Update Dashboard widgets if they exist
         if hasattr(self, "player_theme_chip") and self.player_theme_chip.winfo_exists():
-            self.player_theme_chip.configure(text=f"Theme: {theme_name}")
+            self.player_theme_chip.configure(text=f"{self._t('theme_label', '模板')}: {theme_name}")
 
         if hasattr(self, "global_theme_dropdown") and self.global_theme_dropdown.winfo_exists():
             self.global_theme_dropdown.set(theme_name)
@@ -1702,7 +1707,7 @@ class AppGUI(ctk.CTk):
             else:
                 self.settings_autohide_switch.deselect()
         self._refresh_all_urls()
-        self.show_inapp_toast("暫停時自動隱藏已開啟" if val else "暫停時自動隱藏已關閉")
+        self.show_inapp_toast(self._t("autohide_enabled", "暫停時自動隱藏已開啟") if val else self._t("autohide_disabled", "暫停時自動隱藏已關閉"))
 
     def _on_autohide_toggle_settings(self):
         val = bool(self.settings_autohide_switch.get())
@@ -1714,7 +1719,7 @@ class AppGUI(ctk.CTk):
             else:
                 self.autohide_switch.deselect()
         self._refresh_all_urls()
-        self.show_inapp_toast("暫停時自動隱藏已開啟" if val else "暫停時自動隱藏已關閉")
+        self.show_inapp_toast(self._t("autohide_enabled", "暫停時自動隱藏已開啟") if val else self._t("autohide_disabled", "暫停時自動隱藏已關閉"))
 
     def _refresh_all_urls(self):
         if hasattr(self, "global_url_entry") and self.global_url_entry.winfo_exists():
@@ -1902,7 +1907,7 @@ class AppGUI(ctk.CTk):
         latest = info.get("latest_version")
         if hasattr(self, "hero_status_chip") and self.hero_status_chip.winfo_exists():
             self.hero_status_chip.configure(
-                text=f"  Update Available: {latest}  ",
+                text=f"  {self._t('update_available_badge', '發現新版本')}: {latest}  ",
                 fg_color=TAG_YELLOW_BG,
                 text_color=TAG_YELLOW_TEXT
             )

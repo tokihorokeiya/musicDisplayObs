@@ -13,7 +13,7 @@ import urllib.error
 
 from functools import lru_cache
 
-APP_VERSION = "v1.1.1"
+APP_VERSION = "v1.1.2"
 GITHUB_REPO = "tokihorokeiya/musicDisplayObs"
 GITHUB_API_LATEST = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 
@@ -237,6 +237,8 @@ def apply_frozen_update(source_dir, target_app_dir=None, zip_path=None, quit_app
         log_callback(f"目標目錄: {target_app_dir}")
 
     zip_cleanup = f'del /f /q "{zip_path}" >nul 2>&1' if zip_path else ""
+    extract_parent = os.path.dirname(source_dir)
+    extract_root = extract_parent if ("obs_extract" in extract_parent or "obs_music" in extract_parent) else source_dir
 
     bat_content = f"""@echo off
 setlocal enabledelayedexpansion
@@ -248,6 +250,7 @@ echo ============================================================
 echo.
 
 echo [1/3] Waiting for current process (PID {current_pid}) to exit...
+timeout /t 1 /nobreak >nul
 for /L %%i in (1,1,10) do (
     tasklist /FI "PID eq {current_pid}" 2>nul | findstr /i "{current_pid}" >nul
     if not errorlevel 1 (
@@ -265,7 +268,7 @@ start "" "{target_app_dir}\\OBSMusicDisplay.exe"
 
 echo Cleaning up updater files...
 {zip_cleanup}
-rd /s /q "{os.path.dirname(source_dir) if 'obs_music_extract' in os.path.dirname(source_dir) else source_dir}" >nul 2>&1
+rd /s /q "{extract_root}" >nul 2>&1
 
 echo Update completed successfully!
 (goto) 2>nul & del "%~f0"
@@ -275,23 +278,28 @@ exit
     with open(updater_bat_path, "w", encoding="utf-8") as f:
         f.write(bat_content)
 
-    creation_flags = 0
-    if sys.platform == "win32":
-        creation_flags = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
-
     if log_callback:
         log_callback("啟動自動更新腳本並關閉當前程序...")
 
-    subprocess.Popen(
-        ["cmd.exe", "/c", updater_bat_path],
-        creationflags=creation_flags,
-        close_fds=True
-    )
+    try:
+        os.startfile(updater_bat_path)
+    except Exception as e:
+        if log_callback:
+            log_callback(f"os.startfile 失敗 ({e})，改用 cmd 啟動...")
+        subprocess.Popen(
+            ["cmd.exe", "/c", updater_bat_path],
+            creationflags=subprocess.CREATE_NEW_CONSOLE if sys.platform == "win32" else 0,
+            close_fds=True
+        )
 
+    # Allow batch script a brief instant to spawn, then force exit to release all file locks
+    time.sleep(0.5)
     if quit_app_callback:
-        quit_app_callback()
-    else:
-        sys.exit(0)
+        try:
+            quit_app_callback()
+        except Exception:
+            pass
+    os._exit(0)
 
 def apply_git_update(base_dir=None, log_callback=None):
     """
