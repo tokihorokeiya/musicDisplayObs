@@ -29,9 +29,12 @@ const templateCache = {};
 const urlParams = new URLSearchParams(window.location.search);
 const requestedThemeParam = urlParams.get('theme');
 const isGlobalTheme = (!requestedThemeParam || requestedThemeParam === 'active' || requestedThemeParam === 'global');
+const serverTheme = (typeof window !== 'undefined' && window.INITIAL_THEME) 
+    || (typeof document !== 'undefined' && document.getElementById('overlay-container')?.className.match(/theme-([^\s]+)/)?.[1]) 
+    || 'glassmorphism';
 let currentTheme = (requestedThemeParam && requestedThemeParam !== 'active' && requestedThemeParam !== 'global') 
     ? requestedThemeParam 
-    : 'glassmorphism';
+    : serverTheme;
 const autoHideEnabled = urlParams.get('autohide') === '1';
 const autoHideDelay = parseInt(urlParams.get('delay') || '4', 10) * 1000;
 const requestedMode = urlParams.get('mode') || (urlParams.get('w') === '1920' ? '1920x700' : 'auto');
@@ -39,18 +42,10 @@ const requestedPos = urlParams.get('pos') || 'center';
 const customScale = parseFloat(urlParams.get('scale') || '0');
 
 document.addEventListener('DOMContentLoaded', () => {
-    // For the global overlay the server pre-renders class="theme-{name}" on the container.
-    // Read that class so currentTheme matches what is actually painted on first load.
-    // This prevents infinite-reload: after reload the server-rendered class matches
-    // the active_theme from WebSocket, so the reload condition is never triggered again.
-    if (isGlobalTheme) {
-        const containerEl = document.getElementById('overlay-container');
-        if (containerEl) {
-            const match = containerEl.className.match(/\btheme-(\S+)\b/);
-            if (match) {
-                currentTheme = match[1];
-            }
-        }
+    // Cache server-side pre-rendered template for the initial theme
+    const container = document.getElementById('overlay-container');
+    if (container && container.querySelector('#widget-card')) {
+        templateCache[currentTheme] = container.innerHTML;
     }
 
     applyTheme(currentTheme);
@@ -162,7 +157,7 @@ function applyTheme(themeName) {
         themeLink.rel = 'stylesheet';
         document.head.appendChild(themeLink);
     }
-    const targetHref = `/static/css/themes/${themeName}.css?v=5.0`;
+    const targetHref = `/static/css/themes/${themeName}.css?v=5.1`;
     if (themeLink.getAttribute('href') !== targetHref) {
         themeLink.href = targetHref;
     }
@@ -208,7 +203,7 @@ function renderThemeHTML(theme) {
     const container = document.getElementById('overlay-container');
     if (!container) return;
 
-    // Fast Path A: In-memory cache hit
+    // Fast Path: In-memory cache hit
     if (templateCache[theme]) {
         container.innerHTML = templateCache[theme];
         cacheDOMElements();
@@ -216,16 +211,8 @@ function renderThemeHTML(theme) {
         return;
     }
 
-    // Fast Path B: Check if container was pre-rendered server-side for this theme
-    if (container.classList.contains(`theme-${theme}`) && container.querySelector('#widget-card')) {
-        templateCache[theme] = container.innerHTML;
-        cacheDOMElements();
-        updateUI(currentMedia);
-        return;
-    }
-
-    // Async Path C: Fetch template file on-demand
-    fetch(`/static/templates/${theme}.html?v=5.0`)
+    // Async Path: Fetch template file on-demand
+    fetch(`/static/templates/${theme}.html?v=5.1`)
         .then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return res.text();
@@ -283,10 +270,10 @@ function updateUI(data) {
 
     currentMedia = data;
 
-    // If using Global Active Overlay, reload when active_theme changes.
-    // currentTheme is initialized from the server-rendered container class on startup,
-    // so after the reload it will match again and no further reload fires.
+    // If using Global Active Overlay, cleanly reload if active_theme changed
     if (isGlobalTheme && data.active_theme && data.active_theme !== currentTheme) {
+        console.log(`[OBS Overlay] Active theme changed from ${currentTheme} to ${data.active_theme}. Reloading overlay...`);
+        currentTheme = data.active_theme;
         window.location.reload();
         return;
     }
@@ -415,6 +402,12 @@ function connectWebSocket() {
     socket.onmessage = (event) => {
         try {
             const data = JSON.parse(event.data);
+            if (isGlobalTheme && (data.reload || (data.active_theme && data.active_theme !== currentTheme))) {
+                console.log(`[OBS Overlay] Theme change detected (target: ${data.active_theme}). Reloading overlay for clean layout...`);
+                currentTheme = data.active_theme || currentTheme;
+                window.location.reload();
+                return;
+            }
             updateUI(data);
         } catch (e) {
             console.error('[OBS Overlay] Parsing error:', e);

@@ -66,7 +66,10 @@ class AppCoordinator:
             self.media_engine.set_active_theme(theme_id)
         if self.loop and self.server:
             async def broadcast_theme():
-                await self.server.broadcast_media_update(self.media_engine.current_data)
+                payload = dict(self.media_engine.current_data)
+                payload["theme_changed"] = True
+                payload["reload"] = True
+                await self.server.broadcast_media_update(payload)
             asyncio.run_coroutine_threadsafe(broadcast_theme(), self.loop)
 
     def _on_port_changed(self, new_port):
