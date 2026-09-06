@@ -21,6 +21,7 @@ from updater import (
     APP_VERSION,
     check_github_update,
     download_file_with_progress,
+    extract_and_validate_zip,
     apply_frozen_update,
     apply_git_update,
     is_frozen,
@@ -145,6 +146,369 @@ def format_time_str(seconds):
     m = int(seconds) // 60
     s = int(seconds) % 60
     return f"{m:02d}:{s:02d}"
+
+class UpdateDialog(ctk.CTkToplevel):
+    """
+    Notion-styled Software Update Window with real-time debug console,
+    download progress tracking, and one-click self-update execution.
+    """
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.parent_gui = parent
+        self.title("OBS Music Display - 線上更新管理")
+        self.geometry("620x570")
+        self.minsize(580, 500)
+        self.configure(fg_color=NOTION_SURFACE)
+        self.transient(parent)
+        self.grab_set()
+
+        self.update_idletasks()
+        try:
+            x = parent.winfo_x() + (parent.winfo_width() - 620) // 2
+            y = parent.winfo_y() + (parent.winfo_height() - 570) // 2
+            self.geometry(f"+{max(x, 50)}+{max(y, 50)}")
+        except Exception:
+            pass
+
+        self.info = None
+        self.is_updating = False
+        self._build_ui()
+        self.after(300, self._start_check)
+
+    def log(self, message):
+        """Thread-safe append of timestamped message to the debug log terminal."""
+        def _append():
+            if hasattr(self, "log_box") and self.log_box.winfo_exists():
+                ts = time.strftime("%H:%M:%S")
+                self.log_box.configure(state="normal")
+                self.log_box.insert("end", f"[{ts}] {message}\n")
+                self.log_box.see("end")
+                self.log_box.configure(state="disabled")
+        if threading.current_thread() is not threading.main_thread():
+            self.after(0, _append)
+        else:
+            _append()
+
+    def _build_ui(self):
+        root_box = ctk.CTkFrame(self, fg_color="transparent")
+        root_box.pack(fill="both", expand=True, padx=24, pady=20)
+
+        # 1. Header with Notion icon box
+        head_row = ctk.CTkFrame(root_box, fg_color="transparent")
+        head_row.pack(fill="x", pady=(0, 14))
+
+        icon_box = ctk.CTkFrame(
+            head_row,
+            width=36,
+            height=36,
+            corner_radius=8,
+            fg_color="#222222",
+            border_width=1,
+            border_color=NOTION_HAIRLINE_STRONG
+        )
+        icon_box.pack(side="left", padx=(0, 12))
+        icon_box.pack_propagate(False)
+
+        ctk.CTkLabel(
+            icon_box,
+            text="UPD",
+            font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+            text_color="#a855f7"
+        ).place(relx=0.5, rely=0.5, anchor="center")
+
+        title_meta = ctk.CTkFrame(head_row, fg_color="transparent")
+        title_meta.pack(side="left", fill="both", expand=True)
+
+        ctk.CTkLabel(
+            title_meta,
+            text="線上軟體版本更新",
+            font=self.parent_gui._font(14, "bold"),
+            text_color=NOTION_INK
+        ).pack(anchor="w")
+
+        ctk.CTkLabel(
+            title_meta,
+            text="GitHub Releases 即時檢查、解壓縮校驗與自動套用重啟",
+            font=self.parent_gui._font(11),
+            text_color=NOTION_STEEL
+        ).pack(anchor="w")
+
+        # 2. Version & Release Status Card
+        self.status_card = ctk.CTkFrame(
+            root_box,
+            corner_radius=10,
+            fg_color="#181818",
+            border_width=1,
+            border_color=NOTION_HAIRLINE
+        )
+        self.status_card.pack(fill="x", pady=(0, 12))
+
+        # Version line
+        ver_line = ctk.CTkFrame(self.status_card, fg_color="transparent")
+        ver_line.pack(fill="x", padx=16, pady=(12, 6))
+
+        cur_v = APP_VERSION if APP_VERSION.startswith("v") else f"v{APP_VERSION}"
+        ctk.CTkLabel(
+            ver_line,
+            text=f"本地目前版本: {cur_v}",
+            font=self.parent_gui._font(12, "bold"),
+            text_color=NOTION_CHARCOAL
+        ).pack(side="left")
+
+        self.latest_badge = ctk.CTkFrame(
+            ver_line,
+            corner_radius=6,
+            fg_color=TAG_PEACH_BG,
+            border_width=1,
+            border_color=TAG_PEACH_BORDER
+        )
+        self.latest_badge.pack(side="right")
+
+        self.latest_badge_label = ctk.CTkLabel(
+            self.latest_badge,
+            text="正在檢查中...",
+            font=self.parent_gui._font(10, "bold"),
+            text_color=TAG_PEACH_TEXT
+        )
+        self.latest_badge_label.pack(padx=8, pady=2)
+
+        # Release Title & Asset line
+        self.release_meta_label = ctk.CTkLabel(
+            self.status_card,
+            text="正在連線 GitHub Releases API...",
+            font=self.parent_gui._font(11),
+            text_color=NOTION_STEEL,
+            anchor="w"
+        )
+        self.release_meta_label.pack(fill="x", padx=16, pady=(0, 12))
+
+        # 3. Progress Bar & Real-time Rate
+        prog_row = ctk.CTkFrame(root_box, fg_color="transparent")
+        prog_row.pack(fill="x", pady=(0, 10))
+
+        self.progress_bar = ctk.CTkProgressBar(
+            prog_row,
+            height=8,
+            corner_radius=4,
+            progress_color=NOTION_PURPLE,
+            fg_color="#2b2b2b"
+        )
+        self.progress_bar.set(0)
+        self.progress_bar.pack(fill="x", pady=(0, 4))
+
+        self.progress_label = ctk.CTkLabel(
+            prog_row,
+            text="準備就緒",
+            font=self.parent_gui._font(11),
+            text_color=NOTION_STEEL,
+            anchor="w"
+        )
+        self.progress_label.pack(fill="x")
+
+        # 4. Debug / Progress Terminal Console
+        console_box = ctk.CTkFrame(root_box, fg_color="transparent")
+        console_box.pack(fill="both", expand=True, pady=(0, 14))
+
+        ctk.CTkLabel(
+            console_box,
+            text="即時進度與除錯紀錄 (Debug Log):",
+            font=self.parent_gui._font(11, "bold"),
+            text_color=NOTION_CHARCOAL
+        ).pack(anchor="w", pady=(0, 4))
+
+        self.log_box = ctk.CTkTextbox(
+            console_box,
+            height=160,
+            corner_radius=8,
+            fg_color="#121212",
+            border_width=1,
+            border_color=NOTION_HAIRLINE_STRONG,
+            text_color="#e2e8f0",
+            font=ctk.CTkFont(family="Consolas", size=11),
+            wrap="word"
+        )
+        self.log_box.pack(fill="both", expand=True)
+        self.log_box.configure(state="disabled")
+
+        # 5. Bottom Action Buttons
+        btn_bar = ctk.CTkFrame(root_box, fg_color="transparent")
+        btn_bar.pack(fill="x")
+
+        self.btn_primary = ctk.CTkButton(
+            btn_bar,
+            text="立即直接更新",
+            height=34,
+            corner_radius=8,
+            font=self.parent_gui._font(11, "bold"),
+            fg_color=NOTION_PURPLE,
+            hover_color=NOTION_PURPLE_HOVER,
+            state="disabled",
+            command=self._on_start_update
+        )
+        self.btn_primary.pack(side="left", padx=(0, 8))
+
+        self.btn_force = ctk.CTkButton(
+            btn_bar,
+            text="重新下載修復",
+            height=34,
+            corner_radius=8,
+            font=self.parent_gui._font(11),
+            fg_color="#242424",
+            hover_color="#303030",
+            border_width=1,
+            border_color=NOTION_HAIRLINE_STRONG,
+            state="disabled",
+            command=lambda: self._on_start_update(force=True)
+        )
+        self.btn_force.pack(side="left", padx=(0, 8))
+
+        self.btn_github = ctk.CTkButton(
+            btn_bar,
+            text="在 GitHub 查看",
+            height=34,
+            corner_radius=8,
+            font=self.parent_gui._font(11),
+            fg_color="#242424",
+            hover_color="#303030",
+            border_width=1,
+            border_color=NOTION_HAIRLINE_STRONG,
+            command=self._open_github
+        )
+        self.btn_github.pack(side="left", padx=(0, 8))
+
+        self.btn_close = ctk.CTkButton(
+            btn_bar,
+            text="關閉",
+            width=70,
+            height=34,
+            corner_radius=8,
+            font=self.parent_gui._font(11),
+            fg_color="#242424",
+            hover_color="#303030",
+            border_width=1,
+            border_color=NOTION_HAIRLINE_STRONG,
+            command=self.destroy
+        )
+        self.btn_close.pack(side="right")
+
+    def _open_github(self):
+        url = "https://github.com/tokihorokeiya/musicDisplayObs/releases"
+        if self.info and (self.info.get("html_url") or self.info.get("release_url")):
+            url = self.info.get("html_url") or self.info.get("release_url")
+        webbrowser.open(url)
+
+    def _start_check(self):
+        self.log("正在連線至 GitHub Releases API 檢查更新...")
+        def _bg():
+            info = check_github_update()
+            self.after(0, lambda: self._on_check_finished(info))
+        threading.Thread(target=_bg, daemon=True).start()
+
+    def _on_check_finished(self, info):
+        self.info = info
+        if not info.get("success"):
+            err = info.get("error", "未知網路錯誤")
+            self.log(f"[錯誤] 檢查更新失敗: {err}")
+            self.latest_badge.configure(fg_color="#381a1a", border_color="#582323")
+            self.latest_badge_label.configure(text="連線失敗", text_color="#f87171")
+            self.release_meta_label.configure(text=f"無法連接至 GitHub: {err}")
+            self.progress_label.configure(text="檢查失敗，請檢查網路連線或前往 GitHub 查看")
+            return
+
+        latest_tag = info.get("latest_version")
+        release_name = info.get("release_name")
+        asset_size = info.get("asset_size", 0)
+        size_mb = f" (檔案大小: {asset_size / (1024*1024):.1f} MB)" if asset_size > 0 else ""
+
+        self.log(f"成功取得版本資訊！GitHub 最新版本: {latest_tag}")
+        if info.get("has_update"):
+            self.log(f"發現新版本可供更新: {latest_tag}{size_mb}")
+            self.log(f"發行標題: {release_name}")
+            self.latest_badge.configure(fg_color=TAG_PURPLE_BG, border_color=TAG_PURPLE_BORDER)
+            self.latest_badge_label.configure(text=f"發現新版本: {latest_tag}", text_color=TAG_PURPLE_TEXT)
+            self.release_meta_label.configure(text=f"{release_name}{size_mb}")
+            self.progress_label.configure(text="發現新版本！請點選下方「立即直接更新」按鈕")
+            self.btn_primary.configure(state="normal")
+        else:
+            cur = info.get("current_version", APP_VERSION)
+            self.log(f"目前已是最新版本 ({cur})，無需更新。")
+            self.latest_badge.configure(fg_color=TAG_MINT_BG, border_color=TAG_MINT_BORDER)
+            self.latest_badge_label.configure(text=f"已是最新 ({cur})", text_color=TAG_MINT_TEXT)
+            self.release_meta_label.configure(text=f"{release_name} - 系統已是最新狀態")
+            self.progress_label.configure(text="目前已是最新版本")
+            self.btn_force.configure(state="normal")
+
+    def _update_download_progress(self, pct, cur_mb, tot_mb, speed_str=""):
+        self.progress_bar.set(pct / 100.0)
+        speed_part = f" - 速度: {speed_str}" if speed_str else ""
+        self.progress_label.configure(
+            text=f"正在下載更新檔... {pct:.1f}% ({cur_mb:.1f} MB / {tot_mb:.1f} MB){speed_part}"
+        )
+
+    def _on_update_error(self, err_msg):
+        self.is_updating = False
+        self.progress_label.configure(text=f"更新失敗：{err_msg}")
+        self.btn_close.configure(state="normal")
+        self.btn_primary.configure(state="normal")
+        self.btn_force.configure(state="normal")
+
+    def _on_start_update(self, force=False):
+        if self.is_updating:
+            return
+        self.is_updating = True
+        self.btn_primary.configure(state="disabled")
+        self.btn_force.configure(state="disabled")
+        self.btn_close.configure(state="disabled")
+
+        def _bg():
+            try:
+                if is_frozen():
+                    asset_url = self.info.get("download_url") or self.info.get("asset_url")
+                    if not asset_url:
+                        raise RuntimeError("在 GitHub Releases 找不到 Windows 安裝套件 ZIP 檔")
+
+                    temp_dir = tempfile.gettempdir()
+                    zip_name = self.info.get("asset_name") or f"OBSMusicDisplay_update_{int(time.time())}.zip"
+                    zip_path = os.path.join(temp_dir, zip_name)
+                    extract_dir = os.path.join(temp_dir, f"obs_extract_{int(time.time())}")
+
+                    self.log(f"開始下載更新套件: {os.path.basename(zip_path)}...")
+
+                    def _progress_cb(pct, downloaded, total, speed_str=""):
+                        cur_mb = downloaded / (1024 * 1024)
+                        tot_mb = total / (1024 * 1024)
+                        self.after(0, lambda: self._update_download_progress(pct, cur_mb, tot_mb, speed_str))
+
+                    download_file_with_progress(asset_url, zip_path, progress_callback=_progress_cb, log_callback=self.log)
+
+                    self.after(0, lambda: self.progress_label.configure(text="下載完成！正在驗證並解壓縮檔案..."))
+                    src_app_dir = extract_and_validate_zip(zip_path, extract_dir, log_callback=self.log)
+
+                    self.after(0, lambda: self.progress_label.configure(text="解壓縮完成！正在套用更新並重啟程式..."))
+                    self.log("所有更新檔案已就緒，即將重啟程式...")
+                    time.sleep(1.0)
+                    apply_frozen_update(src_app_dir, target_app_dir=self.parent_gui.base_dir, zip_path=zip_path, log_callback=self.log)
+
+                elif is_git_repo(self.parent_gui.base_dir):
+                    self.log("檢測到目前執行於 Git 原始碼目錄環境。")
+                    self.after(0, lambda: self.progress_label.configure(text="正在透過 git pull 更新程式碼..."))
+                    success, msg = apply_git_update(self.parent_gui.base_dir, log_callback=self.log)
+                    if not success:
+                        raise RuntimeError(f"Git pull 失敗: {msg}")
+
+                    self.log("程式碼更新完成！即將重新啟動應用程式...")
+                    self.after(0, lambda: self.progress_label.configure(text="更新完成！正在重啟..."))
+                    time.sleep(1.0)
+                    os.execl(sys.executable, sys.executable, *sys.argv)
+                else:
+                    self.log("環境無法自動替換，正在為您開啟 GitHub 頁面手動下載...")
+                    webbrowser.open(self.info.get("html_url", "https://github.com/tokihorokeiya/musicDisplayObs/releases"))
+            except Exception as e:
+                err_msg = str(e)
+                self.log(f"[嚴重錯誤] 更新作業中斷: {err_msg}")
+                self.after(0, lambda: self._on_update_error(err_msg))
+
+        threading.Thread(target=_bg, daemon=True).start()
 
 class AppGUI(ctk.CTk):
     """
@@ -1181,29 +1545,16 @@ class AppGUI(ctk.CTk):
         )
         self.btn_check_update.pack(side="right")
 
-        # Update dynamic banner
-        self.update_info_frame = ctk.CTkFrame(sec3_card, fg_color="transparent")
-        self.update_info_frame.pack(fill="x", padx=20, pady=(0, 16))
+        hint_row = ctk.CTkFrame(sec3_card, fg_color="transparent")
+        hint_row.pack(fill="x", padx=20, pady=(0, 16))
 
-        self.update_status_label = ctk.CTkLabel(
-            self.update_info_frame,
-            text="",
+        ctk.CTkLabel(
+            hint_row,
+            text="點選「檢查與線上更新」可開啟專屬更新視窗，自動比對版本並查看即時下載與解壓縮進度日誌。",
             font=self._font(11),
             text_color=NOTION_STEEL,
             anchor="w"
-        )
-        self.update_status_label.pack(fill="x")
-
-        self.update_progress_bar = ctk.CTkProgressBar(
-            self.update_info_frame,
-            height=6,
-            corner_radius=3,
-            progress_color=NOTION_PURPLE,
-            fg_color="#333333"
-        )
-        self.update_progress_bar.set(0)
-
-        self.update_action_box = ctk.CTkFrame(self.update_info_frame, fg_color="transparent")
+        ).pack(fill="x")
 
     def _build_settings_section(self, parent, title, subtitle):
         box = ctk.CTkFrame(parent, fg_color="transparent")
@@ -1521,102 +1872,19 @@ class AppGUI(ctk.CTk):
                 fg_color=TAG_YELLOW_BG,
                 text_color=TAG_YELLOW_TEXT
             )
+            try:
+                self.hero_status_chip.bind("<Button-1>", lambda e: self._open_update_dialog())
+            except Exception:
+                pass
 
     def _on_check_update_clicked(self):
-        self.btn_check_update.configure(state="disabled")
-        self.update_status_label.configure(text=self._t("checking_update", "正在檢查 GitHub 最新版本..."))
+        self._open_update_dialog()
 
-        def _bg():
-            info = check_github_update()
-            self.after(0, lambda: self._handle_update_check_result(info))
-
-        threading.Thread(target=_bg, daemon=True).start()
-
-    def _handle_update_check_result(self, info):
-        self.btn_check_update.configure(state="normal")
-        if not info.get("success"):
-            err_msg = info.get("error", "Unknown error")
-            self.update_status_label.configure(text=self._t("update_error", f"更新失敗：{err_msg}").format(error=err_msg))
+    def _open_update_dialog(self):
+        if hasattr(self, "_update_dialog") and self._update_dialog and self._update_dialog.winfo_exists():
+            self._update_dialog.focus()
             return
-
-        if not info.get("has_update"):
-            cur = info.get("current_version", APP_VERSION)
-            self.update_status_label.configure(text=self._t("already_latest", f"目前已是最新版本 ({cur})！").format(version=cur))
-            return
-
-        # An update is available
-        latest_tag = info.get("latest_version")
-        self.update_status_label.configure(
-            text=f"{self._t('update_available_title', f'發現新版本 {latest_tag}！').format(version=latest_tag)}   (v{info.get('current_version')} -> {latest_tag})"
-        )
-
-        for w in self.update_action_box.winfo_children():
-            w.destroy()
-        self.update_action_box.pack(fill="x", pady=(10, 0))
-
-        ctk.CTkButton(
-            self.update_action_box,
-            text=self._t("btn_start_update", "立即直接更新"),
-            height=32,
-            corner_radius=8,
-            font=self._font(11, "bold"),
-            fg_color=NOTION_PURPLE,
-            hover_color=NOTION_PURPLE_HOVER,
-            command=lambda: self._start_one_click_update(info)
-        ).pack(side="left", padx=(0, 8))
-
-        ctk.CTkButton(
-            self.update_action_box,
-            text=self._t("btn_view_release", "查看 GitHub 更新日誌"),
-            height=32,
-            corner_radius=8,
-            font=self._font(11),
-            fg_color="#242424",
-            hover_color="#303030",
-            border_width=1,
-            border_color=NOTION_HAIRLINE_STRONG,
-            command=lambda: webbrowser.open(info.get("release_url", "https://github.com/tokihorokeiya/musicDisplayObs/releases"))
-        ).pack(side="left")
-
-    def _start_one_click_update(self, info):
-        self.update_progress_bar.pack(fill="x", pady=(8, 8))
-        self.update_progress_bar.set(0)
-        self.update_status_label.configure(text=self._t("downloading_update", "正在下載更新檔... 0%").format(progress=0))
-
-        def _worker():
-            try:
-                if is_frozen():
-                    asset_url = info.get("asset_url")
-                    if not asset_url:
-                        raise RuntimeError("Release asset zip not found on GitHub")
-                    temp_dir = tempfile.gettempdir()
-                    zip_path = os.path.join(temp_dir, f"OBSMusicDisplay_update_{int(time.time())}.zip")
-
-                    def _progress_cb(pct):
-                        self.after(0, lambda: self._update_download_progress(pct))
-
-                    download_file_with_progress(asset_url, zip_path, progress_callback=_progress_cb)
-                    self.after(0, lambda: self.update_status_label.configure(text=self._t("restarting_app", "下載完成！正在重啟並套用更新...")))
-                    time.sleep(1.0)
-                    apply_frozen_update(zip_path)
-                elif is_git_repo():
-                    self.after(0, lambda: self.update_status_label.configure(text=self._t("downloading_update", "正在自 GitHub 拉取最新程式碼...").format(progress=50)))
-                    apply_git_update(info.get("latest_version"))
-                    self.after(0, lambda: self.update_status_label.configure(text=self._t("restarting_app", "更新完成！正在重新啟動程式...")))
-                    time.sleep(1.0)
-                    os.execl(sys.executable, sys.executable, *sys.argv)
-                else:
-                    webbrowser.open(info.get("release_url", "https://github.com/tokihorokeiya/musicDisplayObs/releases"))
-            except Exception as e:
-                err_str = str(e)
-                self.after(0, lambda: self.update_status_label.configure(text=self._t("update_error", f"更新失敗：{err_str}").format(error=err_str)))
-
-        threading.Thread(target=_worker, daemon=True).start()
-
-    def _update_download_progress(self, pct):
-        frac = pct / 100.0
-        self.update_progress_bar.set(frac)
-        self.update_status_label.configure(text=self._t("downloading_update", f"正在下載更新檔... {pct:.0f}%").format(progress=pct))
+        self._update_dialog = UpdateDialog(self)
 
     # -------------------------------------------------------------
     # Window Close & System Tray
