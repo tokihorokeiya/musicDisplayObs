@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/支援平台-Windows%2010%20%7C%2011-0078D6?logo=windows&logoColor=white" alt="Platform">
   <img src="https://img.shields.io/badge/OBS%20Studio-v28%2B%20相容-black?logo=obsstudio&logoColor=white" alt="OBS Studio">
   <img src="https://img.shields.io/badge/瀏覽器外掛-完全免安裝-success" alt="免外掛">
-  <img src="https://img.shields.io/badge/內建模板-10%20款精選風格-8A2BE2" alt="10 款模板">
+  <img src="https://img.shields.io/badge/內建模板-19%20款精選風格-8A2BE2" alt="19 款模板">
 </p>
 
 ---
@@ -23,11 +23,12 @@
 專為 Windows 實況主設計的免外掛、免設定即時音樂串流顯示工具！透過 Windows 系統媒體服務（GSMTC），直接抓取 **YouTube、YouTube Music、Spotify、Apple Music、KKBOX、Chrome、Edge、Firefox** 等播放中的曲目資訊，並生成 100% 全透明、高質感的 HTML5 動畫組件，無縫融入 **OBS Studio** 實況畫面。
 
 * **完全免裝任何瀏覽器外掛** — 只要瀏覽器正在播放音樂，軟體自動即時抓取！
-* **一鍵快速複製 OBS 網址** — 點選模板旁的「複製網址」，貼入 OBS「瀏覽器」來源即可使用。
-* **內建 10 款高品質風格模板** — 毛玻璃、賽博龐克、復古黑膠、錄音帶、萌系粉彩等應有盡有。
-* **微軟正黑體 UI 專屬字型優化** — 繁體中文曲名與歌手名稱皆以標準清晰的系統字體完美渲染。
+* **直接拖曳加入 OBS 畫布** — 預覽卡片或網址方塊可直接拖曳至 OBS 畫面，秒速新增瀏覽器來源。
+* **內建 19 款高品質風格模板** — 毛玻璃、賽博龐克、復古黑膠、瑞士網格、復古 70 年代、8-Bit 像素、Bento 模組等應有盡有。
+* **清晰向量抗鋸齒字體** — 微軟正黑體、Yu Gothic UI、Malgun Gothic 等平滑無襯線向量字體，全面杜絕中日韓文字出現 1-bit 點陣雜點。
 * **平滑無抖動進度條與時間顯示** — 精確計算真實播放時間，避免時間倒退或反覆跳動。
 * **一鍵直接從 GitHub 線上更新** — 軟體內建版本檢查與自動熱更新功能，升級時完整保留個人自訂設定。
+* **Notion 極簡設計風格界面** — 簡約無彈窗干擾，操作提示全數採用無感浮動 Toast 通知。
 * **系統匣常駐與完整關閉管理** — 關閉視窗時可彈性選擇最小化至右下角系統匣或完全關閉進程。
 
 ---
@@ -84,7 +85,7 @@
 
 ---
 
-### 🎨 10 大內建風格主題一覽
+### 🎨 19 大內建風格主題一覽
 
 | 主題名稱 | 設計風格說明 | 實機預覽截圖 |
 |---|---|:---:|
@@ -98,6 +99,15 @@
 | **8. Spotify 潮流黑綠 (Spotify)** | 經典深色系搭律動翡翠綠條，完美重現現代流行音樂軟體風貌 | <img src="static/previews/spotify.png" width="320"> |
 | **9. 暖心 Lo-Fi 書房 (Lo-Fi Cozy)** | 溫暖的暮色鎢絲燈光暈、柔和質感邊框，深夜伴讀與聊天台首選 | <img src="static/previews/lofi_cozy.png" width="320"> |
 | **10. 動態島彈動視窗 (Dynamic Island)** | 宛如智慧型手機的流暢物理彈動視窗，曲目切換時動態延展彈跳 | <img src="static/previews/dynamic_island.png" width="320"> |
+| **11. 極簡純粹 (Minimalism)** | 純粹字體排印與專輯封面結合的高對比簡約設計，絕無多餘干擾 | <img src="static/previews/minimalism.png" width="320"> |
+| **12. 瑞士網格風 (Swiss Style)** | 經典國際主義字體設計，嚴謹 Helvetica 網格系統與俐落十字標記 | <img src="static/previews/swiss.png" width="320"> |
+| **13. 奢華雜誌風 (Editorial)** | Vogue 與 Kinfolk 高級時尚紙本排版風格，優雅襯線英文字型 | <img src="static/previews/editorial.png" width="320"> |
+| **14. 手繪塗鴉手帳 (Hand-Drawn)** | 紙張纖維質感邊框搭配和紙膠帶拼貼，滿滿童趣與日常溫馨氣息 | <img src="static/previews/hand_drawn.png" width="320"> |
+| **15. 70年代復古音響 (Retro Hi-Fi)** | 經典立體聲收音擴大機搭配復古暖彩線條，重現黃金類比音響風華 | <img src="static/previews/retro.png" width="320"> |
+| **16. 霓虹街機像素 (Pixel Arcade)** | 80 年代街機 CRT 映像管螢幕風格搭配霓虹網格，復古科幻感十足 | <img src="static/previews/pixel.png" width="320"> |
+| **17. 扁平方塊 2.0 (Flat 2.0)** | 現代大膽色塊與幾何圓角撞色拼接，清爽純粹且視覺層次分明 | <img src="static/previews/flat.png" width="320"> |
+| **18. 紅白機 8-Bit (8-Bit Gaming)** | 經典紅白機與 Game Boy 綠黑像素風格，生命值血條化身音樂進度 | <img src="static/previews/eight_bit.png" width="320"> |
+| **19. Bento 現代模組網格 (Bento Grid)** | 蘋果發表會風格便當盒多功能獨立區塊卡片，音訊數據一目了然 | <img src="static/previews/bento.png" width="320"> |
 
 ---
 

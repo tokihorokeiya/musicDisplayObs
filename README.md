@@ -15,7 +15,7 @@
   <img src="https://img.shields.io/badge/Platform-Windows%2010%20%7C%2011-0078D6?logo=windows&logoColor=white" alt="Platform">
   <img src="https://img.shields.io/badge/OBS%20Studio-v28%2B%20Compatible-black?logo=obsstudio&logoColor=white" alt="OBS Studio">
   <img src="https://img.shields.io/badge/Browser%20Extension-Zero%20Required-success" alt="No Extensions">
-  <img src="https://img.shields.io/badge/Themes-10%20Built--in%20Styles-8A2BE2" alt="10 Themes">
+  <img src="https://img.shields.io/badge/Themes-19%20Built--in%20Styles-8A2BE2" alt="19 Themes">
 </p>
 
 ---
@@ -23,11 +23,13 @@
 A modern, standalone desktop tool for Windows that captures currently playing music or video from **YouTube, YouTube Music, Spotify, Apple Music, Chrome, Edge, Firefox, etc.** via Windows System Media Transport Controls (GSMTC) and displays 100% transparent, animated widgets for **OBS Studio** live streams.
 
 * **Zero Browser Extensions** — Works automatically with any media playing in your browser or desktop apps.
-* **1-Click OBS Integration** — Simply click "Copy URL" and paste into an OBS Browser Source.
-* **10 High-Quality Built-in Themes** — From Glassmorphism and Cyberpunk to Retro Cassette, Vinyl, and Kawaii.
+* **Direct Drag & Drop into OBS** — Simply drag any preview card or URL box directly into your OBS Studio canvas.
+* **19 High-Quality Built-in Themes** — From Glassmorphism, Cyberpunk, and Swiss Style to Retro 70s, 8-Bit Pixel, and Bento Grid.
+* **Normal Anti-Aliased CJK Fonts** — Smooth, high-definition ClearType vector fonts for Chinese, Japanese, and Korean characters everywhere.
 * **Auto-Marquee Text** — Long song titles and artist names smoothly scroll with seamless looping.
 * **Jitter-Free Progress & Timestamps** — Real-time position tracking and synchronized progress bars.
 * **1-Click Direct Updates from GitHub** — Check and auto-update to the latest release right from the app without losing your settings.
+* **Notion Workspace Aesthetic** — Clean Notion-inspired dark studio UI with non-blocking floating toast notifications.
 * **System Tray & Clean Exit** — Minimize to system tray or exit completely on demand.
 
 ---
@@ -84,7 +86,7 @@ You can add the music overlay to OBS Studio using either of the two methods belo
 
 ---
 
-### 🎨 10 Built-In Theme Templates
+### 🎨 19 Built-In Theme Templates
 
 | Theme Name | Style Description | Preview Screenshot |
 |---|---|:---:|
@@ -98,6 +100,15 @@ You can add the music overlay to OBS Studio using either of the two methods belo
 | **8. Spotify Card** | Spotify-inspired modern dark card with glowing green active audio equalizer | <img src="static/previews/spotify.png" width="320"> |
 | **9. Lo-Fi Cozy** | Warm twilight bedroom vibes with amber string-light glow and soft typography | <img src="static/previews/lofi_cozy.png" width="320"> |
 | **10. Dynamic Island** | Apple-style floating pill with fluid spring-bounce expansion when music updates | <img src="static/previews/dynamic_island.png" width="320"> |
+| **11. Minimalism** | Ultra-clean typography and high-contrast composition without distractions | <img src="static/previews/minimalism.png" width="320"> |
+| **12. Swiss Style** | International Typographic Style with structured Helvetica grid and clean cross accents | <img src="static/previews/swiss.png" width="320"> |
+| **13. Editorial Magazine** | Vogue & Kinfolk inspired high-fashion editorial print layout with serif aesthetics | <img src="static/previews/editorial.png" width="320"> |
+| **14. Hand-Drawn Sketchbook** | Playful scrapbook layout with washi tape, paper texture borders, and whimsical notes | <img src="static/previews/hand_drawn.png" width="320"> |
+| **15. Retro 70s Hi-Fi** | Vintage analog stereo receiver and cassette deck aesthetic with rainbow stripe accents | <img src="static/previews/retro.png" width="320"> |
+| **16. Pixel Arcade** | Retro arcade cabinet CRT monitor aesthetic with synthwave glowing gridlines | <img src="static/previews/pixel.png" width="320"> |
+| **17. Flat 2.0** | Bold solid blocks, vibrant contrast cards, and modern flat interface hierarchy | <img src="static/previews/flat.png" width="320"> |
+| **18. 8-Bit Retro Gaming** | Classic NES / Game Boy green/black retro gaming aesthetic with health-bar timeline | <img src="static/previews/eight_bit.png" width="320"> |
+| **19. Bento Modular Grid** | Apple-inspired clean modular bento box layout with dedicated live telemetries | <img src="static/previews/bento.png" width="320"> |
 
 ---
 
