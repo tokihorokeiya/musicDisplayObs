@@ -1,0 +1,99 @@
+/* ==========================================================================
+   THEME 16: PIXEL STYLE (16-Bit Arcade & CRT)
+   ========================================================================== */
+.theme-pixel .widget-card {
+  width: 860px;
+  height: 190px;
+  background: #0f0d24;
+  border: 4px solid #00f5d4;
+  border-radius: 0px;
+  box-shadow: 8px 8px 0px #f72585;
+  display: flex;
+  align-items: center;
+  padding: 22px 28px;
+  gap: 26px;
+  position: relative;
+  image-rendering: pixelated;
+}
+
+.theme-pixel .widget-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(rgba(18, 16, 38, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.theme-pixel .cover-art {
+  width: 120px;
+  height: 120px;
+  border-radius: 0;
+  border: 3px solid #f72585;
+  box-shadow: 4px 4px 0px #00f5d4;
+  object-fit: cover;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+}
+
+.theme-pixel .info-box {
+  flex: 1;
+  min-width: 0;
+  z-index: 6;
+}
+
+.theme-pixel .pixel-badge {
+  font-family: 'Space Mono', 'Courier New', var(--standard-font), monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #ffbe0b;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.theme-pixel .track-title {
+  font-family: 'VT323', 'Space Mono', var(--standard-font), monospace !important;
+  font-size: 32px;
+  font-weight: 700;
+  color: #ffffff !important;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 0px #f72585;
+  line-height: 1.1;
+}
+
+.theme-pixel .artist-name {
+  font-family: 'Space Mono', var(--standard-font), monospace !important;
+  font-size: 14px;
+  font-weight: 700;
+  color: #00f5d4;
+  letter-spacing: 1px;
+  margin-bottom: 10px;
+}
+
+.theme-pixel .progress-bar-container {
+  height: 10px;
+  background: #050410;
+  border: 2px solid #00f5d4;
+  border-radius: 0;
+  padding: 1px;
+}
+
+.theme-pixel .progress-bar-fill {
+  background: repeating-linear-gradient(90deg, #00f5d4, #00f5d4 8px, #0f0d24 8px, #0f0d24 10px);
+  border-radius: 0;
+}
+
+.theme-pixel .time-display {
+  font-family: 'Space Mono', var(--standard-font), monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: #f72585;
+}
+
+.theme-pixel .sound-bars span {
+  width: 6px;
+  background-color: #00f5d4;
+  border-radius: 0;
+}

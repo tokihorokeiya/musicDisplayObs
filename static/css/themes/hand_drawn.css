@@ -1,0 +1,93 @@
+/* ==========================================================================
+   THEME 14: HAND-DRAWN STYLE (Sketchbook & Doodle)
+   ========================================================================== */
+.theme-hand_drawn .widget-card {
+  width: 840px;
+  height: 195px;
+  background: #252220;
+  border: 3px solid #fefae0;
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+  box-shadow: 6px 6px 0px #000000, 10px 10px 25px rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  padding: 22px 30px;
+  gap: 26px;
+  position: relative;
+  transform: rotate(-0.5deg);
+}
+
+.theme-hand_drawn .washi-tape {
+  position: absolute;
+  top: -12px;
+  left: 60px;
+  width: 90px;
+  height: 24px;
+  background: rgba(254, 250, 224, 0.45);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  transform: rotate(-4deg);
+  border-left: 2px dashed rgba(0,0,0,0.15);
+  border-right: 2px dashed rgba(0,0,0,0.15);
+}
+
+.theme-hand_drawn .cover-art {
+  width: 120px;
+  height: 120px;
+  border-radius: 15px 225px 15px 255px/255px 15px 225px 15px;
+  border: 3px solid #fefae0;
+  box-shadow: 4px 4px 0px #000000;
+  object-fit: cover;
+  flex-shrink: 0;
+  transform: rotate(1.5deg);
+}
+
+.theme-hand_drawn .info-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-hand_drawn .doodle-tag {
+  font-size: 12px;
+  color: #ffb703;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+}
+
+.theme-hand_drawn .track-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #fefae0 !important;
+  letter-spacing: 0.5px;
+  text-shadow: none;
+}
+
+.theme-hand_drawn .artist-name {
+  font-size: 16px;
+  color: #ff758f;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.theme-hand_drawn .progress-bar-container {
+  height: 10px;
+  background: #191716;
+  border: 2px solid #fefae0;
+  border-radius: 20px;
+  padding: 1px;
+}
+
+.theme-hand_drawn .progress-bar-fill {
+  background: repeating-linear-gradient(45deg, #ffb703, #ffb703 6px, #fb8500 6px, #fb8500 12px);
+  border-radius: 16px;
+}
+
+.theme-hand_drawn .time-display {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fefae0;
+}
+
+.theme-hand_drawn .sound-bars span {
+  background-color: #ff758f;
+  border-radius: 2px;
+}

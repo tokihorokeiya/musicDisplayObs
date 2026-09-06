@@ -1,0 +1,92 @@
+/* ==========================================================================
+   THEME 15: RETRO STYLE (70s-80s Analog Hi-Fi & Warm Sunset)
+   ========================================================================== */
+.theme-retro .widget-card {
+  width: 860px;
+  height: 190px;
+  background: #1c1512;
+  border: 3px solid #d4a373;
+  border-radius: 14px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.7), inset 0 2px 0 rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  padding: 22px 28px;
+  gap: 26px;
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-retro .retro-stripes {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #e76f51 0%, #f4a261 40%, #e9c46a 70%, #2a9d8f 100%);
+}
+
+.theme-retro .cover-art {
+  width: 126px;
+  height: 126px;
+  border-radius: 10px;
+  border: 3px solid #e76f51;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.theme-retro .info-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-retro .retro-deck-label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+  color: #f4a261;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.theme-retro .track-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #fff1e6 !important;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 10px rgba(231, 111, 81, 0.4);
+}
+
+.theme-retro .artist-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #e9c46a;
+  letter-spacing: 0.8px;
+  margin-bottom: 10px;
+}
+
+.theme-retro .progress-bar-container {
+  height: 8px;
+  background: #0d0a08;
+  border: 1px solid #d4a373;
+  border-radius: 4px;
+  padding: 1px;
+}
+
+.theme-retro .progress-bar-fill {
+  background: linear-gradient(90deg, #e76f51, #f4a261, #e9c46a);
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(244, 162, 97, 0.6);
+}
+
+.theme-retro .time-display {
+  font-family: 'Space Mono', var(--standard-font), monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: #e9c46a;
+  letter-spacing: 1px;
+}
+
+.theme-retro .sound-bars span {
+  background-color: #e76f51;
+}

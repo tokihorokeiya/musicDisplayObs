@@ -47,7 +47,11 @@ THEME_IDS = [
     "pixel",
     "flat",
     "eight_bit",
-    "bento"
+    "bento",
+    "belmore",
+    "shizuru",
+    "nyaru",
+    "keiya"
 ]
 
 # -------------------------------------------------------------

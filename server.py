@@ -64,10 +64,31 @@ class MediaServer:
             return web.Response(text=content, content_type="text/html", headers=self._no_cache_headers())
         return web.Response(text="<h1>Dashboard Not Found</h1>", content_type="text/html", status=404)
 
+    def _get_theme_template(self, theme):
+        """Returns in-memory cached theme HTML template content."""
+        if not hasattr(self, "_theme_template_cache"):
+            self._theme_template_cache = {}
+        if theme not in self._theme_template_cache:
+            path = os.path.join(self.base_dir, "static", "templates", f"{theme}.html")
+            if os.path.exists(path):
+                try:
+                    with open(path, "r", encoding="utf-8") as f:
+                        self._theme_template_cache[theme] = f.read()
+                except Exception:
+                    self._theme_template_cache[theme] = ""
+            else:
+                self._theme_template_cache[theme] = ""
+        return self._theme_template_cache[theme]
+
     async def _handle_overlay(self, request):
         content = self._get_template("overlay.html")
         if content is not None:
-            return web.Response(text=content, content_type="text/html", headers=self._no_cache_headers())
+            theme = request.query.get("theme")
+            if not theme or theme in ("active", "global"):
+                theme = self.media_engine.current_data.get("active_theme", "glassmorphism")
+            initial_html = self._get_theme_template(theme)
+            rendered = content.replace("{{THEME}}", theme).replace("{{INITIAL_TEMPLATE}}", initial_html)
+            return web.Response(text=rendered, content_type="text/html", headers=self._no_cache_headers())
         return web.Response(text="<h1>Overlay Not Found</h1>", content_type="text/html", status=404)
 
     async def _handle_api_status(self, request):

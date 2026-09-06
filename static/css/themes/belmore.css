@@ -1,0 +1,337 @@
+/* ==========================================================================
+   THEME 20: EURO STYLE PIPE WITH BEER (1980s Vintage Tavern & Black-Gray Slate)
+   ========================================================================== */
+.theme-belmore .widget-card {
+  width: 900px;
+  height: 200px;
+  background: linear-gradient(145deg, #22252c 0%, #181a1f 40%, #111215 100%);
+  border: 2px solid #787f8f;
+  border-radius: 12px;
+  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.95), 
+              inset 0 1px 1px rgba(255, 255, 255, 0.12),
+              inset 0 0 20px rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  padding: 18px 28px;
+  position: relative;
+  overflow: visible;
+}
+
+/* Fancy 80s Filigree Corner Brackets */
+.theme-belmore .belmore-filigree-corner {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #c5a059;
+  pointer-events: none;
+}
+.theme-belmore .belmore-filigree-corner.tl { top: 6px; left: 6px; border-right: none; border-bottom: none; }
+.theme-belmore .belmore-filigree-corner.tr { top: 6px; right: 6px; border-left: none; border-bottom: none; }
+.theme-belmore .belmore-filigree-corner.bl { bottom: 6px; left: 6px; border-right: none; border-top: none; }
+.theme-belmore .belmore-filigree-corner.br { bottom: 6px; right: 6px; border-left: none; border-top: none; }
+
+.theme-belmore .belmore-crest-badge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #c5a059;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.theme-belmore .belmore-anchor {
+  font-size: 13px;
+  color: #c5a059;
+}
+
+.theme-belmore .belmore-unit {
+  font-family: 'Cinzel', var(--standard-font), serif;
+  background: rgba(197, 160, 89, 0.1);
+  border: 1px solid rgba(197, 160, 89, 0.35);
+  padding: 2px 10px;
+  border-radius: 3px;
+  color: #ded7c3;
+  letter-spacing: 2.5px;
+}
+
+.theme-belmore .belmore-stars {
+  letter-spacing: 4px;
+  color: #939aa8;
+}
+
+.theme-belmore .belmore-main-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-belmore .belmore-cover-frame {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+
+.theme-belmore .cover-art {
+  width: 120px;
+  height: 120px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 2px solid #5a5f6b;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.8);
+}
+
+.theme-belmore .belmore-porthole-ring {
+  position: absolute;
+  top: -4px; left: -4px; right: -4px; bottom: -4px;
+  border: 1px dashed rgba(197, 160, 89, 0.5);
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.theme-belmore .info-box {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.theme-belmore .belmore-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: #8c93a3;
+  margin-bottom: 4px;
+  font-family: 'Cinzel', var(--standard-font), serif;
+  text-transform: uppercase;
+}
+
+.theme-belmore .belmore-knot {
+  color: #c5a059;
+}
+
+.theme-belmore .track-title {
+  font-family: 'Playfair Display', 'Cinzel', var(--standard-font);
+  font-size: 27px;
+  font-weight: 700;
+  color: #f1f0eb !important;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.5px;
+}
+
+.theme-belmore .artist-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #a6adb9;
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+.theme-belmore .progress-bar-container {
+  height: 6px;
+  background: #0f1013;
+  border-radius: 2px;
+  border: 1px solid #3d414d;
+  overflow: visible;
+  position: relative;
+}
+
+.theme-belmore .progress-bar-fill {
+  background: linear-gradient(90deg, #8c6a23, #c5a059);
+  border-radius: 2px;
+  position: relative;
+  box-shadow: none;
+}
+
+.theme-belmore .beer-foam-head {
+  position: absolute;
+  right: -4px;
+  top: -4px;
+  width: 14px;
+  height: 14px;
+  background: #ede9dc;
+  border: 1px solid #c5a059;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.theme-belmore .time-display {
+  font-size: 12px;
+  font-weight: 700;
+  color: #c5a059;
+  font-family: 'Cinzel', var(--standard-font), monospace;
+  margin-top: 5px;
+  letter-spacing: 1px;
+}
+
+.theme-belmore .belmore-ornaments {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-shrink: 0;
+}
+
+/* 80s Vintage Pewter & Malt Beer Stein */
+.theme-belmore .beer-stein-widget {
+  width: 54px;
+  height: 64px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-belmore .beer-mug {
+  width: 38px;
+  height: 50px;
+  background: #1b1d22;
+  border: 2px solid #787f8f;
+  border-radius: 3px 3px 6px 6px;
+  position: relative;
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.theme-belmore .beer-foam {
+  position: absolute;
+  top: -8px;
+  left: -2px;
+  right: -2px;
+  height: 14px;
+  background: #ede9dc;
+  border: 1px solid #787f8f;
+  border-bottom: none;
+  border-radius: 8px 8px 2px 2px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  animation: foamPulse 3s ease-in-out infinite;
+}
+
+.theme-belmore .beer-foam .bubble {
+  width: 4px;
+  height: 4px;
+  background: #c5a059;
+  border-radius: 50%;
+  opacity: 0.6;
+}
+
+.theme-belmore .beer-liquid {
+  height: 82%;
+  background: linear-gradient(180deg, #b8860b 0%, #634812 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.theme-belmore .beer-label {
+  font-size: 8px;
+  font-weight: 800;
+  color: #ede9dc;
+  font-family: 'Cinzel', var(--standard-font), serif;
+  background: #15161a;
+  border: 1px solid #c5a059;
+  padding: 1px 4px;
+  border-radius: 2px;
+  letter-spacing: 0.5px;
+}
+
+.theme-belmore .beer-handle {
+  position: absolute;
+  right: -10px;
+  top: 10px;
+  width: 10px;
+  height: 26px;
+  border: 3px solid #787f8f;
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+}
+
+/* 80s Briar Wood Pipe with Sterling Silver Band */
+.theme-belmore .briar-pipe-widget {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-belmore .pipe-bowl {
+  position: absolute;
+  bottom: 8px;
+  left: 6px;
+  width: 20px;
+  height: 26px;
+  background: linear-gradient(135deg, #3d2314, #21130a);
+  border: 2px solid #5a5f6b;
+  border-radius: 4px 4px 10px 10px;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.theme-belmore .pipe-glow {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  height: 4px;
+  background: #c2410c;
+  border-radius: 2px;
+  animation: emberGlow 2.5s ease-in-out infinite alternate;
+}
+
+.theme-belmore .pipe-stem {
+  position: absolute;
+  bottom: 14px;
+  left: 22px;
+  width: 26px;
+  height: 7px;
+  background: #14161a;
+  border-top: 1px solid #8c93a3;
+  border-bottom: 1px solid #8c93a3;
+  border-radius: 0 6px 6px 0;
+  transform: rotate(-10deg);
+}
+
+.theme-belmore .pipe-smoke {
+  position: absolute;
+  background: radial-gradient(circle, rgba(214, 218, 226, 0.7) 0%, rgba(214, 218, 226, 0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.theme-belmore .pipe-smoke.s1 {
+  width: 14px; height: 14px;
+  top: -10px; left: 2px;
+  animation: smokeWaft 2.6s infinite ease-out;
+}
+
+.theme-belmore .pipe-smoke.s2 {
+  width: 18px; height: 18px;
+  top: -22px; left: 6px;
+  animation: smokeWaft 3.0s infinite 0.9s ease-out;
+}
+
+.theme-belmore .pipe-smoke.s3 {
+  width: 22px; height: 22px;
+  top: -34px; left: 14px;
+  animation: smokeWaft 3.4s infinite 1.8s ease-out;
+}
+
+.theme-belmore .sound-bars span {
+  background: #c5a059;
+  border-radius: 1px;
+  width: 4px;
+  box-shadow: none;
+}

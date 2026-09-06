@@ -1,0 +1,84 @@
+/* ==========================================================================
+   THEME 17: FLAT STYLE (Flat 2.0 Bold Color-Blocked UI)
+   ========================================================================== */
+.theme-flat .widget-card {
+  width: 860px;
+  height: 180px;
+  background: #181e29;
+  border-left: 12px solid #2563eb;
+  border-radius: 16px;
+  box-shadow: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  padding: 24px 30px;
+  gap: 26px;
+}
+
+.theme-flat .cover-art {
+  width: 126px;
+  height: 126px;
+  border-radius: 14px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 2px solid #2563eb;
+}
+
+.theme-flat .info-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-flat .flat-pill {
+  display: inline-block;
+  background: #f97316;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.theme-flat .track-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff !important;
+  letter-spacing: -0.2px;
+  text-shadow: none;
+}
+
+.theme-flat .artist-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #60a5fa;
+  margin-bottom: 8px;
+}
+
+.theme-flat .progress-bar-container {
+  height: 6px;
+  background: #0f141d;
+  border-radius: 3px;
+}
+
+.theme-flat .progress-bar-fill {
+  background: #2563eb;
+  border-radius: 3px;
+  box-shadow: none;
+}
+
+.theme-flat .time-display {
+  font-size: 13px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.theme-flat .sound-bars span {
+  width: 4px;
+  background-color: #2563eb;
+  border-radius: 2px;
+}

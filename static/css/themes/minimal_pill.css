@@ -1,0 +1,103 @@
+/* ==========================================================================
+   THEME 4: MINIMAL FLOATING PILL (Frosted Crystal Capsule)
+   ========================================================================== */
+.theme-minimal_pill .widget-card {
+  height: 104px;
+  width: 840px;
+  background: rgba(16, 18, 26, 0.82);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border-radius: 52px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  display: flex;
+  align-items: center;
+  padding: 12px 28px 12px 14px;
+  gap: 18px;
+}
+
+.theme-minimal_pill .pill-cover-wrapper {
+  position: relative;
+  width: 78px;
+  height: 78px;
+  flex-shrink: 0;
+}
+
+.theme-minimal_pill .cover-art {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+
+.theme-minimal_pill .pill-play-indicator {
+  position: absolute;
+  top: -2px; left: -2px; right: -2px; bottom: -2px;
+  border-radius: 50%;
+  border: 2px dashed rgba(99, 102, 241, 0.6);
+  pointer-events: none;
+}
+
+.playing.theme-minimal_pill .pill-play-indicator,
+.theme-minimal_pill .widget-card.playing .pill-play-indicator {
+  animation: spinPillRing 8s linear infinite;
+}
+
+@keyframes spinPillRing {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.theme-minimal_pill .info-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-minimal_pill .track-title {
+  font-size: 21px;
+  font-weight: 700;
+  color: #ffffff !important;
+  letter-spacing: -0.2px;
+  text-shadow: none;
+}
+
+.theme-minimal_pill .pill-sub-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.theme-minimal_pill .artist-name {
+  font-size: 14px;
+  color: #94a3b8;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.theme-minimal_pill .progress-bar-container {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+}
+
+.theme-minimal_pill .progress-bar-fill {
+  background: linear-gradient(90deg, #6366f1, #a855f7, #38bdf8);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.8);
+  border-radius: 2px;
+}
+
+.theme-minimal_pill .time-display {
+  font-size: 11px;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.theme-minimal_pill .sound-bars span {
+  width: 3px;
+  background-color: #6366f1;
+  box-shadow: 0 0 6px rgba(99, 102, 241, 0.6);
+  border-radius: 1.5px;
+}

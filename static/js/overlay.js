@@ -1,7 +1,8 @@
 /**
- * Real-Time Music Display OBS Overlay Controller V4
+ * Real-Time Music Display OBS Overlay Controller V5
+ * Modular multi-file theme architecture with on-demand CSS & HTML template streaming.
  * Multi-resolution (1920x700, 1000x400, 1920x1080 bottom), Auto-scaling,
- * Zero-leak base64 SVG, White Title, Cute Kawaii & Lo-Fi Cozy themes.
+ * Zero-leak base64 SVG, White Title, Normal CJK ClearType fonts.
  */
 
 const DEFAULT_COVER = "/static/sample_cover.png";
@@ -22,6 +23,7 @@ let hideTimeout = null;
 let socket = null;
 let localPosition = 0;
 let lastSyncTimestamp = Date.now();
+const templateCache = {};
 
 // Parse Query Parameters
 const urlParams = new URLSearchParams(window.location.search);
@@ -46,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (urlParams.get('mock') === '1') {
         updateUI({
             title: "Sincerely",
-            artist: "Yuzuki Choco",
+            artist: "TRUE (Violet Evergarden OP)",
             status: "Playing",
             is_playing: true,
             thumbnail: "/static/sample_cover.png",
@@ -82,16 +84,14 @@ function setupAutoScale() {
             return;
         }
 
-        // If in 1920x700 or full screen window
+        // Responsive stream scaling
         if (windowW >= 1600 && windowH >= 650) {
-            // Scale up nicely for 1920p stream
             const scale = Math.min(windowW / 1100, windowH / 460, 1.65);
             container.style.transform = `scale(${scale})`;
         } else if (windowW >= 1200) {
             const scale = Math.min(windowW / 1050, windowH / 420, 1.35);
             container.style.transform = `scale(${scale})`;
         } else {
-            // Standard 1000x400 fit
             const scale = Math.min(windowW / 1000, windowH / 400);
             if (scale < 0.99 || scale > 1.01) {
                 container.style.transform = `scale(${scale})`;
@@ -139,8 +139,22 @@ function applyTheme(themeName) {
     if (container) {
         container.className = `theme-${themeName}`;
     }
+
+    // 1. Dynamically swap the theme-specific stylesheet link
+    let themeLink = document.getElementById('theme-css');
+    if (!themeLink) {
+        themeLink = document.createElement('link');
+        themeLink.id = 'theme-css';
+        themeLink.rel = 'stylesheet';
+        document.head.appendChild(themeLink);
+    }
+    const targetHref = `/static/css/themes/${themeName}.css?v=5.0`;
+    if (themeLink.getAttribute('href') !== targetHref) {
+        themeLink.href = targetHref;
+    }
+
+    // 2. Render theme HTML template
     renderThemeHTML(themeName);
-    cacheDOMElements();
 }
 
 function formatTime(seconds) {
@@ -153,511 +167,69 @@ function formatTime(seconds) {
     return `${mm}:${ss}`;
 }
 
+const UNIVERSAL_FALLBACK_HTML = `
+    <div class="widget-card" id="widget-card">
+        <img class="cover-art" id="cover-img" src="/static/sample_cover.png" alt="">
+        <div class="info-box">
+            <div class="top-row">
+                <div class="marquee-wrapper" id="title-wrapper">
+                    <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
+                </div>
+                <div class="sound-bars">
+                    <span></span><span></span><span></span><span></span><span></span>
+                </div>
+            </div>
+            <div class="artist-name" id="artist-name">No active playback</div>
+            <div class="progress-section">
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="progress-fill"></div>
+                </div>
+                <div class="time-display" id="time-display">00:00 / 00:00</div>
+            </div>
+        </div>
+    </div>
+`;
+
 function renderThemeHTML(theme) {
     const container = document.getElementById('overlay-container');
-    
-    if (theme === 'vinyl') {
-        container.innerHTML = `
-            <div class="widget-card" id="widget-card">
-                <div class="vinyl-wrapper">
-                    <img class="vinyl-sleeve cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
-                    <div class="vinyl-record">
-                        <div class="vinyl-center" id="vinyl-center-img"></div>
-                    </div>
-                </div>
-                <div class="info-box">
-                    <div class="marquee-wrapper" id="title-wrapper">
-                        <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                    </div>
-                    <div class="artist-name" id="artist-name">No active playback</div>
-                    <div class="progress-section">
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" id="progress-fill"></div>
-                        </div>
-                        <div class="time-display" id="time-display">00:00 / 00:00</div>
-                    </div>
-                </div>
-            </div>
-        `;
-    } else if (theme === 'cassette') {
-        container.innerHTML = `
-            <div class="widget-card" id="widget-card">
-                <div class="cassette-label">
-                    <div class="marquee-wrapper" id="title-wrapper">
-                        <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                    </div>
-                    <div class="spools-window">
-                        <div class="spool"></div>
-                        <div class="sound-bars">
-                            <span></span><span></span><span></span><span></span><span></span>
-                        </div>
-                        <div class="spool"></div>
-                    </div>
-                    <div class="cassette-bottom-row">
-                        <div class="artist-name" id="artist-name">No active playback</div>
-                        <div class="time-display" id="time-display">00:00 / 00:00</div>
-                    </div>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar-fill" id="progress-fill"></div>
-                    </div>
-                </div>
-            </div>
-        `;
-    } else if (theme === 'cyberpunk') {
-        container.innerHTML = `
-            <div class="widget-card" id="widget-card">
-                <div class="cyber-scanline"></div>
-                <div class="cyber-corner cyber-tl"></div>
-                <div class="cyber-corner cyber-tr"></div>
-                <div class="cyber-corner cyber-bl"></div>
-                <div class="cyber-corner cyber-br"></div>
-                <div class="cyber-header-row">
-                    <span class="cyber-sys-badge">SYS.AUDIO_V2.0 // DECRYPTED_FEED</span>
-                    <span class="cyber-status-tag">STATUS: LIVE_STREAM</span>
-                </div>
-                <div class="cyber-main-row">
-                    <div class="cyber-cover-wrapper">
-                        <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
-                    </div>
-                    <div class="info-box">
-                        <div class="marquee-wrapper" id="title-wrapper">
-                            <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                        </div>
-                        <div class="artist-name" id="artist-name">No active playback</div>
-                        <div class="cyber-telemetry">
-                            <span>BITRATE: 320KBPS</span>
-                            <span>ENC: AAC-HE</span>
-                            <span>FREQ: 48.0kHz</span>
-                        </div>
-                        <div class="progress-section">
-                            <div class="progress-bar-container">
-                                <div class="progress-bar-fill" id="progress-fill"></div>
-                            </div>
-                            <div class="time-display" id="time-display">00:00 / 00:00</div>
-                        </div>
-                    </div>
-                    <div class="sound-bars">
-                        <span></span><span></span><span></span><span></span><span></span>
-                    </div>
-                </div>
-            </div>
-        `;
-    } else if (theme === 'minimal_pill') {
-        container.innerHTML = `
-            <div class="widget-card" id="widget-card">
-                <div class="pill-cover-wrapper">
-                    <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
-                    <div class="pill-play-indicator"></div>
-                </div>
-                <div class="info-box">
-                    <div class="marquee-wrapper" id="title-wrapper">
-                        <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                    </div>
-                    <div class="pill-sub-row">
-                        <div class="artist-name" id="artist-name">No active playback</div>
-                        <div class="time-display" id="time-display">00:00 / 00:00</div>
-                    </div>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar-fill" id="progress-fill"></div>
-                    </div>
-                </div>
-                <div class="sound-bars">
-                    <span></span><span></span><span></span><span></span><span></span>
-                </div>
-            </div>
-        `;
-    } else if (theme === 'broadcast') {
-        container.innerHTML = `
-            <div class="widget-card" id="widget-card">
-                <div class="broadcast-top-strip">
-                    <div class="broadcast-live-badge">
-                        <span class="broadcast-pulse-dot"></span>
-                        <span>LIVE BROADCAST</span>
-                    </div>
-                    <div class="broadcast-channel-tag">STUDIO FEED // AUDIO MONITOR</div>
-                </div>
-                <div class="broadcast-content-row">
-                    <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
-                    <div class="info-box">
-                        <div class="marquee-wrapper" id="title-wrapper">
-                            <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                        </div>
-                        <div class="artist-name" id="artist-name">No active playback</div>
-                        <div class="progress-section">
-                            <div class="progress-bar-container">
-                                <div class="progress-bar-fill" id="progress-fill"></div>
-                            </div>
-                            <div class="time-display" id="time-display">00:00 / 00:00</div>
-                        </div>
-                    </div>
-                    <div class="sound-bars">
-                        <span></span><span></span><span></span><span></span><span></span>
-                    </div>
-                </div>
-            </div>
-        `;
-    } else if (theme === 'cute_kawaii') {
-        container.innerHTML = `
-            <div class="widget-card" id="widget-card">
-                <div class="kawaii-banner">
-                    <span>💖 NOW PLAYING ♫ VTUBER SPECIAL ✨</span>
-                </div>
-                <div class="kawaii-body">
-                    <div class="kawaii-cover-wrap">
-                        <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
-                        <div class="kawaii-heart-badge">♥</div>
-                    </div>
-                    <div class="info-box">
-                        <div class="marquee-wrapper" id="title-wrapper">
-                            <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                        </div>
-                        <div class="artist-name" id="artist-name">No active playback</div>
-                        <div class="progress-section">
-                            <div class="progress-bar-container">
-                                <div class="progress-bar-fill" id="progress-fill"></div>
-                            </div>
-                            <div class="time-display" id="time-display">00:00 / 00:00</div>
-                        </div>
-                    </div>
-                    <div class="sound-bars">
-                        <span></span><span></span><span></span><span></span><span></span>
-                    </div>
-                </div>
-            </div>
-        `;
-    } else if (theme === 'spotify') {
-        container.innerHTML = `
-            <div class="widget-card" id="widget-card">
-                <div class="spotify-badge-header">
-                    <span>NOW PLAYING</span>
-                </div>
-                <div class="spotify-body">
-                    <div class="spotify-cover-wrap">
-                        <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
-                    </div>
-                    <div class="info-box">
-                        <div class="marquee-wrapper" id="title-wrapper">
-                            <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                        </div>
-                        <div class="artist-name" id="artist-name">No active playback</div>
-                        <div class="progress-section spotify-progress-row">
-                            <span class="time-current" id="time-current">00:00</span>
-                            <div class="progress-bar-container">
-                                <div class="progress-bar-fill" id="progress-fill"></div>
-                            </div>
-                            <span class="time-duration" id="time-duration">00:00</span>
-                        </div>
-                    </div>
-                    <div class="sound-bars">
-                        <span></span><span></span><span></span><span></span><span></span>
-                    </div>
-                </div>
-            </div>
-        `;
-    } else if (theme === 'lofi_cozy') {
-        container.innerHTML = `
-            <div class="widget-card" id="widget-card">
-                <div class="lofi-top-badge">
-                    <span>☕ LO-FI BEATS TO RELAX / CHILL TO</span>
-                    <span class="lofi-cassette-rpm">33⅓ RPM</span>
-                </div>
-                <div class="lofi-main">
-                    <div class="lofi-cover-wrap">
-                        <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
-                    </div>
-                    <div class="info-box">
-                        <div class="marquee-wrapper" id="title-wrapper">
-                            <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                        </div>
-                        <div class="artist-name" id="artist-name">No active playback</div>
-                        <div class="progress-section">
-                            <div class="progress-bar-container">
-                                <div class="progress-bar-fill" id="progress-fill"></div>
-                            </div>
-                            <div class="time-display" id="time-display">00:00 / 00:00</div>
-                        </div>
-                    </div>
-                    <div class="sound-bars">
-                        <span></span><span></span><span></span><span></span><span></span>
-                    </div>
-                </div>
-            </div>
-        `;
-    } else if (theme === 'dynamic_island') {
-        container.innerHTML = `
-            <div class="widget-card" id="widget-card">
-                <div class="island-left">
-                    <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
-                </div>
-                <div class="info-box island-center">
-                    <div class="marquee-wrapper" id="title-wrapper">
-                        <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                    </div>
-                    <div class="artist-name" id="artist-name">No active playback</div>
-                    <div class="progress-section">
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" id="progress-fill"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="island-right">
-                    <div class="sound-bars">
-                        <span></span><span></span><span></span><span></span><span></span>
-                    </div>
-                    <div class="time-display" id="time-display">00:00</div>
-                </div>
-            </div>
-        `;
-    } else if (theme === 'bento') {
-        container.innerHTML = `
-            <div class="widget-card" id="widget-card">
-                <div class="bento-cell bento-cover-cell">
-                    <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
-                </div>
-                <div class="bento-cell bento-main-cell">
-                    <div class="bento-live-badge">
-                        <span class="bento-live-dot"></span>
-                        <span>LIVE STREAM AUDIO</span>
-                    </div>
-                    <div class="marquee-wrapper" id="title-wrapper">
-                        <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                    </div>
-                    <div class="artist-name" id="artist-name">No active playback</div>
-                    <div class="progress-section">
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" id="progress-fill"></div>
-                        </div>
-                    </div>
-                </div>
-                <div class="bento-cell bento-stats-cell">
-                    <div class="sound-bars">
-                        <span></span><span></span><span></span><span></span><span></span>
-                    </div>
-                    <div class="time-display" id="time-display">00:00 / 00:00</div>
-                </div>
-            </div>
-        `;
-    } else if (theme === 'swiss') {
-        container.innerHTML = `
-            <div class="widget-card" id="widget-card">
-                <div class="swiss-sidebar">
-                    <div class="swiss-cross">+</div>
-                    <div class="swiss-meta-vert">CH-8001</div>
-                    <div class="swiss-cross">+</div>
-                </div>
-                <div class="swiss-body">
-                    <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
-                    <div class="info-box">
-                        <div class="swiss-header-tag">
-                            <span>01 // NOW PLAYING</span>
-                            <span>&bull;</span>
-                            <span>STEREO</span>
-                        </div>
-                        <div class="marquee-wrapper" id="title-wrapper">
-                            <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                        </div>
-                        <div class="artist-name" id="artist-name">No active playback</div>
-                        <div class="progress-section">
-                            <div class="progress-bar-container">
-                                <div class="progress-bar-fill" id="progress-fill"></div>
-                            </div>
-                            <div class="time-display" id="time-display">00:00 / 00:00</div>
-                        </div>
-                    </div>
-                    <div class="sound-bars">
-                        <span></span><span></span><span></span><span></span><span></span>
-                    </div>
-                </div>
-            </div>
-        `;
-    } else if (theme === 'eight_bit') {
-        container.innerHTML = `
-            <div class="widget-card" id="widget-card">
-                <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
-                <div class="info-box">
-                    <div class="eight-bit-header">
-                        <span>★ 1P LV.99 // BGM</span>
-                        <span class="eight-bit-cursor">█</span>
-                    </div>
-                    <div class="marquee-wrapper" id="title-wrapper">
-                        <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                    </div>
-                    <div class="artist-name" id="artist-name">No active playback</div>
-                    <div class="progress-section">
-                        <span class="hp-label">HP</span>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" id="progress-fill"></div>
-                        </div>
-                        <div class="time-display" id="time-display">00:00 / 00:00</div>
-                    </div>
-                </div>
-                <div class="sound-bars">
-                    <span></span><span></span><span></span><span></span><span></span>
-                </div>
-            </div>
-        `;
-    } else if (theme === 'editorial') {
-        container.innerHTML = `
-            <div class="widget-card" id="widget-card">
-                <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
-                <div class="info-box">
-                    <div class="editorial-meta">
-                        <span>VOL. IV &middot; N&deg; 26</span>
-                        <span>NOW AUDIBLE</span>
-                    </div>
-                    <div class="marquee-wrapper" id="title-wrapper">
-                        <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                    </div>
-                    <div class="artist-name" id="artist-name">No active playback</div>
-                    <div class="progress-section">
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" id="progress-fill"></div>
-                        </div>
-                        <div class="time-display" id="time-display">00:00 / 00:00</div>
-                    </div>
-                </div>
-                <div class="sound-bars">
-                    <span></span><span></span><span></span><span></span><span></span>
-                </div>
-            </div>
-        `;
-    } else if (theme === 'hand_drawn') {
-        container.innerHTML = `
-            <div class="widget-card" id="widget-card">
-                <div class="washi-tape"></div>
-                <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
-                <div class="info-box">
-                    <div class="doodle-tag">&starf; now playing &bull; tune &starf;</div>
-                    <div class="marquee-wrapper" id="title-wrapper">
-                        <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                    </div>
-                    <div class="artist-name" id="artist-name">No active playback</div>
-                    <div class="progress-section">
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" id="progress-fill"></div>
-                        </div>
-                        <div class="time-display" id="time-display">00:00 / 00:00</div>
-                    </div>
-                </div>
-                <div class="sound-bars">
-                    <span></span><span></span><span></span><span></span><span></span>
-                </div>
-            </div>
-        `;
-    } else if (theme === 'retro') {
-        container.innerHTML = `
-            <div class="widget-card" id="widget-card">
-                <div class="retro-stripes"></div>
-                <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
-                <div class="info-box">
-                    <div class="retro-deck-label">STEREO HI-FI &bull; AUTO-REVERSE DECK</div>
-                    <div class="marquee-wrapper" id="title-wrapper">
-                        <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                    </div>
-                    <div class="artist-name" id="artist-name">No active playback</div>
-                    <div class="progress-section">
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" id="progress-fill"></div>
-                        </div>
-                        <div class="time-display" id="time-display">00:00 / 00:00</div>
-                    </div>
-                </div>
-                <div class="sound-bars">
-                    <span></span><span></span><span></span><span></span><span></span>
-                </div>
-            </div>
-        `;
-    } else if (theme === 'pixel') {
-        container.innerHTML = `
-            <div class="widget-card" id="widget-card">
-                <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
-                <div class="info-box">
-                    <div class="pixel-badge">&#9654; 1UP [MUSIC_ARCADE]</div>
-                    <div class="marquee-wrapper" id="title-wrapper">
-                        <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                    </div>
-                    <div class="artist-name" id="artist-name">No active playback</div>
-                    <div class="progress-section">
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" id="progress-fill"></div>
-                        </div>
-                        <div class="time-display" id="time-display">00:00 / 00:00</div>
-                    </div>
-                </div>
-                <div class="sound-bars">
-                    <span></span><span></span><span></span><span></span><span></span>
-                </div>
-            </div>
-        `;
-    } else if (theme === 'flat') {
-        container.innerHTML = `
-            <div class="widget-card" id="widget-card">
-                <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
-                <div class="info-box">
-                    <div><span class="flat-pill">ON AIR</span></div>
-                    <div class="marquee-wrapper" id="title-wrapper">
-                        <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                    </div>
-                    <div class="artist-name" id="artist-name">No active playback</div>
-                    <div class="progress-section">
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" id="progress-fill"></div>
-                        </div>
-                        <div class="time-display" id="time-display">00:00 / 00:00</div>
-                    </div>
-                </div>
-                <div class="sound-bars">
-                    <span></span><span></span><span></span><span></span><span></span>
-                </div>
-            </div>
-        `;
-    } else if (theme === 'minimalism') {
-        container.innerHTML = `
-            <div class="widget-card" id="widget-card">
-                <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
-                <div class="info-box">
-                    <div class="minimal-meta">PLAYING NOW</div>
-                    <div class="marquee-wrapper" id="title-wrapper">
-                        <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                    </div>
-                    <div class="artist-name" id="artist-name">No active playback</div>
-                    <div class="progress-section">
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" id="progress-fill"></div>
-                        </div>
-                        <div class="time-display" id="time-display">00:00 / 00:00</div>
-                    </div>
-                </div>
-                <div class="sound-bars">
-                    <span></span><span></span><span></span><span></span><span></span>
-                </div>
-            </div>
-        `;
-    } else {
-        // Universal Layout (glassmorphism, cyberpunk, minimal_pill, broadcast, cute_kawaii, lofi_cozy, dynamic_island)
-        container.innerHTML = `
-            <div class="widget-card" id="widget-card">
-                <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
-                <div class="info-box">
-                    <div class="top-row">
-                        <div class="marquee-wrapper" id="title-wrapper">
-                            <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                        </div>
-                        <div class="sound-bars">
-                            <span></span><span></span><span></span><span></span><span></span>
-                        </div>
-                    </div>
-                    <div class="artist-name" id="artist-name">No active playback</div>
-                    <div class="progress-section">
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" id="progress-fill"></div>
-                        </div>
-                        <div class="time-display" id="time-display">00:00 / 00:00</div>
-                    </div>
-                </div>
-            </div>
-        `;
+    if (!container) return;
+
+    // Fast Path A: In-memory cache hit
+    if (templateCache[theme]) {
+        container.innerHTML = templateCache[theme];
+        cacheDOMElements();
+        updateUI(currentMedia);
+        return;
     }
+
+    // Fast Path B: Check if container was pre-rendered server-side for this theme
+    if (container.classList.contains(`theme-${theme}`) && container.querySelector('#widget-card')) {
+        templateCache[theme] = container.innerHTML;
+        cacheDOMElements();
+        updateUI(currentMedia);
+        return;
+    }
+
+    // Async Path C: Fetch template file on-demand
+    fetch(`/static/templates/${theme}.html?v=5.0`)
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.text();
+        })
+        .then(html => {
+            templateCache[theme] = html;
+            if (currentTheme === theme) {
+                container.innerHTML = html;
+                cacheDOMElements();
+                updateUI(currentMedia);
+            }
+        })
+        .catch(err => {
+            console.warn(`[OBS Overlay] Could not load template for ${theme}, falling back:`, err);
+            container.innerHTML = UNIVERSAL_FALLBACK_HTML;
+            cacheDOMElements();
+            updateUI(currentMedia);
+        });
 }
 
 function getEstimatedPosition() {
@@ -683,7 +255,6 @@ function updateUI(data) {
     if (!songChanged && !playStateChanged && currentMedia.is_playing && data.is_playing) {
         const currentLocal = getEstimatedPosition();
         const diff = Math.abs(serverPos - currentLocal);
-        // Only jump if it's a real seek (> 2.0s), otherwise never bounce backwards
         if (diff > 2.0) {
             localPosition = serverPos;
             lastSyncTimestamp = Date.now();
@@ -698,7 +269,7 @@ function updateUI(data) {
 
     currentMedia = data;
 
-    // If using the Global Active Overlay, dynamically switch theme if active_theme changed!
+    // If using Global Active Overlay, switch theme if active_theme changed
     if (isGlobalTheme && data.active_theme && data.active_theme !== currentTheme) {
         currentTheme = data.active_theme;
         applyTheme(currentTheme);

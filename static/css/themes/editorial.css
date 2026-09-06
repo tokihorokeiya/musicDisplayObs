@@ -1,0 +1,101 @@
+/* ==========================================================================
+   THEME 13: EDITORIAL STYLE (Magazine & Literary Publication)
+   ========================================================================== */
+.theme-editorial .widget-card {
+  width: 860px;
+  height: 195px;
+  background: #141210;
+  border: 1px solid rgba(197, 160, 89, 0.4);
+  border-radius: 4px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), inset 0 0 0 4px rgba(197, 160, 89, 0.08);
+  display: flex;
+  align-items: center;
+  padding: 24px 32px;
+  gap: 28px;
+  position: relative;
+}
+
+.theme-editorial .widget-card::after {
+  content: "";
+  position: absolute;
+  top: 6px; left: 6px; right: 6px; bottom: 6px;
+  border: 1px solid rgba(197, 160, 89, 0.2);
+  pointer-events: none;
+}
+
+.theme-editorial .cover-art {
+  width: 110px;
+  height: 145px;
+  border-radius: 2px;
+  border: 1px solid rgba(197, 160, 89, 0.6);
+  object-fit: cover;
+  flex-shrink: 0;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+}
+
+.theme-editorial .info-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-editorial .editorial-meta {
+  font-family: 'Cinzel', Georgia, var(--standard-font), serif;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: #c5a059;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.theme-editorial .editorial-meta::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(197, 160, 89, 0.25);
+}
+
+.theme-editorial .track-title {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', var(--standard-font), serif !important;
+  font-size: 28px;
+  font-weight: 700;
+  font-style: italic;
+  color: #f7f5f0 !important;
+  letter-spacing: 0px;
+  text-shadow: none;
+  line-height: 1.2;
+}
+
+.theme-editorial .artist-name {
+  font-family: 'Playfair Display', Georgia, var(--standard-font), serif !important;
+  font-size: 15px;
+  font-style: italic;
+  color: #c5a059;
+  font-weight: 400;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.theme-editorial .progress-bar-container {
+  height: 2px;
+  background: rgba(197, 160, 89, 0.18);
+  border-radius: 0;
+}
+
+.theme-editorial .progress-bar-fill {
+  background: #c5a059;
+  box-shadow: 0 0 6px rgba(197, 160, 89, 0.5);
+}
+
+.theme-editorial .time-display {
+  font-family: 'Cinzel', Georgia, var(--standard-font), serif;
+  font-size: 11px;
+  color: #d4b886;
+  letter-spacing: 1.5px;
+}
+
+.theme-editorial .sound-bars span {
+  background-color: #c5a059;
+}

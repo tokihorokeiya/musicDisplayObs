@@ -1,0 +1,103 @@
+/* ==========================================================================
+   THEME 18: 8 BIT STYLE (NES / Game Boy Retro Console)
+   ========================================================================== */
+.theme-eight_bit .widget-card {
+  width: 860px;
+  height: 195px;
+  background: #080c08;
+  border: 4px solid #39ff14;
+  box-shadow: inset 0 0 16px rgba(57, 255, 20, 0.2), 8px 8px 0px #000;
+  display: flex;
+  align-items: center;
+  padding: 20px 28px;
+  gap: 24px;
+  position: relative;
+  image-rendering: pixelated;
+}
+
+.theme-eight_bit .cover-art {
+  width: 120px;
+  height: 120px;
+  border: 4px solid #39ff14;
+  border-radius: 0;
+  object-fit: cover;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+}
+
+.theme-eight_bit .info-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-eight_bit .eight-bit-header {
+  font-family: 'VT323', 'Space Mono', var(--standard-font), monospace;
+  font-size: 16px;
+  color: #39ff14;
+  letter-spacing: 2px;
+  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.theme-eight_bit .eight-bit-cursor {
+  animation: blinkPixel 0.8s steps(1) infinite;
+}
+
+@keyframes blinkPixel {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.theme-eight_bit .track-title {
+  font-family: 'VT323', var(--standard-font), monospace !important;
+  font-size: 34px;
+  font-weight: 700;
+  color: #ffffff !important;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 0px #000;
+  line-height: 1.1;
+}
+
+.theme-eight_bit .artist-name {
+  font-family: 'VT323', var(--standard-font), monospace !important;
+  font-size: 20px;
+  color: #39ff14;
+  letter-spacing: 2px;
+  margin-bottom: 6px;
+}
+
+.theme-eight_bit .hp-label {
+  font-family: 'VT323', var(--standard-font), monospace;
+  font-size: 16px;
+  color: #e71d36;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.theme-eight_bit .progress-bar-container {
+  height: 12px;
+  background: #020402;
+  border: 2px solid #39ff14;
+  border-radius: 0;
+  padding: 1px;
+}
+
+.theme-eight_bit .progress-bar-fill {
+  background: repeating-linear-gradient(90deg, #39ff14, #39ff14 6px, #080c08 6px, #080c08 8px);
+  border-radius: 0;
+}
+
+.theme-eight_bit .time-display {
+  font-family: 'VT323', var(--standard-font), monospace;
+  font-size: 16px;
+  color: #39ff14;
+  letter-spacing: 1px;
+}
+
+.theme-eight_bit .sound-bars span {
+  width: 6px;
+  background-color: #39ff14;
+  border-radius: 0;
+}

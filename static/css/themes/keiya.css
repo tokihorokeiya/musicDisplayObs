@@ -1,0 +1,242 @@
+/* ==========================================================================
+   THEME 23: KEIYA (Midnight Cyber Knight & Dual Crossed Swords)
+   ========================================================================== */
+.theme-keiya .widget-card {
+  width: 900px;
+  height: 200px;
+  background: linear-gradient(135deg, #070c17 0%, #0b1528 50%, #060b14 100%);
+  border: 2px solid #38bdf8;
+  border-radius: 8px;
+  clip-path: polygon(
+    14px 0%, calc(100% - 14px) 0%, 
+    100% 14px, 100% calc(100% - 14px), 
+    calc(100% - 14px) 100%, 14px 100%, 
+    0% calc(100% - 14px), 0% 14px
+  );
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9), 
+              inset 0 0 24px rgba(56, 189, 248, 0.2),
+              0 0 20px rgba(56, 189, 248, 0.35);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 26px;
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-keiya .circuit-grid {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background-image: 
+    linear-gradient(rgba(56, 189, 248, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.04) 1px, transparent 1px);
+  background-size: 24px 24px;
+  pointer-events: none;
+}
+
+.theme-keiya .keiya-chassis-corner {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #fbbf24;
+  pointer-events: none;
+}
+
+.theme-keiya .keiya-chassis-corner.tl { top: 4px; left: 4px; border-right: none; border-bottom: none; }
+.theme-keiya .keiya-chassis-corner.tr { top: 4px; right: 4px; border-left: none; border-bottom: none; }
+.theme-keiya .keiya-chassis-corner.bl { bottom: 4px; left: 4px; border-right: none; border-top: none; }
+.theme-keiya .keiya-chassis-corner.br { bottom: 4px; right: 4px; border-left: none; border-top: none; }
+
+.theme-keiya .keiya-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  position: relative;
+  z-index: 2;
+}
+
+.theme-keiya .keiya-unit-tag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theme-keiya .cross-icon {
+  font-size: 16px;
+  color: #38bdf8;
+  text-shadow: 0 0 10px #38bdf8, 0 0 20px #0284c7;
+  animation: plasmaCross 2s infinite alternate;
+}
+
+@keyframes plasmaCross {
+  0% { text-shadow: 0 0 8px #38bdf8; }
+  100% { text-shadow: 0 0 16px #38bdf8, 0 0 28px #0284c7; }
+}
+
+.theme-keiya .unit-code {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: #38bdf8;
+  font-family: 'Space Mono', var(--standard-font), monospace;
+}
+
+.theme-keiya .swords-emblem {
+  font-size: 11px;
+  font-weight: 800;
+  color: #fbbf24;
+  letter-spacing: 1.5px;
+  font-family: 'Space Mono', var(--standard-font), monospace;
+  background: rgba(251, 191, 36, 0.15);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.theme-keiya .keiya-main-row {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex: 1;
+  min-width: 0;
+  position: relative;
+  z-index: 2;
+}
+
+.theme-keiya .keiya-cover-wrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+
+.theme-keiya .cover-art {
+  width: 120px;
+  height: 120px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 2px solid #38bdf8;
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+}
+
+.theme-keiya .keiya-hud-bracket {
+  position: absolute;
+  top: -4px; left: -4px; right: -4px; bottom: -4px;
+  border: 1px dashed rgba(251, 191, 36, 0.6);
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.theme-keiya .luminous-cross-badge {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  width: 26px;
+  height: 26px;
+  background: #0b1528;
+  border: 2px solid #38bdf8;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #38bdf8;
+  box-shadow: 0 0 10px #38bdf8;
+}
+
+.theme-keiya .info-box {
+  flex: 1;
+  min-width: 0;
+}
+
+.theme-keiya .track-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff !important;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8), 0 0 14px rgba(56, 189, 248, 0.5);
+  letter-spacing: 0.5px;
+}
+
+.theme-keiya .artist-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.theme-keiya .keiya-telemetry {
+  display: flex;
+  gap: 16px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fbbf24;
+  font-family: 'Space Mono', var(--standard-font), monospace;
+  margin-bottom: 8px;
+}
+
+.theme-keiya .progress-bar-container {
+  height: 6px;
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 2px;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  position: relative;
+  overflow: visible;
+}
+
+.theme-keiya .progress-bar-fill {
+  background: linear-gradient(90deg, #2563eb, #38bdf8);
+  border-radius: 2px;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.8);
+  position: relative;
+}
+
+.theme-keiya .photon-blade-edge {
+  position: absolute;
+  right: -3px;
+  top: -3px;
+  width: 6px;
+  height: 12px;
+  background: #ffffff;
+  border-radius: 2px;
+  box-shadow: 0 0 8px #ffffff, 0 0 16px #38bdf8;
+}
+
+.theme-keiya .time-display {
+  font-size: 12px;
+  font-weight: 700;
+  color: #38bdf8;
+  font-family: 'Space Mono', var(--standard-font), monospace;
+  margin-top: 4px;
+}
+
+.theme-keiya .keiya-status-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.theme-keiya .dual-swords-crest {
+  width: 44px;
+  height: 44px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 10px rgba(56, 189, 248, 0.2);
+}
+
+.theme-keiya .swords-icon {
+  font-size: 22px;
+  color: #fbbf24;
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.7);
+}
+
+.theme-keiya .sound-bars span {
+  background: #38bdf8;
+  box-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
+  width: 4px;
+}

@@ -1,0 +1,128 @@
+/* ==========================================================================
+   THEME 19: BENTO STYLE (Modular Frosted Bento Grid)
+   ========================================================================== */
+.theme-bento #widget-card,
+.theme-bento .widget-card {
+  width: 900px;
+  height: 200px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  display: grid;
+  grid-template-columns: 180px 1fr 180px;
+  gap: 16px;
+  padding: 0;
+}
+
+.theme-bento .bento-cell {
+  background: rgba(22, 22, 26, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  position: relative;
+}
+
+.theme-bento .bento-cover-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+}
+
+.theme-bento .cover-art {
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
+  object-fit: cover;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.theme-bento .bento-main-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 22px 28px;
+}
+
+.theme-bento .bento-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(139, 92, 246, 0.2);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  color: #a78bfa;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  width: fit-content;
+  margin-bottom: 8px;
+}
+
+.theme-bento .bento-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a78bfa;
+  box-shadow: 0 0 8px #a78bfa;
+}
+
+.theme-bento .track-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #ffffff !important;
+  letter-spacing: -0.3px;
+  margin-bottom: 2px;
+}
+
+.theme-bento .artist-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: #94a3b8;
+  margin-bottom: 12px;
+}
+
+.theme-bento .progress-bar-container {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.theme-bento .progress-bar-fill {
+  background: linear-gradient(90deg, #8b5cf6, #ec4899);
+  border-radius: 3px;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.6);
+}
+
+.theme-bento .bento-stats-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  gap: 12px;
+}
+
+.theme-bento .bento-stats-cell .sound-bars {
+  height: 36px;
+  gap: 4px;
+}
+
+.theme-bento .bento-stats-cell .sound-bars span {
+  width: 4px;
+  background: #8b5cf6;
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.5);
+}
+
+.theme-bento .bento-stats-cell .time-display {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f8fafc;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 6px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}

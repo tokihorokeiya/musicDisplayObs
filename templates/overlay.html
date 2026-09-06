@@ -7,7 +7,8 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>OBS Music Overlay</title>
-    <link rel="stylesheet" href="/static/css/themes.css?v=3.0">
+    <link rel="stylesheet" href="/static/css/common.css?v=5.0">
+    <link id="theme-css" rel="stylesheet" href="/static/css/themes/{{THEME}}.css?v=5.0">
     <style>
         html, body {
             background-color: transparent !important;
@@ -24,10 +25,10 @@
 </head>
 <body>
     <div id="overlay-scaler">
-        <div id="overlay-container">
-            <!-- Dynamically populated by overlay.js -->
+        <div id="overlay-container" class="theme-{{THEME}}">
+            {{INITIAL_TEMPLATE}}
         </div>
     </div>
-    <script src="/static/js/overlay.js?v=3.0"></script>
+    <script src="/static/js/overlay.js?v=5.0"></script>
 </body>
 </html>
