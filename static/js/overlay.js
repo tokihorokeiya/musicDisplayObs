@@ -269,10 +269,11 @@ function updateUI(data) {
 
     currentMedia = data;
 
-    // If using Global Active Overlay, switch theme if active_theme changed
+    // If using Global Active Overlay, reload page when active_theme changes.
+    // In-place CSS+HTML swapping causes visual glitches; a clean reload avoids this.
     if (isGlobalTheme && data.active_theme && data.active_theme !== currentTheme) {
-        currentTheme = data.active_theme;
-        applyTheme(currentTheme);
+        window.location.reload();
+        return;
     }
 
     const container = dom.container;
