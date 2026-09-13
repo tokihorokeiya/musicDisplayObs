@@ -65,20 +65,15 @@ class MediaServer:
         return web.Response(text="<h1>Dashboard Not Found</h1>", content_type="text/html", status=404)
 
     def _get_theme_template(self, theme):
-        """Returns in-memory cached theme HTML template content."""
-        if not hasattr(self, "_theme_template_cache"):
-            self._theme_template_cache = {}
-        if theme not in self._theme_template_cache:
-            path = os.path.join(self.base_dir, "static", "templates", f"{theme}.html")
-            if os.path.exists(path):
-                try:
-                    with open(path, "r", encoding="utf-8") as f:
-                        self._theme_template_cache[theme] = f.read()
-                except Exception:
-                    self._theme_template_cache[theme] = ""
-            else:
-                self._theme_template_cache[theme] = ""
-        return self._theme_template_cache[theme]
+        """Returns theme HTML template content directly from disk to prevent stale caching."""
+        path = os.path.join(self.base_dir, "static", "templates", f"{theme}.html")
+        if os.path.exists(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    return f.read()
+            except Exception:
+                return ""
+        return ""
 
     async def _handle_overlay(self, request):
         content = self._get_template("overlay.html")

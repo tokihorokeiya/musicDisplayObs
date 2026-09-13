@@ -13,7 +13,7 @@ import urllib.error
 
 from functools import lru_cache
 
-APP_VERSION = "v1.3.4"
+APP_VERSION = "v1.3.5"
 GITHUB_REPO = "tokihorokeiya/musicDisplayObs"
 GITHUB_API_LATEST = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 

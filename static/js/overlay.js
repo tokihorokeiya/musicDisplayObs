@@ -5,7 +5,8 @@
  * Zero-leak base64 SVG, White Title, Normal CJK ClearType fonts.
  */
 
-const DEFAULT_COVER = "/static/sample_cover.png";
+const TRANSPARENT_PIXEL = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
+const DEFAULT_COVER = TRANSPARENT_PIXEL;
 
 let currentMedia = {
     title: "",
@@ -110,10 +111,15 @@ function setupAutoScale() {
         }
     }
 
+    let lastContainerWidth = 0;
     window.addEventListener('resize', () => {
         autoScale();
-        if (dom.titleEl && dom.titleWrapper && dom.titleEl.dataset.rawTitle) {
-            adjustMarquee(dom.titleEl, dom.titleWrapper, dom.titleEl.dataset.rawTitle);
+        if (dom.titleEl && dom.titleWrapper && dom.titleEl._currentMarqueeTitle) {
+            const currentW = dom.titleWrapper.clientWidth;
+            if (Math.abs(currentW - lastContainerWidth) > 10) {
+                lastContainerWidth = currentW;
+                adjustMarquee(dom.titleEl, dom.titleWrapper, dom.titleEl._currentMarqueeTitle);
+            }
         }
     });
     autoScale();
@@ -148,6 +154,7 @@ function cacheDOMElements() {
 }
 
 function applyTheme(themeName) {
+    if (!themeName) return;
     currentTheme = themeName;
     const container = document.getElementById('overlay-container');
     if (container) {
@@ -162,7 +169,7 @@ function applyTheme(themeName) {
         themeLink.rel = 'stylesheet';
         document.head.appendChild(themeLink);
     }
-    const targetHref = `/static/css/themes/${themeName}.css?v=5.2`;
+    const targetHref = `/static/css/themes/${themeName}.css?v=5.6`;
     if (themeLink.getAttribute('href') !== targetHref) {
         themeLink.href = targetHref;
     }
@@ -183,7 +190,7 @@ function formatTime(seconds) {
 
 const UNIVERSAL_FALLBACK_HTML = `
     <div class="widget-card" id="widget-card">
-        <img class="cover-art" id="cover-img" src="/static/sample_cover.png" alt="">
+        <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="" style="opacity: 0;">
         <div class="info-box">
             <div class="top-row">
                 <div class="marquee-wrapper" id="title-wrapper">
@@ -217,7 +224,7 @@ function renderThemeHTML(theme) {
     }
 
     // Async Path: Fetch template file on-demand
-    fetch(`/static/templates/${theme}.html?v=5.2`)
+    fetch(`/static/templates/${theme}.html?v=5.5`)
         .then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return res.text();
@@ -322,20 +329,31 @@ function updateUI(data) {
         }
     }
 
-    // Cover
-    const coverSrc = data.thumbnail || DEFAULT_COVER;
-    if (coverEl && coverEl.src !== coverSrc) {
-        coverEl.src = coverSrc;
+    // Cover (Zero flash: completely invisible if no thumbnail is available)
+    const hasThumbnail = Boolean(data.thumbnail);
+    const coverSrc = hasThumbnail ? data.thumbnail : TRANSPARENT_PIXEL;
+    if (coverEl) {
+        if (coverEl.src !== coverSrc) {
+            coverEl.src = coverSrc;
+        }
+        coverEl.style.opacity = hasThumbnail ? "1" : "0";
     }
     if (vinylCenter) {
-        vinylCenter.style.backgroundImage = `url("${coverSrc}")`;
+        if (hasThumbnail) {
+            vinylCenter.style.backgroundImage = `url("${coverSrc}")`;
+            vinylCenter.style.opacity = "1";
+        } else {
+            vinylCenter.style.backgroundImage = "none";
+            vinylCenter.style.opacity = "0";
+        }
     }
 
     // Title & Artist
-    const displayTitle = data.title || "Waiting for music...";
-    const displayArtist = data.artist || (hasMedia ? "Unknown Artist" : "No active playback");
+    const displayTitle = (data.title || (hasMedia ? "Unknown Title" : "Waiting for music...")).trim();
+    const displayArtist = (data.artist || (hasMedia ? "Unknown Artist" : "No active playback")).trim();
 
-    if (titleEl && titleEl.dataset.rawTitle !== displayTitle) {
+    if (titleEl && titleEl._currentMarqueeTitle !== displayTitle) {
+        titleEl._currentMarqueeTitle = displayTitle;
         titleEl.dataset.rawTitle = displayTitle;
         adjustMarquee(titleEl, titleWrapper, displayTitle);
     }
@@ -392,7 +410,11 @@ function escapeHtml(str) {
 function adjustMarquee(textEl, wrapperEl, titleText) {
     if (!textEl || !wrapperEl) return;
 
-    const rawText = titleText !== undefined ? titleText : (textEl.dataset.rawTitle || textEl.textContent || "");
+    const rawText = (titleText !== undefined ? titleText : (textEl._currentMarqueeTitle || textEl.dataset.rawTitle || textEl.textContent || "")).trim();
+    if (!rawText) return;
+
+    textEl._currentMarqueeTitle = rawText;
+    textEl.dataset.rawTitle = rawText;
 
     // Reset styles & classes to measure natural width
     textEl.classList.remove('marquee-scroll');
@@ -405,22 +427,36 @@ function adjustMarquee(textEl, wrapperEl, titleText) {
     void textEl.offsetWidth;
 
     const textWidth = textEl.scrollWidth;
-    const containerWidth = wrapperEl.clientWidth;
+    const containerWidth = wrapperEl.clientWidth || 300;
 
-    // Only scroll if text exceeds container width (with safety margin)
-    if (textWidth > containerWidth + 8) {
+    // Only scroll if text exceeds container width
+    if (textWidth > containerWidth - 4) {
         const safeText = escapeHtml(rawText);
-        const separator = '&nbsp;&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;&nbsp;';
-        // Create two identical halves for perfect seamless infinite loop
-        textEl.innerHTML = `<span class="marquee-unit">${safeText}${separator}</span><span class="marquee-unit">${safeText}${separator}</span>`;
+        // Wide spaces gap like standard ticker (e.g. "Abc Song        Abc Song")
+        const gap = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
 
-        // Measure one unit width
-        const firstUnit = textEl.querySelector('.marquee-unit');
-        const unitWidth = firstUnit ? firstUnit.offsetWidth : (textWidth + 30);
+        // Measure single unit with gap
+        textEl.innerHTML = `<span class="marquee-unit">${safeText}${gap}</span>`;
+        const unitEl = textEl.querySelector('.marquee-unit');
+        const unitWidth = unitEl ? unitEl.offsetWidth : (textWidth + 60);
 
-        // Constant leisurely speed: ~28 pixels per second (slower, comfortable reading)
-        const speed = 28;
-        const duration = Math.max(18, Math.round(unitWidth / speed));
+        // Build Block A with enough repetitions so Block A spans at least containerWidth + 40px
+        const repeatCount = Math.max(1, Math.ceil((containerWidth + 40) / unitWidth));
+        let singleBlockHtml = '';
+        for (let i = 0; i < repeatCount; i++) {
+            singleBlockHtml += `<span class="marquee-unit">${safeText}${gap}</span>`;
+        }
+
+        // Two identical blocks: Block A + Block B for 100% seamless infinite looping
+        textEl.innerHTML = `<span class="marquee-block">${singleBlockHtml}</span><span class="marquee-block">${singleBlockHtml}</span>`;
+
+        // Calculate total width of one block to determine smooth, leisurely duration
+        const firstBlock = textEl.querySelector('.marquee-block');
+        const blockWidth = firstBlock ? firstBlock.offsetWidth : (unitWidth * repeatCount);
+
+        // Leisurely speed: ~25 pixels per second (slower, clear readability)
+        const speed = 25;
+        const duration = Math.max(18, Math.round(blockWidth / speed));
         textEl.style.animationDuration = `${duration}s`;
 
         textEl.classList.add('marquee-scroll');
@@ -442,9 +478,10 @@ function connectWebSocket() {
         try {
             const data = JSON.parse(event.data);
             if (isGlobalTheme && (data.reload || (data.active_theme && data.active_theme !== currentTheme))) {
-                console.log(`[OBS Overlay] Theme change detected (target: ${data.active_theme}). Reloading overlay for clean layout...`);
-                currentTheme = data.active_theme || currentTheme;
-                window.location.reload();
+                const targetTheme = data.active_theme || currentTheme;
+                console.log(`[OBS Overlay] Global theme switch to: ${targetTheme}`);
+                applyTheme(targetTheme);
+                updateUI(data);
                 return;
             }
             updateUI(data);

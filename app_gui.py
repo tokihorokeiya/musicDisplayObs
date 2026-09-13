@@ -1817,6 +1817,14 @@ class AppGUI(ctk.CTk):
                 self.time_label.configure(text=time_str)
                 self._last_rendered_time_str = time_str
 
+            # Track song identity to prevent stale thumbnail when a new song starts without cover
+            song_identity = (media_data.get("title", ""), media_data.get("artist", ""))
+            if song_identity != getattr(self, "_current_gui_song_key", None):
+                self._current_gui_song_key = song_identity
+                if not thumb_b64 and self.current_thumbnail_data is not None:
+                    self.current_thumbnail_data = None
+                    self._load_default_cover(target_label=self.cover_label, size=(90, 90))
+
             # Album Art
             if thumb_b64 and thumb_b64 != self.current_thumbnail_data:
                 self.current_thumbnail_data = thumb_b64

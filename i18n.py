@@ -82,7 +82,7 @@ TRANSLATIONS = { 'zh_TW': { 'app_title': 'OBS 即時音樂動態顯示器',
                          'bento': ('便當盒模組化網格 (Bento)', '現代蘋果與 Linear 便當盒網格設計，圓角磨砂微光獨立隔間，兼具功能性與科技美感'),
                          'belmore': ('歐風煙斗與啤酒', '80年代復古歐陸黑灰酒館風格，消光黑灰岩紋、精緻燙金雕花飾角、復古麥芽啤酒杯與雕花石楠木煙斗輕煙'),
                          'shizuru': ('紫白櫻花與懷錶', '典雅時計美學，復古雕花銀懷錶外框、紫白藤櫻花瓣飄落與神秘天體軌道環'),
-                         'nyaru': ('水藍貓咪與歐式茶杯', '夢幻水藍洛麗塔女僕風，貓耳飾邊、皇家歐風描金骨瓷茶杯與精緻蕾絲花邊'),
+                         'nyaru': ('粉藍法式貓咪', '夢幻粉藍 (#9fddfc) 法式浪漫洛麗塔風格，萌系立體貓耳、精緻法式蕾絲珍珠飾邊與粉嫩蝴蝶結'),
                          'keiya': ('戰術賽博騎士與雙劍', '暗夜機甲戰術賽博風，深藍鈦合金外裝、電漿青光、發光十字領帶與雙劍迴路徽記')},
              'nav_dashboard': '即時控制台',
              'nav_gallery': '風格模板庫',
@@ -245,9 +245,9 @@ TRANSLATIONS = { 'zh_TW': { 'app_title': 'OBS 即時音樂動態顯示器',
                       'shizuru': ( 'Purple & White Flower & Pocket Watch',
                                    'Celestial pocket watch aesthetic with ornate silver dial, purple ribbon bow and '
                                    'floating purple cherry blossom petals'),
-                      'nyaru': ( 'Light Blue Cat & Euro Style Tea Cup',
-                                 'Pastel sky-blue lolita maid aesthetic with cat ears, royal European gold-rimmed '
-                                 'porcelain tea cup and delicate lace trims'),
+                      'nyaru': ( 'Pastel Blue French Cat',
+                                 'Dreamy pastel sky-blue (#9fddfc) French chic lolita aesthetic with authentic anime '
+                                 'cat ears, delicate French lace, and satin ribbon bow'),
                       'keiya': ( 'Tactical Cyber Knight & Dual Swords',
                                  'Midnight cyber-knight aesthetic with deep indigo armor, luminous cyan accents, '
                                  'glowing cross necktie and dual crossed swords insignia')},

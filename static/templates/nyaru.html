@@ -1,49 +1,188 @@
 <div class="widget-card" id="widget-card">
-                <div class="cat-ear ear-left"><div class="ear-inner"></div></div>
-                <div class="cat-ear ear-right"><div class="ear-inner"></div></div>
-                <div class="cat-tail">
-                    <div class="tail-pattern"></div>
+    <!-- Top-Left Translucent Cat Paw Watermark -->
+    <div class="paw-watermark top-left">
+        <svg viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="27" cy="35" rx="13" ry="10" fill="rgba(255, 255, 255, 0.85)"/>
+            <circle cx="14" cy="20" r="5" fill="rgba(255, 255, 255, 0.85)"/>
+            <circle cx="23" cy="13" r="5" fill="rgba(255, 255, 255, 0.85)"/>
+            <circle cx="31" cy="13" r="5" fill="rgba(255, 255, 255, 0.85)"/>
+            <circle cx="40" cy="20" r="5" fill="rgba(255, 255, 255, 0.85)"/>
+        </svg>
+    </div>
+
+    <!-- Bottom-Left Flowing Silk Ribbon Drape -->
+    <div class="ribbon-drape bottom-left">
+        <svg viewBox="0 0 110 55" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 40 C32 24, 62 42, 102 14 C76 30, 42 24, 14 36 Z" fill="#bde4fa" opacity="0.95"/>
+            <path d="M14 46 C40 30, 70 36, 106 12 C80 23, 48 23, 22 40 Z" fill="#ffffff" opacity="0.85"/>
+            <circle cx="96" cy="18" r="2.8" fill="#ffffff"/>
+            <path d="M90 22 L91.5 17 L93 22 L98 23.5 L93 25 L91.5 30 L90 25 L85 23.5 Z" fill="#ffffff" opacity="0.9"/>
+        </svg>
+    </div>
+
+    <!-- Delicate Background Sparkle Stars -->
+    <div class="card-bg-sparkles">
+        <svg viewBox="0 0 920 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M690 38 L692 30 L694 38 L702 40 L694 42 L692 50 L690 42 L682 40 Z" fill="rgba(255, 255, 255, 0.85)"/>
+            <circle cx="708" cy="46" r="1.8" fill="rgba(255, 255, 255, 0.85)"/>
+            <path d="M810 82 L811 77 L812 82 L817 83 L812 84 L811 89 L810 84 L805 83 Z" fill="rgba(255, 255, 255, 0.7)"/>
+            <circle cx="360" cy="28" r="1.8" fill="rgba(255, 255, 255, 0.6)"/>
+        </svg>
+    </div>
+
+    <div class="nyaru-main-row">
+        <!-- Album Art with crisp white border and cute empty placeholder -->
+        <div class="nyaru-cover-wrapper">
+            <div class="nyaru-cover-placeholder">
+                <svg viewBox="0 0 54 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <ellipse cx="27" cy="35" rx="13" ry="10" fill="#9fddfc"/>
+                    <circle cx="14" cy="20" r="5" fill="#9fddfc"/>
+                    <circle cx="23" cy="13" r="5" fill="#9fddfc"/>
+                    <circle cx="31" cy="13" r="5" fill="#9fddfc"/>
+                    <circle cx="40" cy="20" r="5" fill="#9fddfc"/>
+                </svg>
+                <span>MUSIC</span>
+            </div>
+            <img class="cover-art" id="cover-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style="opacity: 0;" alt="">
+        </div>
+
+        <!-- Center Information: Title, Artist, and Progress Bar -->
+        <div class="info-box">
+            <div class="marquee-wrapper" id="title-wrapper">
+                <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
+            </div>
+            <div class="artist-name" id="artist-name">No active playback</div>
+            
+            <div class="progress-telemetry-row">
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="progress-fill">
+                        <span class="progress-knob"></span>
+                    </div>
                 </div>
-                <div class="lace-trim top"></div>
-                <div class="nyaru-main-row">
-                    <div class="nyaru-cover-wrapper">
-                        <img class="cover-art" id="cover-img" src="${DEFAULT_COVER}" alt="">
-                        <div class="cover-lace-frame"></div>
-                    </div>
-                    <div class="info-box">
-                        <div class="nyaru-header">
-                            <span class="nyaru-badge">🐾 ROYAL TEA SALON 🐾</span>
-                            <span class="nyaru-sub">EUROPEAN PARLOR &bull; SWEET BLEND</span>
-                        </div>
-                        <div class="marquee-wrapper" id="title-wrapper">
-                            <div class="marquee-content track-title" id="track-title">Waiting for music...</div>
-                        </div>
-                        <div class="artist-name" id="artist-name">No active playback</div>
-                        <div class="progress-section">
-                            <div class="progress-bar-container">
-                                <div class="progress-bar-fill" id="progress-fill">
-                                    <span class="sugar-cube">✦</span>
-                                </div>
-                            </div>
-                            <div class="time-display" id="time-display">00:00 / 00:00</div>
-                        </div>
-                    </div>
-                    <div class="nyaru-tea-col">
-                        <div class="tea-cup-widget" title="Royal European Teacup">
-                            <div class="tea-steam">
-                                <span class="steam s1"></span>
-                                <span class="steam s2"></span>
-                            </div>
-                            <div class="teacup-body">
-                                <div class="teacup-liquid"></div>
-                                <div class="teacup-handle"></div>
-                            </div>
-                            <div class="teacup-saucer"></div>
-                        </div>
+                
+                <!-- Playback Telemetry: Sound bars stacked directly above the time readout -->
+                <div class="playback-telemetry">
+                    <div class="sound-bars-wrap">
+                        <svg class="mini-sparkle" viewBox="0 0 16 16" fill="none">
+                            <path d="M8 0 L9.5 6.5 L16 8 L9.5 9.5 L8 16 L6.5 9.5 L0 8 L6.5 6.5 Z" fill="#9ecbf2"/>
+                        </svg>
                         <div class="sound-bars">
+                            <span></span><span></span><span></span><span></span><span></span>
                             <span></span><span></span><span></span><span></span><span></span>
                         </div>
                     </div>
+                    <div class="time-display" id="time-display">00:00 / 00:00</div>
                 </div>
-                <div class="lace-trim bottom"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- Bottom-Right Ornament: White Blossom Flowers, Silk Ribbon Bow & Cat Head Badge with Blue Paw -->
+    <div class="nyaru-ornament-cluster">
+        <svg class="floral-cat-ornament" viewBox="0 0 220 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <filter id="ornament-shadow" x="-30%" y="-30%" width="160%" height="160%">
+                    <feDropShadow dx="0" dy="3" stdDeviation="4.5" flood-color="rgba(25, 70, 120, 0.26)"/>
+                </filter>
+                <linearGradient id="ribbon-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#dbf2fe"/>
+                    <stop offset="40%" stop-color="#a4d8f7"/>
+                    <stop offset="100%" stop-color="#76bee9"/>
+                </linearGradient>
+                <linearGradient id="ribbon-loop-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#edf8fe"/>
+                    <stop offset="50%" stop-color="#bde4fa"/>
+                    <stop offset="100%" stop-color="#8ecdf5"/>
+                </linearGradient>
+                <linearGradient id="cat-paw-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stop-color="#9ad2f7"/>
+                    <stop offset="100%" stop-color="#64a9e2"/>
+                </linearGradient>
+                <radialGradient id="petal-grad" cx="35%" cy="35%" r="65%">
+                    <stop offset="0%" stop-color="#ffffff"/>
+                    <stop offset="80%" stop-color="#ffffff"/>
+                    <stop offset="100%" stop-color="#e0f0fa"/>
+                </radialGradient>
+            </defs>
+
+            <!-- Flowing Light Blue Silk Ribbon Bow and Long Tails -->
+            <g class="ribbon-group" filter="url(#ornament-shadow)">
+                <!-- Left Ribbon Tail sweeping along bottom border -->
+                <path d="M125 136 C105 152, 70 165, 30 174 C20 176, 26 182, 40 180 C75 174, 110 160, 134 142 Z" fill="url(#ribbon-grad)"/>
+                <path d="M35 176 C70 170, 102 157, 128 140" stroke="#ffffff" stroke-width="1.6" opacity="0.8"/>
+                
+                <!-- Right Ribbon Tail -->
+                <path d="M138 136 C160 152, 185 162, 212 168 C218 169, 216 163, 204 158 C180 150, 158 142, 144 134 Z" fill="url(#ribbon-grad)"/>
+                <path d="M148 138 C170 148, 192 157, 210 164" stroke="#ffffff" stroke-width="1.4" opacity="0.75"/>
+                
+                <!-- Left Ribbon Loop -->
+                <path d="M120 115 C95 115, 80 135, 98 150 C115 152, 125 138, 122 125 Z" fill="url(#ribbon-loop-grad)" stroke="#ffffff" stroke-width="1.8"/>
+                <!-- Right Ribbon Loop -->
+                <path d="M145 110 C175 105, 195 125, 180 145 C160 155, 145 140, 145 125 Z" fill="url(#ribbon-loop-grad)" stroke="#ffffff" stroke-width="1.8"/>
+                <!-- Bow Knot -->
+                <ellipse cx="132" cy="132" rx="9" ry="7" fill="url(#ribbon-grad)" stroke="#ffffff" stroke-width="1.6"/>
+            </g>
+
+            <!-- Trailing Mini Blossom Petals -->
+            <g opacity="0.95" filter="url(#ornament-shadow)">
+                <ellipse cx="32" cy="184" rx="5" ry="3.5" fill="#ffffff" stroke="#d5e8f8" stroke-width="0.8" transform="rotate(-20 32 184)"/>
+                <ellipse cx="48" cy="176" rx="4.5" ry="3" fill="#ffffff" stroke="#d5e8f8" stroke-width="0.8" transform="rotate(15 48 176)"/>
+            </g>
+
+            <!-- Blossom Flower 1 (Top-Right of Cat Head) -->
+            <g transform="translate(156, 18) scale(0.76)" filter="url(#ornament-shadow)">
+                <circle cx="20" cy="10" r="10" fill="url(#petal-grad)" stroke="#d4e8f8" stroke-width="1"/>
+                <circle cx="29" cy="18" r="10" fill="url(#petal-grad)" stroke="#d4e8f8" stroke-width="1"/>
+                <circle cx="25" cy="30" r="10" fill="url(#petal-grad)" stroke="#d4e8f8" stroke-width="1"/>
+                <circle cx="13" cy="27" r="10" fill="url(#petal-grad)" stroke="#d4e8f8" stroke-width="1"/>
+                <circle cx="11" cy="16" r="10" fill="url(#petal-grad)" stroke="#d4e8f8" stroke-width="1"/>
+                <circle cx="20" cy="20" r="4.8" fill="#fef3c7" stroke="#fbbf24" stroke-width="0.8"/>
+                <circle cx="20" cy="20" r="2.2" fill="#f59e0b"/>
+            </g>
+
+            <!-- Cute White Cat Head Badge with Soft Pink Ears & Blue Paw Print -->
+            <g transform="translate(122, 28) scale(1.18)" filter="url(#ornament-shadow)">
+                <!-- Cat Head Silhouette -->
+                <path d="M12 19 C7 5, 23 2, 27 15 C36 13, 46 13, 55 15 C59 2, 75 5, 70 19 C80 27, 82 46, 72 56 C60 66, 22 66, 10 56 C0 46, 2 27, 12 19 Z" fill="#ffffff" stroke="#c4e2f8" stroke-width="2.2"/>
+                <!-- Inner Soft Pink Ears -->
+                <path d="M16 17 C14 10, 21 8, 24 15 Z" fill="#ffd5df" opacity="0.95"/>
+                <path d="M66 17 C68 10, 61 8, 58 15 Z" fill="#ffd5df" opacity="0.95"/>
+                <!-- Sky-Blue Cat Paw Print centered on face -->
+                <ellipse cx="41" cy="40" rx="10.5" ry="8" fill="url(#cat-paw-grad)"/>
+                <circle cx="29.5" cy="27.5" r="3.8" fill="url(#cat-paw-grad)"/>
+                <circle cx="37" cy="22.5" r="3.8" fill="url(#cat-paw-grad)"/>
+                <circle cx="45" cy="22.5" r="3.8" fill="url(#cat-paw-grad)"/>
+                <circle cx="52.5" cy="27.5" r="3.8" fill="url(#cat-paw-grad)"/>
+            </g>
+
+            <!-- Blossom Flower 2 (Bottom-Left of Cat Head, overlapping cheek and card edge) -->
+            <g transform="translate(80, 88) scale(1.12)" filter="url(#ornament-shadow)">
+                <circle cx="20" cy="10" r="10" fill="url(#petal-grad)" stroke="#d4e8f8" stroke-width="1.2"/>
+                <circle cx="30" cy="19" r="10" fill="url(#petal-grad)" stroke="#d4e8f8" stroke-width="1.2"/>
+                <circle cx="25" cy="31" r="10" fill="url(#petal-grad)" stroke="#d4e8f8" stroke-width="1.2"/>
+                <circle cx="13" cy="28" r="10" fill="url(#petal-grad)" stroke="#d4e8f8" stroke-width="1.2"/>
+                <circle cx="11" cy="17" r="10" fill="url(#petal-grad)" stroke="#d4e8f8" stroke-width="1.2"/>
+                <circle cx="20" cy="21" r="5.2" fill="#fef3c7" stroke="#fbbf24" stroke-width="0.8"/>
+                <circle cx="20" cy="21" r="2.4" fill="#f59e0b"/>
+            </g>
+
+            <!-- Blossom Flower 3 (Bottom-Center under Cat Head) -->
+            <g transform="translate(136, 92) scale(1.04)" filter="url(#ornament-shadow)">
+                <circle cx="20" cy="10" r="10" fill="url(#petal-grad)" stroke="#d4e8f8" stroke-width="1.2"/>
+                <circle cx="29" cy="18" r="10" fill="url(#petal-grad)" stroke="#d4e8f8" stroke-width="1.2"/>
+                <circle cx="25" cy="30" r="10" fill="url(#petal-grad)" stroke="#d4e8f8" stroke-width="1.2"/>
+                <circle cx="13" cy="27" r="10" fill="url(#petal-grad)" stroke="#d4e8f8" stroke-width="1.2"/>
+                <circle cx="11" cy="16" r="10" fill="url(#petal-grad)" stroke="#d4e8f8" stroke-width="1.2"/>
+                <circle cx="20" cy="20" r="5" fill="#fef3c7" stroke="#fbbf24" stroke-width="0.8"/>
+                <circle cx="20" cy="20" r="2.3" fill="#f59e0b"/>
+            </g>
+
+            <!-- Sparkling Twinkles around Ornament -->
+            <g opacity="0.9">
+                <path d="M54 82 L55.5 76 L57 82 L63 83.5 L57 85 L55.5 91 L54 85 L48 83.5 Z" fill="#ffffff"/>
+                <circle cx="198" cy="46" r="2.4" fill="#ffffff"/>
+                <circle cx="68" cy="112" r="1.8" fill="#ffffff"/>
+            </g>
+        </svg>
+    </div>
+</div>

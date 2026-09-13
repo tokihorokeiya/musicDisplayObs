@@ -284,7 +284,7 @@
             { id: 'bento', name: '19. Bento Modular Grid' },
             { id: 'belmore', name: '20. Euro Style Pipe with Beer' },
             { id: 'shizuru', name: '21. Purple and White Flower and Pocket Watch' },
-            { id: 'nyaru', name: '22. Light Blue Cat and Euro Style Tea Cup' },
+            { id: 'nyaru', name: '22. Pastel Blue French Cat' },
             { id: 'keiya', name: '23. Tactical Cyber Knight & Cross' }
         ];
 
@@ -335,6 +335,8 @@
                     document.getElementById('dash-status-text').textContent = data.status || "Playing";
                     if (data.thumbnail) {
                         document.getElementById('dash-cover').src = data.thumbnail;
+                    } else {
+                        document.getElementById('dash-cover').src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' fill='%236366f1' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/></svg>";
                     }
                 }
             } catch(e) {}

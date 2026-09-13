@@ -153,12 +153,26 @@ class MediaEngine:
             sessions = manager.get_sessions()
             target_session = manager.get_current_session()
             
-            if not target_session and sessions:
-                for s in sessions:
-                    pb = s.get_playback_info()
+            # Check if target_session is actually playing
+            target_is_playing = False
+            if target_session:
+                try:
+                    pb = target_session.get_playback_info()
                     if pb and pb.playback_status == PlaybackStatus.PLAYING:
-                        target_session = s
-                        break
+                        target_is_playing = True
+                except Exception:
+                    pass
+
+            # If current session is not playing, look for any session that IS playing
+            if not target_is_playing and sessions:
+                for s in sessions:
+                    try:
+                        pb = s.get_playback_info()
+                        if pb and pb.playback_status == PlaybackStatus.PLAYING:
+                            target_session = s
+                            break
+                    except Exception:
+                        pass
                 if not target_session and len(sessions) > 0:
                     target_session = sessions[0]
 
@@ -286,7 +300,7 @@ class MediaEngine:
                         info["artist"] != self.current_data["artist"] or
                         info["status"] != self.current_data["status"] or
                         info["has_media"] != self.current_data["has_media"] or
-                        (bool(info["thumbnail"]) != bool(self.current_data["thumbnail"])) or
+                        info["thumbnail"] != self.current_data.get("thumbnail", "") or
                         abs(info["duration"] - self.current_data.get("duration", 0)) > 2
                     )
 

@@ -111,7 +111,7 @@ You can add the music overlay to OBS Studio using either of the two methods belo
 | **19. Bento Modular Grid** | Apple-inspired clean modular bento box layout with dedicated live telemetries | <img src="static/previews/bento.png" width="320"> |
 | **20. Belmore** | Classic European pub warmth — amber tones, serif typography, felt-green accents | <img src="static/previews/belmore.png" width="320"> |
 | **21. Shizuru** | Pocket watch elegance — copper and cream, antique ivory, vintage serif style | <img src="static/previews/shizuru.png" width="320"> |
-| **22. Nyaru** | Cat maid tea party — pastel pinks and mint green, soft rounded kawaii layout | <img src="static/previews/nyaru.png" width="320"> |
+| **22. Nyaru** | Dreamy pastel sky-blue (#9fddfc) French chic lolita aesthetic with authentic anime cat ears, delicate French lace, and satin ribbon bow | <img src="static/previews/nyaru.png" width="320"> |
 | **23. Keiya** | Cyber knight armor — electric blue on dark steel, angular futuristic panels | <img src="static/previews/keiya.png" width="320"> |
 
 ---

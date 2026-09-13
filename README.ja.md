@@ -110,7 +110,7 @@ Windows 環境向けに特化した、ブラウザ拡張機能不要のリアル
 | **19. Bento モジュラーグリッド** | Apple風の機能美あふれる弁当箱モジュールカード、音声データを直感的に把握 | <img src="static/previews/bento.png" width="320"> |
 | **20. ベルモア (Belmore)** | 欧州の伝統的なパブの温もり——琥珀色調、セリフ体、ビリヤード台グリーンのアクセント | <img src="static/previews/belmore.png" width="320"> |
 | **21. 静流 (Shizuru)** | 懐中時計の優美さ——銅色とクリーム、象牙色のアンティークセリフ調スタイル | <img src="static/previews/shizuru.png" width="320"> |
-| **22. ニャル (Nyaru)** | 猫メイドのティーパーティー——パステルピンクとミントグリーン、丸みのある可愛いレイアウト | <img src="static/previews/nyaru.png" width="320"> |
+| **22. ニャル (Nyaru)** | パステルブルーフレンチキャット——夢幻のスカイブルー (#9fddfc)、立体猫耳とフレンチレース・リボンのロリータ調スタイル | <img src="static/previews/nyaru.png" width="320"> |
 | **23. 鍵矢 (Keiya)** | サイバーナイトの鎧——ダークスチール上の電気ブルー、鋭角的な未来主義パネル | <img src="static/previews/keiya.png" width="320"> |
 
 ---

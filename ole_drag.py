@@ -59,7 +59,7 @@ if IS_WINDOWS:
 
     class FORMATETC(ctypes.Structure):
         _fields_ = [
-            ("cfFormat", wintypes.UINT),
+            ("cfFormat", wintypes.WORD),
             ("ptd", ctypes.c_void_p),
             ("dwAspect", wintypes.DWORD),
             ("lindex", wintypes.LONG),
@@ -72,6 +72,10 @@ if IS_WINDOWS:
             ("hGlobal", wintypes.HANDLE),
             ("pUnkForRelease", ctypes.c_void_p),
         ]
+
+    # Struct representing a COM object instance whose first field is a pointer to the vtable
+    class COMInterfaceInstance(ctypes.Structure):
+        _fields_ = [("lpVtbl", ctypes.c_void_p)]
 
     QueryInterfaceProto = ctypes.WINFUNCTYPE(ctypes.c_long, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)
     AddRefReleaseProto = ctypes.WINFUNCTYPE(ctypes.c_ulong, ctypes.c_void_p)
@@ -121,6 +125,7 @@ if IS_WINDOWS:
     kernel32.GlobalAlloc.argtypes = [wintypes.UINT, ctypes.c_size_t]
     kernel32.GlobalLock.restype = ctypes.c_void_p
     kernel32.GlobalLock.argtypes = [ctypes.c_void_p]
+    kernel32.GlobalUnlock.restype = wintypes.BOOL
     kernel32.GlobalUnlock.argtypes = [ctypes.c_void_p]
 
     shell32.SHCreateStdEnumFmtEtc.restype = ctypes.c_long
@@ -128,59 +133,89 @@ if IS_WINDOWS:
 
     ole32.OleInitialize.restype = ctypes.c_long
     ole32.OleInitialize.argtypes = [ctypes.c_void_p]
+    ole32.OleUninitialize.restype = None
+    ole32.OleUninitialize.argtypes = []
 
     ole32.DoDragDrop.restype = ctypes.c_long
     ole32.DoDragDrop.argtypes = [ctypes.c_void_p, ctypes.c_void_p, wintypes.DWORD, ctypes.POINTER(wintypes.DWORD)]
 
     def alloc_global_bytes(raw_bytes):
-        h = kernel32.GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, len(raw_bytes))
-        ptr = kernel32.GlobalLock(h)
-        ctypes.memmove(ptr, raw_bytes, len(raw_bytes))
-        kernel32.GlobalUnlock(h)
-        return h
+        try:
+            h = kernel32.GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, len(raw_bytes))
+            if not h:
+                return None
+            ptr = kernel32.GlobalLock(h)
+            if not ptr:
+                return None
+            ctypes.memmove(ptr, raw_bytes, len(raw_bytes))
+            kernel32.GlobalUnlock(h)
+            return h
+        except Exception:
+            return None
 
     class NativeDropSource:
         def __init__(self):
             self.ref_count = 1
+            # Retain callback prototypes to guarantee they are never garbage collected
+            self._cb_qi = QueryInterfaceProto(self.QueryInterface)
+            self._cb_addref = AddRefReleaseProto(self.AddRef)
+            self._cb_release = AddRefReleaseProto(self.Release)
+            self._cb_qcd = QueryContinueDragProto(self.QueryContinueDrag)
+            self._cb_gf = GiveFeedbackProto(self.GiveFeedback)
+
             self._vtbl = DropSourceVtbl(
-                QueryInterface=QueryInterfaceProto(self.QueryInterface),
-                AddRef=AddRefReleaseProto(self.AddRef),
-                Release=AddRefReleaseProto(self.Release),
-                QueryContinueDrag=QueryContinueDragProto(self.QueryContinueDrag),
-                GiveFeedback=GiveFeedbackProto(self.GiveFeedback)
+                QueryInterface=self._cb_qi,
+                AddRef=self._cb_addref,
+                Release=self._cb_release,
+                QueryContinueDrag=self._cb_qcd,
+                GiveFeedback=self._cb_gf
             )
-            self._vtbl_ptr = ctypes.pointer(self._vtbl)
+            # Pin the COM instance structure directly in self
+            self._instance = COMInterfaceInstance(ctypes.cast(ctypes.byref(self._vtbl), ctypes.c_void_p))
+            self._interface_ptr = ctypes.cast(ctypes.byref(self._instance), ctypes.c_void_p)
 
         @property
         def interface_ptr(self):
-            return ctypes.cast(ctypes.pointer(self._vtbl_ptr), ctypes.c_void_p)
+            return self._interface_ptr
 
         def QueryInterface(self, this, riid, ppv):
-            if not ppv:
+            try:
+                if not ppv:
+                    return E_FAIL
+                guid_bytes = ctypes.string_at(riid, 16)
+                if guid_bytes in (IID_IUnknown_BYTES, IID_IDropSource_BYTES):
+                    ctypes.cast(ppv, ctypes.POINTER(ctypes.c_void_p))[0] = this
+                    self.AddRef(this)
+                    return S_OK
+                ctypes.cast(ppv, ctypes.POINTER(ctypes.c_void_p))[0] = None
+                return E_NOINTERFACE
+            except Exception:
                 return E_FAIL
-            guid_bytes = ctypes.string_at(riid, 16)
-            if guid_bytes in (IID_IUnknown_BYTES, IID_IDropSource_BYTES):
-                ctypes.cast(ppv, ctypes.POINTER(ctypes.c_void_p))[0] = this
-                self.AddRef(this)
-                return S_OK
-            ctypes.cast(ppv, ctypes.POINTER(ctypes.c_void_p))[0] = None
-            return E_NOINTERFACE
 
         def AddRef(self, this):
-            self.ref_count += 1
-            return self.ref_count
+            try:
+                self.ref_count += 1
+                return self.ref_count
+            except Exception:
+                return 1
 
         def Release(self, this):
-            self.ref_count -= 1
-            return self.ref_count
+            try:
+                self.ref_count -= 1
+                return max(0, self.ref_count)
+            except Exception:
+                return 0
 
         def QueryContinueDrag(self, this, fEscapePressed, grfKeyState):
-            if fEscapePressed:
+            try:
+                if fEscapePressed:
+                    return DRAGDROP_S_CANCEL
+                # Release when left mouse button is released
+                if not (grfKeyState & MK_LBUTTON):
+                    return DRAGDROP_S_DROP
+                return S_OK
+            except Exception:
                 return DRAGDROP_S_CANCEL
-            # Release when left mouse button is released
-            if not (grfKeyState & MK_LBUTTON):
-                return DRAGDROP_S_DROP
-            return S_OK
 
         def GiveFeedback(self, this, dwEffect):
             return DRAGDROP_S_USEDEFAULTCURSORS
@@ -200,25 +235,41 @@ if IS_WINDOWS:
             ]
             self.format_array = (FORMATETC * len(self.formats))(*self.formats)
 
+            # Retain callback prototypes to guarantee they are never garbage collected
+            self._cb_qi = QueryInterfaceProto(self.QueryInterface)
+            self._cb_addref = AddRefReleaseProto(self.AddRef)
+            self._cb_release = AddRefReleaseProto(self.Release)
+            self._cb_getdata = GetDataProto(self.GetData)
+            self._cb_getdatahere = GetDataHereProto(self.GetDataHere)
+            self._cb_querygetdata = QueryGetDataProto(self.QueryGetData)
+            self._cb_getcanonical = GetCanonicalFormatEtcProto(self.GetCanonicalFormatEtc)
+            self._cb_setdata = SetDataProto(self.SetData)
+            self._cb_enumformatetc = EnumFormatEtcProto(self.EnumFormatEtc)
+            self._cb_dadvise = DAdviseProto(self.DAdvise)
+            self._cb_dunadvise = DUnadviseProto(self.DUnadvise)
+            self._cb_enumdadvise = EnumDAdviseProto(self.EnumDAdvise)
+
             self._vtbl = DataObjectVtbl(
-                QueryInterface=QueryInterfaceProto(self.QueryInterface),
-                AddRef=AddRefReleaseProto(self.AddRef),
-                Release=AddRefReleaseProto(self.Release),
-                GetData=GetDataProto(self.GetData),
-                GetDataHere=GetDataHereProto(self.GetDataHere),
-                QueryGetData=QueryGetDataProto(self.QueryGetData),
-                GetCanonicalFormatEtc=GetCanonicalFormatEtcProto(self.GetCanonicalFormatEtc),
-                SetData=SetDataProto(self.SetData),
-                EnumFormatEtc=EnumFormatEtcProto(self.EnumFormatEtc),
-                DAdvise=DAdviseProto(self.DAdvise),
-                DUnadvise=DUnadviseProto(self.DUnadvise),
-                EnumDAdvise=EnumDAdviseProto(self.EnumDAdvise)
+                QueryInterface=self._cb_qi,
+                AddRef=self._cb_addref,
+                Release=self._cb_release,
+                GetData=self._cb_getdata,
+                GetDataHere=self._cb_getdatahere,
+                QueryGetData=self._cb_querygetdata,
+                GetCanonicalFormatEtc=self._cb_getcanonical,
+                SetData=self._cb_setdata,
+                EnumFormatEtc=self._cb_enumformatetc,
+                DAdvise=self._cb_dadvise,
+                DUnadvise=self._cb_dunadvise,
+                EnumDAdvise=self._cb_enumdadvise
             )
-            self._vtbl_ptr = ctypes.pointer(self._vtbl)
+            # Pin the COM instance structure directly in self
+            self._instance = COMInterfaceInstance(ctypes.cast(ctypes.byref(self._vtbl), ctypes.c_void_p))
+            self._interface_ptr = ctypes.cast(ctypes.byref(self._instance), ctypes.c_void_p)
 
         @property
         def interface_ptr(self):
-            return ctypes.cast(ctypes.pointer(self._vtbl_ptr), ctypes.c_void_p)
+            return self._interface_ptr
 
         def QueryInterface(self, this, riid, ppv):
             try:
@@ -235,12 +286,18 @@ if IS_WINDOWS:
                 return E_FAIL
 
         def AddRef(self, this):
-            self.ref_count += 1
-            return self.ref_count
+            try:
+                self.ref_count += 1
+                return self.ref_count
+            except Exception:
+                return 1
 
         def Release(self, this):
-            self.ref_count -= 1
-            return self.ref_count
+            try:
+                self.ref_count -= 1
+                return max(0, self.ref_count)
+            except Exception:
+                return 0
 
         def QueryGetData(self, this, pFormatEtc):
             try:
@@ -272,8 +329,12 @@ if IS_WINDOWS:
                 else:
                     return DV_E_FORMATETC
 
+                h = alloc_global_bytes(raw)
+                if not h:
+                    return E_FAIL
+
                 pStgMedium.contents.tymed = TYMED_HGLOBAL
-                pStgMedium.contents.hGlobal = alloc_global_bytes(raw)
+                pStgMedium.contents.hGlobal = h
                 pStgMedium.contents.pUnkForRelease = None
                 return S_OK
             except Exception:
@@ -294,7 +355,7 @@ if IS_WINDOWS:
                     return shell32.SHCreateStdEnumFmtEtc(
                         ctypes.c_uint(len(self.formats)),
                         ctypes.cast(ctypes.byref(self.format_array), ctypes.c_void_p),
-                        ctypes.c_void_p(ppEnumFormatEtc)
+                        ppEnumFormatEtc
                     )
                 return E_NOTIMPL
             except Exception:
@@ -311,21 +372,29 @@ if IS_WINDOWS:
 
     def perform_ole_url_drag(url):
         """Initiates a native Windows OLE drag-and-drop operation for a URL."""
+        global _DRAG_IN_PROGRESS
         try:
-            ole32.OleInitialize(None)
-            data_obj = NativeUrlDataObject(url)
-            drop_src = NativeDropSource()
-            dw_effect = wintypes.DWORD(0)
+            hr = ole32.OleInitialize(None)
+            ole_initialized = (hr in (0, 1))
+            try:
+                data_obj = NativeUrlDataObject(url)
+                drop_src = NativeDropSource()
+                dw_effect = wintypes.DWORD(0)
 
-            res = ole32.DoDragDrop(
-                data_obj.interface_ptr,
-                drop_src.interface_ptr,
-                DROPEFFECT_COPY | DROPEFFECT_LINK,
-                ctypes.byref(dw_effect)
-            )
-            # DRAGDROP_S_DROP (0x00040100) or S_OK (0) indicates successful drop
-            is_success = (res in (0, 0x00040100)) and (dw_effect.value != DROPEFFECT_NONE)
-            return is_success, res
+                res = ole32.DoDragDrop(
+                    data_obj.interface_ptr,
+                    drop_src.interface_ptr,
+                    DROPEFFECT_COPY | DROPEFFECT_LINK,
+                    ctypes.byref(dw_effect)
+                )
+                is_success = (res in (0, 0x00040100)) and (dw_effect.value != DROPEFFECT_NONE)
+                return is_success, res
+            finally:
+                if ole_initialized:
+                    try:
+                        ole32.OleUninitialize()
+                    except Exception:
+                        pass
         except Exception as e:
             print("[OLE Drag Error]", e)
             return False, -1
@@ -334,12 +403,14 @@ else:
     def perform_ole_url_drag(url):
         return False, -1
 
+_DRAG_IN_PROGRESS = False
 
 def setup_native_drag_and_drop(widget, get_url_func, on_drag_success_callback=None, on_click_callback=None):
     """
     Binds native Windows OLE drag-and-drop to any Tkinter / CustomTkinter widget.
     - Click (< 6px movement): triggers on_click_callback
     - Drag (>= 6px movement): starts native OLE DoDragDrop with URL into OBS Studio
+    - Re-entrancy locked to ensure stability during modal COM loops.
     """
     state = {
         "start_x": 0,
@@ -354,27 +425,45 @@ def setup_native_drag_and_drop(widget, get_url_func, on_drag_success_callback=No
             return ""
 
     def on_press(event):
+        global _DRAG_IN_PROGRESS
+        if _DRAG_IN_PROGRESS:
+            return "break"
         state["start_x"] = event.x_root
         state["start_y"] = event.y_root
         state["is_dragging"] = False
 
     def on_motion(event):
+        global _DRAG_IN_PROGRESS
+        if _DRAG_IN_PROGRESS:
+            return "break"
+
         if not state["is_dragging"]:
             dx = abs(event.x_root - state["start_x"])
             dy = abs(event.y_root - state["start_y"])
             if dx > 6 or dy > 6:
+                if _DRAG_IN_PROGRESS:
+                    return "break"
                 state["is_dragging"] = True
-                url = _resolve_url()
-                if not url:
-                    return
-                success, code = perform_ole_url_drag(url)
-                if success and on_drag_success_callback:
-                    try:
-                        on_drag_success_callback()
-                    except Exception:
-                        pass
+                _DRAG_IN_PROGRESS = True
+                try:
+                    url = _resolve_url()
+                    if not url:
+                        return "break"
+                    success, code = perform_ole_url_drag(url)
+                    if success and on_drag_success_callback:
+                        try:
+                            on_drag_success_callback()
+                        except Exception:
+                            pass
+                finally:
+                    _DRAG_IN_PROGRESS = False
+                    state["is_dragging"] = False
+                return "break"
 
     def on_release(event):
+        global _DRAG_IN_PROGRESS
+        if _DRAG_IN_PROGRESS:
+            return "break"
         if not state["is_dragging"]:
             url = _resolve_url()
             if on_click_callback:
@@ -382,8 +471,13 @@ def setup_native_drag_and_drop(widget, get_url_func, on_drag_success_callback=No
                     on_click_callback(url)
                 except Exception:
                     pass
+        state["is_dragging"] = False
 
-    # Support CustomTkinter wrapper widgets by also binding inner tk components
+    # Avoid duplicate bindings if already configured
+    if getattr(widget, "_ole_drag_installed", False):
+        return
+    widget._ole_drag_installed = True
+
     targets = [widget]
     for attr in ("_entry", "_label", "_canvas", "_text"):
         if hasattr(widget, attr):
