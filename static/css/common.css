@@ -85,7 +85,7 @@ body.pos-bottom #overlay-container {
   font-weight: 600;
 }
 
-/* Fixed Marquee: No left-side fade mask! Starts 100% solid white at 0% */
+/* Fixed Marquee: Smooth infinite continuous ticker without pausing */
 .marquee-wrapper {
   overflow: hidden;
   white-space: nowrap;
@@ -96,21 +96,30 @@ body.pos-bottom #overlay-container {
   -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 24px), transparent 100%);
 }
 
+.marquee-wrapper.has-marquee {
+  mask-image: linear-gradient(90deg, transparent 0%, #000 12px, #000 calc(100% - 24px), transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 12px, #000 calc(100% - 24px), transparent 100%);
+}
+
 .marquee-content {
   display: inline-block;
   white-space: nowrap;
   will-change: transform;
 }
 
+.marquee-unit {
+  display: inline-block;
+  white-space: nowrap;
+}
+
 .marquee-scroll {
   display: inline-block;
-  animation: marquee-anim 16s linear infinite;
+  white-space: nowrap;
+  animation: marquee-anim 28s linear infinite;
 }
 
 @keyframes marquee-anim {
-  0% { transform: translateX(0%); }
-  15% { transform: translateX(0%); }
-  85% { transform: translateX(-50%); }
+  0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
 

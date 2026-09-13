@@ -110,7 +110,12 @@ function setupAutoScale() {
         }
     }
 
-    window.addEventListener('resize', autoScale);
+    window.addEventListener('resize', () => {
+        autoScale();
+        if (dom.titleEl && dom.titleWrapper && dom.titleEl.dataset.rawTitle) {
+            adjustMarquee(dom.titleEl, dom.titleWrapper, dom.titleEl.dataset.rawTitle);
+        }
+    });
     autoScale();
 }
 
@@ -157,7 +162,7 @@ function applyTheme(themeName) {
         themeLink.rel = 'stylesheet';
         document.head.appendChild(themeLink);
     }
-    const targetHref = `/static/css/themes/${themeName}.css?v=5.1`;
+    const targetHref = `/static/css/themes/${themeName}.css?v=5.2`;
     if (themeLink.getAttribute('href') !== targetHref) {
         themeLink.href = targetHref;
     }
@@ -212,7 +217,7 @@ function renderThemeHTML(theme) {
     }
 
     // Async Path: Fetch template file on-demand
-    fetch(`/static/templates/${theme}.html?v=5.1`)
+    fetch(`/static/templates/${theme}.html?v=5.2`)
         .then(res => {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return res.text();
@@ -330,9 +335,9 @@ function updateUI(data) {
     const displayTitle = data.title || "Waiting for music...";
     const displayArtist = data.artist || (hasMedia ? "Unknown Artist" : "No active playback");
 
-    if (titleEl && titleEl.textContent !== displayTitle) {
-        titleEl.textContent = displayTitle;
-        adjustMarquee(titleEl, titleWrapper);
+    if (titleEl && titleEl.dataset.rawTitle !== displayTitle) {
+        titleEl.dataset.rawTitle = displayTitle;
+        adjustMarquee(titleEl, titleWrapper, displayTitle);
     }
 
     if (artistEl && artistEl.textContent !== displayArtist) {
@@ -374,18 +379,52 @@ function startPlaybackTicker() {
     }, 500);
 }
 
-function adjustMarquee(textEl, wrapperEl) {
+function escapeHtml(str) {
+    if (!str) return "";
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function adjustMarquee(textEl, wrapperEl, titleText) {
     if (!textEl || !wrapperEl) return;
-    
+
+    const rawText = titleText !== undefined ? titleText : (textEl.dataset.rawTitle || textEl.textContent || "");
+
+    // Reset styles & classes to measure natural width
     textEl.classList.remove('marquee-scroll');
+    if (wrapperEl) wrapperEl.classList.remove('has-marquee');
+    textEl.style.animationDuration = '';
+    textEl.innerHTML = '';
+    textEl.textContent = rawText;
+
+    // Force reflow for accurate measurement
     void textEl.offsetWidth;
 
     const textWidth = textEl.scrollWidth;
     const containerWidth = wrapperEl.clientWidth;
 
-    if (textWidth > containerWidth + 15) {
-        textEl.innerHTML = `${textEl.textContent}&nbsp;&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;&nbsp;${textEl.textContent}`;
+    // Only scroll if text exceeds container width (with safety margin)
+    if (textWidth > containerWidth + 8) {
+        const safeText = escapeHtml(rawText);
+        const separator = '&nbsp;&nbsp;&nbsp;&nbsp;&bull;&nbsp;&nbsp;&nbsp;&nbsp;';
+        // Create two identical halves for perfect seamless infinite loop
+        textEl.innerHTML = `<span class="marquee-unit">${safeText}${separator}</span><span class="marquee-unit">${safeText}${separator}</span>`;
+
+        // Measure one unit width
+        const firstUnit = textEl.querySelector('.marquee-unit');
+        const unitWidth = firstUnit ? firstUnit.offsetWidth : (textWidth + 30);
+
+        // Constant leisurely speed: ~28 pixels per second (slower, comfortable reading)
+        const speed = 28;
+        const duration = Math.max(18, Math.round(unitWidth / speed));
+        textEl.style.animationDuration = `${duration}s`;
+
         textEl.classList.add('marquee-scroll');
+        wrapperEl.classList.add('has-marquee');
     }
 }
 
