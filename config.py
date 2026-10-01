@@ -37,7 +37,16 @@ def detect_system_language():
         pass
 
     try:
-        loc = locale.getdefaultlocale()[0]
+        loc = None
+        try:
+            loc = locale.getlocale()[0]
+        except Exception:
+            pass
+        if not loc:
+            try:
+                loc = locale.getdefaultlocale()[0]
+            except Exception:
+                pass
         if loc:
             loc_lower = loc.lower()
             if "zh" in loc_lower or "tw" in loc_lower or "hk" in loc_lower or "cht" in loc_lower:
@@ -75,7 +84,9 @@ def load_config():
 
 def save_config(config):
     try:
-        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        tmp_file = f"{CONFIG_FILE}.tmp"
+        with open(tmp_file, "w", encoding="utf-8") as f:
             json.dump(config, f, indent=4, ensure_ascii=False)
+        os.replace(tmp_file, CONFIG_FILE)
     except Exception as e:
         print(f"Error saving config: {e}")

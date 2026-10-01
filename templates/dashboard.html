@@ -213,13 +213,17 @@
             position: relative;
         }
 
-        .preview-viewport iframe {
-            width: 1000px;
-            height: 400px;
-            border: none;
-            transform: scale(0.52);
-            transform-origin: center center;
-            pointer-events: none;
+        .preview-viewport img {
+            max-width: 92%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            transition: transform 0.2s ease;
+        }
+
+        .preview-viewport img:hover {
+            transform: scale(1.03);
         }
     </style>
 </head>
@@ -304,7 +308,7 @@
                     </button>
                 </div>
                 <div class="preview-viewport">
-                    <iframe src="/overlay?theme=${t.id}"></iframe>
+                    <img src="/static/previews/${t.id}.png" alt="${t.name}" loading="lazy" onerror="this.src='/static/sample_cover.png'">
                 </div>
             `;
             grid.appendChild(card);

@@ -516,7 +516,7 @@ class UpdateDialog(ctk.CTkToplevel):
                     self.log("程式碼更新完成！即將重新啟動應用程式...")
                     self.after(0, lambda: self.progress_label.configure(text=self._t("update_restarting", "更新完成！正在重啟...")))
                     time.sleep(1.0)
-                    os.execl(sys.executable, sys.executable, *sys.argv)
+                    self.after(0, self._relaunch_app)
                 else:
                     self.log("環境無法自動替換，正在為您開啟 GitHub 頁面手動下載...")
                     webbrowser.open(self.info.get("html_url", "https://github.com/tokihorokeiya/musicDisplayObs/releases"))
@@ -526,6 +526,20 @@ class UpdateDialog(ctk.CTkToplevel):
                 self.after(0, lambda: self._on_update_error(err_msg))
 
         threading.Thread(target=_bg, daemon=True).start()
+
+    def _relaunch_app(self):
+        try:
+            subprocess.Popen([sys.executable] + sys.argv, close_fds=True)
+        except Exception as e:
+            self.log(f"重啟失敗: {e}")
+            return
+        if hasattr(self.parent_gui, "on_exit_callback") and self.parent_gui.on_exit_callback:
+            try:
+                self.parent_gui.on_exit_callback()
+            except Exception:
+                pass
+        self.parent_gui.destroy()
+        os._exit(0)
 
 class AppGUI(ctk.CTk):
     """
@@ -549,6 +563,7 @@ class AppGUI(ctk.CTk):
 
         self.current_res_mode = self.config.get("resolution_mode", "1920x700")
         self.current_page = "dashboard"
+        self.autohide_var = ctk.BooleanVar(value=bool(self.config.get("autohide_on_pause", False)))
 
         self.title("OBS Real-Time Music Display")
         self.geometry("980x740")
@@ -1193,16 +1208,15 @@ class AppGUI(ctk.CTk):
             text_color=NOTION_CHARCOAL
         ).pack(side="left")
 
-        self.autohide_switch = ctk.CTkSwitch(
+        self.autohide_switch_dash = ctk.CTkSwitch(
             auto_row,
             text="",
             width=42,
             progress_color=NOTION_PURPLE,
+            variable=self.autohide_var,
             command=self._on_autohide_toggle
         )
-        if self.config.get("autohide_on_pause", False):
-            self.autohide_switch.select()
-        self.autohide_switch.pack(side="right")
+        self.autohide_switch_dash.pack(side="right")
 
         # Action Buttons
         btn_box = ctk.CTkFrame(sync_inner, fg_color="transparent")
@@ -1260,16 +1274,15 @@ class AppGUI(ctk.CTk):
             text_color=NOTION_STEEL
         ).pack(side="left", padx=18, pady=12)
 
-        self.autohide_switch = ctk.CTkSwitch(
+        self.autohide_switch_gallery = ctk.CTkSwitch(
             top_bar,
             text=self._t("autohide_switch", "暫停或停止播放時自動隱藏小組件"),
             font=self._font(11, "bold"),
             progress_color=NOTION_PURPLE,
+            variable=self.autohide_var,
             command=self._on_autohide_toggle
         )
-        if self.config.get("autohide_on_pause", False):
-            self.autohide_switch.select()
-        self.autohide_switch.pack(side="right", padx=18, pady=10)
+        self.autohide_switch_gallery.pack(side="right", padx=18, pady=10)
 
         # Scrollable gallery (Notion database card grid)
         self.scrollable_gallery = ctk.CTkScrollableFrame(parent, fg_color="transparent")
@@ -1707,7 +1720,7 @@ class AppGUI(ctk.CTk):
             self.global_theme_dropdown.set(theme_name)
 
     def _on_autohide_toggle(self):
-        val = bool(self.autohide_switch.get())
+        val = bool(self.autohide_var.get())
         self.config["autohide_on_pause"] = val
         save_config(self.config)
         self._refresh_all_urls()
@@ -1732,12 +1745,28 @@ class AppGUI(ctk.CTk):
         try:
             p = int(self.port_entry.get().strip())
             if 1024 <= p <= 65535:
-                self.config["port"] = p
-                save_config(self.config)
+                if p == self.config.get("port"):
+                    return
+
+                def _on_port_result(success, err):
+                    def _gui_update():
+                        if success:
+                            self.config["port"] = p
+                            self._refresh_all_urls()
+                            self.show_inapp_toast(self._t("port_updated_toast", f"端口已更新為 {p}！").format(port=p))
+                        else:
+                            self.port_entry.delete(0, "end")
+                            self.port_entry.insert(0, str(self.config.get("port", 11150)))
+                            self.show_inapp_toast(self._t("port_error_occupied", f"端口 {p} 無法使用或已被佔用！").format(port=p))
+                    self.after(0, _gui_update)
+
                 if self.on_port_change_callback:
-                    self.on_port_change_callback(p)
-                self._refresh_all_urls()
-                self.show_inapp_toast(self._t("port_updated_toast", f"端口已更新為 {p}！").format(port=p))
+                    self.on_port_change_callback(p, _on_port_result)
+                else:
+                    self.config["port"] = p
+                    save_config(self.config)
+                    self._refresh_all_urls()
+                    self.show_inapp_toast(self._t("port_updated_toast", f"端口已更新為 {p}！").format(port=p))
             else:
                 self.show_inapp_toast(self._t("port_error", "端口號必須介於 1024 至 65535 之間"))
         except ValueError:
@@ -1817,21 +1846,20 @@ class AppGUI(ctk.CTk):
                 self.time_label.configure(text=time_str)
                 self._last_rendered_time_str = time_str
 
-            # Track song identity to prevent stale thumbnail when a new song starts without cover
+            # Track song identity
             song_identity = (media_data.get("title", ""), media_data.get("artist", ""))
             if song_identity != getattr(self, "_current_gui_song_key", None):
                 self._current_gui_song_key = song_identity
-                if not thumb_b64 and self.current_thumbnail_data is not None:
+
+            # Album Art: immediately display new thumbnail or reset when empty
+            if thumb_b64:
+                if thumb_b64 != self.current_thumbnail_data:
+                    self.current_thumbnail_data = thumb_b64
+                    self._update_cover_image(thumb_b64, self.cover_label, size=(90, 90))
+            else:
+                if self.current_thumbnail_data is not None:
                     self.current_thumbnail_data = None
                     self._load_default_cover(target_label=self.cover_label, size=(90, 90))
-
-            # Album Art
-            if thumb_b64 and thumb_b64 != self.current_thumbnail_data:
-                self.current_thumbnail_data = thumb_b64
-                self._update_cover_image(thumb_b64, self.cover_label, size=(90, 90))
-            elif not has_media and self.current_thumbnail_data is not None:
-                self.current_thumbnail_data = None
-                self._load_default_cover(target_label=self.cover_label, size=(90, 90))
 
     def _load_default_cover(self, target_label, size=(90, 90)):
         if not target_label or not target_label.winfo_exists():

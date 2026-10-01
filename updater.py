@@ -13,7 +13,7 @@ import urllib.error
 
 from functools import lru_cache
 
-APP_VERSION = "v1.3.5"
+APP_VERSION = "v1.3.6"
 GITHUB_REPO = "tokihorokeiya/musicDisplayObs"
 GITHUB_API_LATEST = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 
@@ -201,7 +201,11 @@ def extract_and_validate_zip(zip_path, extract_dir, log_callback=None):
         if log_callback:
             log_callback(f"壓縮檔校驗通過！共 {total_files} 個檔案，正在解壓縮...")
 
+        target_base = os.path.abspath(extract_dir)
         for idx, member in enumerate(namelist, 1):
+            target_path = os.path.abspath(os.path.join(extract_dir, member))
+            if not target_path.startswith(target_base + os.sep) and target_path != target_base:
+                raise RuntimeError(f"危險的 ZIP 路徑遍歷項目: {member}")
             zf.extract(member, extract_dir)
             if log_callback and (idx % 150 == 0 or idx == total_files):
                 pct = idx / total_files * 100
@@ -225,6 +229,10 @@ def apply_frozen_update(source_dir, target_app_dir=None, zip_path=None, quit_app
             target_app_dir = os.path.dirname(sys.executable)
         else:
             target_app_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Strip trailing slashes to prevent \" escaping issues in Windows batch files
+    target_app_dir = target_app_dir.rstrip("\\/")
+    source_dir = source_dir.rstrip("\\/")
 
     current_pid = os.getpid()
     temp_dir = tempfile.gettempdir()

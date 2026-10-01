@@ -72,14 +72,45 @@ class AppCoordinator:
                 await self.server.broadcast_media_update(payload)
             asyncio.run_coroutine_threadsafe(broadcast_theme(), self.loop)
 
-    def _on_port_changed(self, new_port):
-        self.config["port"] = new_port
-        save_config(self.config)
+    def _on_port_changed(self, new_port, callback=None):
         if self.loop and self.server:
             async def restart_srv():
-                await self.server.stop()
-                self.server.port = new_port
-                await self.server.start()
+                import socket
+                old_port = self.server.port
+                if new_port == old_port:
+                    if callback:
+                        callback(True, "")
+                    return
+
+                # Pre-test socket binding to avoid killing the running server on conflict
+                try:
+                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    s.settimeout(0.5)
+                    s.bind(("0.0.0.0", new_port))
+                    s.close()
+                except Exception as e:
+                    if callback:
+                        callback(False, f"Port {new_port} is already in use: {e}")
+                    return
+
+                try:
+                    await self.server.stop()
+                    self.server.port = new_port
+                    await self.server.start()
+                    self.config["port"] = new_port
+                    save_config(self.config)
+                    if callback:
+                        callback(True, "")
+                except Exception as e:
+                    # Roll back to old port
+                    self.server.port = old_port
+                    try:
+                        await self.server.start()
+                    except Exception:
+                        pass
+                    if callback:
+                        callback(False, f"Failed to start server on port {new_port}: {e}")
+
             asyncio.run_coroutine_threadsafe(restart_srv(), self.loop)
 
     def _shutdown(self):

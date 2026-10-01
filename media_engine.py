@@ -1,3 +1,4 @@
+import logging
 import asyncio
 import base64
 import time
@@ -10,6 +11,8 @@ from winsdk.windows.media.control import (
     GlobalSystemMediaTransportControlsSessionPlaybackStatus as PlaybackStatus
 )
 from winsdk.windows.storage.streams import DataReader
+
+logger = logging.getLogger("MediaEngine")
 
 # Pre-compiled regex patterns for high-throughput string cleaning & extraction
 RE_TOPIC = re.compile(r'\s*-\s*Topic$', re.IGNORECASE)
@@ -119,6 +122,10 @@ class MediaEngine:
         self._media_manager = None
         self._cached_track_key = None
         self._cached_thumbnail_b64 = ""
+        self._prev_thumbnail_b64 = ""
+        self._track_change_time = 0.0
+        self._last_thumb_periodic_check = 0.0
+        self._active_session_app = None
 
     def set_active_theme(self, theme_id):
         """Updates active theme for dynamic overlay updates."""
@@ -128,19 +135,119 @@ class MediaEngine:
     async def _extract_thumbnail(self, thumbnail_stream_ref):
         if not thumbnail_stream_ref:
             return ""
+        stream = None
+        reader = None
         try:
             stream = await thumbnail_stream_ref.open_read_async()
-            size = stream.size
-            if size <= 0:
+            if not stream:
                 return ""
-            reader = DataReader(stream.get_input_stream_at(0))
-            await reader.load_async(size)
-            buf = bytearray(size)
+            size = stream.size
+            if size <= 0 or size > 15 * 1024 * 1024:
+                return ""
+            input_stream = stream.get_input_stream_at(0)
+            reader = DataReader(input_stream)
+            actual_size = await reader.load_async(size)
+            if actual_size <= 0:
+                return ""
+            buf = bytearray(actual_size)
             reader.read_bytes(buf)
-            b64_str = base64.b64encode(buf).decode('utf-8')
-            return f"data:image/jpeg;base64,{b64_str}"
+
+            # Detect actual image format from magic bytes or stream metadata
+            mime = "image/jpeg"
+            if buf.startswith(b"\x89PNG\r\n\x1a\n"):
+                mime = "image/png"
+            elif buf.startswith(b"RIFF") and len(buf) > 12 and buf[8:12] == b"WEBP":
+                mime = "image/webp"
+            elif buf.startswith(b"\xff\xd8\xff"):
+                mime = "image/jpeg"
+            elif buf.startswith(b"GIF8"):
+                mime = "image/gif"
+            elif hasattr(stream, "content_type") and stream.content_type:
+                mime = stream.content_type
+
+            b64_str = base64.b64encode(buf).decode('ascii')
+            return f"data:{mime};base64,{b64_str}"
         except Exception:
             return ""
+        finally:
+            if reader:
+                try:
+                    reader.close()
+                except Exception:
+                    pass
+            if stream:
+                try:
+                    stream.close()
+                except Exception:
+                    pass
+
+    async def _select_best_session(self, manager):
+        """
+        Evaluates active media sessions and picks the one with the strongest
+        relevance score (playing status, valid title/artist, thumbnail presence).
+        """
+        if not manager:
+            return None
+        try:
+            sessions = manager.get_sessions()
+        except Exception:
+            return None
+        if not sessions:
+            return None
+
+        current_session = None
+        try:
+            current_session = manager.get_current_session()
+        except Exception:
+            pass
+
+        best_session = None
+        best_score = -1
+
+        for s in sessions:
+            try:
+                score = 0
+                pb = s.get_playback_info()
+                status = pb.playback_status if pb else None
+
+                # Skip completely closed or stopped sessions to eliminate redundant IPC latency
+                if status in (PlaybackStatus.CLOSED, PlaybackStatus.STOPPED):
+                    continue
+
+                if status == PlaybackStatus.PLAYING:
+                    score += 100
+                elif status == PlaybackStatus.CHANGING:
+                    score += 40
+                elif status == PlaybackStatus.PAUSED:
+                    score += 20
+
+                # OS-designated current session priority bonus
+                if current_session and s == current_session:
+                    score += 25
+
+                # Inspect properties for actual media presence
+                props = await s.try_get_media_properties_async()
+                if props:
+                    title = (props.title or "").strip()
+                    artist = (props.artist or props.album_artist or "").strip()
+                    if title:
+                        score += 50
+                    if artist:
+                        score += 20
+                    if props.thumbnail:
+                        score += 35
+
+                tl = s.get_timeline_properties()
+                if tl and tl.last_updated_time:
+                    score += 5
+
+                if score > best_score:
+                    best_score = score
+                    best_session = s
+            except Exception:
+                continue
+
+        return best_session or current_session or (sessions[0] if len(sessions) > 0 else None)
 
     async def get_current_media_info(self):
         try:
@@ -150,35 +257,13 @@ class MediaEngine:
             if not manager:
                 return None
             
-            sessions = manager.get_sessions()
-            target_session = manager.get_current_session()
-            
-            # Check if target_session is actually playing
-            target_is_playing = False
-            if target_session:
-                try:
-                    pb = target_session.get_playback_info()
-                    if pb and pb.playback_status == PlaybackStatus.PLAYING:
-                        target_is_playing = True
-                except Exception:
-                    pass
-
-            # If current session is not playing, look for any session that IS playing
-            if not target_is_playing and sessions:
-                for s in sessions:
-                    try:
-                        pb = s.get_playback_info()
-                        if pb and pb.playback_status == PlaybackStatus.PLAYING:
-                            target_session = s
-                            break
-                    except Exception:
-                        pass
-                if not target_session and len(sessions) > 0:
-                    target_session = sessions[0]
+            target_session = await self._select_best_session(manager)
 
             if not target_session:
                 self._cached_track_key = None
                 self._cached_thumbnail_b64 = ""
+                self._prev_thumbnail_b64 = ""
+                self._active_session_app = None
                 return {
                     "title": "",
                     "artist": "",
@@ -191,6 +276,15 @@ class MediaEngine:
                     "has_media": False,
                     "updated_at": time.time()
                 }
+
+            # Detect session source app change to avoid cross-app thumbnail retention
+            app_id = getattr(target_session, "source_app_user_model_id", "") or ""
+            if app_id != self._active_session_app:
+                self._active_session_app = app_id
+                self._cached_track_key = None
+                self._cached_thumbnail_b64 = ""
+                self._prev_thumbnail_b64 = ""
+                self._track_change_time = time.time()
 
             properties = await target_session.try_get_media_properties_async()
             playback_info = target_session.get_playback_info()
@@ -258,16 +352,30 @@ class MediaEngine:
                 self._last_smooth_song = song_key
                 self._last_smooth_pos = pos
 
-            # Thumbnail: Cache based on song identity to avoid COM stream I/O and base64 re-encoding every 500ms
-            track_key = (raw_title, raw_artist, album)
-            if track_key == self._cached_track_key and self._cached_thumbnail_b64:
-                thumbnail_b64 = self._cached_thumbnail_b64
-            else:
-                thumbnail_b64 = ""
-                if properties and properties.thumbnail:
-                    thumbnail_b64 = await self._extract_thumbnail(properties.thumbnail)
+            # Thumbnail: dynamically update during transition window and periodic check
+            now = time.time()
+            track_key = (clean_title, clean_artist, album)
+            if track_key != self._cached_track_key:
                 self._cached_track_key = track_key
-                self._cached_thumbnail_b64 = thumbnail_b64
+                self._prev_thumbnail_b64 = self._cached_thumbnail_b64
+                self._cached_thumbnail_b64 = ""
+                self._track_change_time = now
+
+            # We query the thumbnail if:
+            # 1. We don't have a thumbnail yet for this song
+            # 2. Within 4.0 seconds of a track transition (when Windows / media players load the new artwork)
+            # 3. Periodic 3.0s check (to capture dynamic live stream art or radio track changes)
+            in_transition = (now - self._track_change_time <= 4.0)
+            periodic_check = (now - self._last_thumb_periodic_check >= 3.0)
+
+            if (not self._cached_thumbnail_b64) or in_transition or periodic_check:
+                self._last_thumb_periodic_check = now
+                if properties and properties.thumbnail:
+                    new_thumb = await self._extract_thumbnail(properties.thumbnail)
+                    if new_thumb:
+                        self._cached_thumbnail_b64 = new_thumb
+
+            thumbnail_b64 = self._cached_thumbnail_b64
 
             has_media = bool(clean_title or clean_artist)
 
@@ -283,7 +391,8 @@ class MediaEngine:
                 "has_media": has_media,
                 "updated_at": time.time()
             }
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Media info extraction exception: {e}")
             self._media_manager = None
             return None
 
@@ -325,8 +434,8 @@ class MediaEngine:
                         self.current_data["duration"] = info["duration"]
                         self.current_data["updated_at"] = info["updated_at"]
 
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug(f"Media monitor tick exception: {e}")
             
             await asyncio.sleep(poll_interval)
 

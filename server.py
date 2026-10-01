@@ -4,6 +4,14 @@ import sys
 import json
 from aiohttp import web
 
+ALLOWED_THEMES = {
+    "glassmorphism", "cyberpunk", "vinyl", "minimal_pill", "cassette",
+    "broadcast", "cute_kawaii", "spotify", "lofi_cozy", "dynamic_island",
+    "minimalism", "swiss", "editorial", "hand_drawn", "retro",
+    "pixel", "flat", "eight_bit", "bento", "belmore",
+    "shizuru", "nyaru", "keiya"
+}
+
 class MediaServer:
     def __init__(self, media_engine, port=11150):
         self.media_engine = media_engine
@@ -66,10 +74,17 @@ class MediaServer:
 
     def _get_theme_template(self, theme):
         """Returns theme HTML template content directly from disk to prevent stale caching."""
+        if not theme or theme not in ALLOWED_THEMES:
+            theme = "glassmorphism"
         path = os.path.join(self.base_dir, "static", "templates", f"{theme}.html")
-        if os.path.exists(path):
+        # Ensure path is safely within the static/templates directory
+        expected_dir = os.path.abspath(os.path.join(self.base_dir, "static", "templates"))
+        real_path = os.path.abspath(path)
+        if not real_path.startswith(expected_dir + os.sep) and real_path != expected_dir:
+            return ""
+        if os.path.exists(real_path):
             try:
-                with open(path, "r", encoding="utf-8") as f:
+                with open(real_path, "r", encoding="utf-8") as f:
                     return f.read()
             except Exception:
                 return ""
@@ -78,11 +93,24 @@ class MediaServer:
     async def _handle_overlay(self, request):
         content = self._get_template("overlay.html")
         if content is not None:
-            theme = request.query.get("theme")
+            theme = request.query.get("theme", "").strip()
             if not theme or theme in ("active", "global"):
                 theme = self.media_engine.current_data.get("active_theme", "glassmorphism")
+            
+            # Whitelist validation to prevent XSS and path traversal
+            if theme not in ALLOWED_THEMES:
+                theme = self.media_engine.current_data.get("active_theme", "glassmorphism")
+                if theme not in ALLOWED_THEMES:
+                    theme = "glassmorphism"
+
             initial_html = self._get_theme_template(theme)
-            rendered = content.replace("{{THEME}}", theme).replace("{{INITIAL_TEMPLATE}}", initial_html)
+            safe_theme_json = json.dumps(theme)
+            rendered = (
+                content
+                .replace('"{{THEME}}"', safe_theme_json)
+                .replace("{{THEME}}", theme)
+                .replace("{{INITIAL_TEMPLATE}}", initial_html)
+            )
             return web.Response(text=rendered, content_type="text/html", headers=self._no_cache_headers())
         return web.Response(text="<h1>Overlay Not Found</h1>", content_type="text/html", status=404)
 
